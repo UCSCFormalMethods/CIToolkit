@@ -1,1 +1,1 @@
-# ControlImprovisationToolkit
+# Control Improvisation Toolkit
