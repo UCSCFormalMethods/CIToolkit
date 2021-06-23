@@ -4,7 +4,7 @@ intersection, and negation operations on specifications."""
 
 import copy
 from enum import Enum
-from typing import Set
+from typing import List, Set
 
 class Spec:
     """ The Spec class is a parent class to all specifications.
@@ -14,7 +14,7 @@ class Spec:
     def __init__(self, alphabet: Set[str]) -> None:
         self.alphabet = alphabet
 
-    def accepts(self, word) -> bool:
+    def accepts(self, word: List[str]) -> bool:
         """ Returns true if the specification accepts word, and false otherwise.
 
         :param word: The word which is checked for membership in the lanugage
@@ -22,7 +22,11 @@ class Spec:
         """
         raise NotImplementedError(self.__class__.__name__ + " has not implemented 'accepts'.")
 
-    def __or__(self, other):
+    def language_size(self) -> int:
+        """ Computes the number of strings accepted by this specification."""
+        raise NotImplementedError(self.__class__.__name__ + " has not implemented 'language_size'.")
+
+    def __or__(self, other: Spec) -> "AbstractSpec":
         """ Computes an abstract specification that accepts only words accepted
             by self or accepted by other. The returned specification will be the
             logical intersection of self and other.
@@ -31,7 +35,7 @@ class Spec:
         """
         return AbstractSpec(self, other, SpecOp.UNION)
 
-    def __and__(self, other):
+    def __and__(self, other: Spec) -> "AbstractSpec":
         """ Computes an abstract specification that accepts only words accepted
             by self and accepted by other. The returned specification will be the
             logical intersection of self and other.
@@ -40,18 +44,23 @@ class Spec:
         """
         return AbstractSpec(self, other, SpecOp.INTERSECTION)
 
-    def __invert__(self):
+    def __invert__(self) -> "AbstractSpec":
         """ Computes an abstract specification that accepts only words not accepted
             by self. The returned specification will be the logical negation of self.
         """
         return AbstractSpec(self, None, SpecOp.NEGATION)
 
-class SpecOp(Enum):
-    """ An enum enconding the different operations that can be performed on specifications.
-    """
-    UNION = 1
-    INTERSECTION = 2
-    NEGATION = 3
+    def __sub__(self, other: Spec) -> "AbstractSpec":
+        """ Computes an abstract specification that accepts only words accepted
+            by self and not accepted by other. The returned specification will be the
+            logical difference of self and other. This is shorthand for using the
+            intersection and complement functions.
+
+        :param other: The specification whose complement will be intersected with self.
+        """
+        complement_spec_2 = AbstractSpec(other, None, SpecOp.NEGATION)
+
+        return AbstractSpec(self, complement_spec_2, SpecOp.INTERSECTION)
 
 class AbstractSpec(Spec):
     """ The AbstractSpec class represents the language that results from a SpecOp
@@ -60,12 +69,12 @@ class AbstractSpec(Spec):
     :param spec_1: The first specification in the operation.
     :param spec_2: The second specificaton in the operation. In the case of a
         unary operation, spec_2 is None.
-    :param spec_3: The operation to be performed on spec_1/spec_2.
+    :param operation: The operation to be performed on spec_1/spec_2.
     """
     def __init__(self, spec_1: Spec, spec_2: Spec, operation: SpecOp):
         # Performs checks to make sure that AbstractSpec is being used
         # correctly.
-        alphabet = spec_1.alphabet & spec_2.alphabet
+        alphabet = spec_1.alphabet | spec_2.alphabet
         if alphabet != spec_1.alphabet or alphabet != spec_2.alphabet:
             raise ValueError("Cannot perform operations on specifications with different alphabets.")
 
@@ -88,7 +97,7 @@ class AbstractSpec(Spec):
         self.spec_2 = copy.deepcopy(spec_2)
         self.operation = operation
 
-    def accepts(self, word) -> bool:
+    def accepts(self, word: List[str]) -> bool:
         """ Returns true if the specification accepts word, and false otherwise.
 
         :param word: The word which is checked for membership in the lanugage
@@ -103,8 +112,26 @@ class AbstractSpec(Spec):
         else:
             raise NotImplementedError(str(self.operation) + " is not currently supported.")
 
+    def language_size(self) -> int:
+        """ Computes the number of strings accepted by this specification.
+            For an AbstractSpec, we first try to compute it's explicit form,
+            in which case we can rely on the subclasses' counting method.
+            Otherwise, we make as much of the AbstractSpec tree as explicit as
+            possible, and then check if we have a "hack" to compute the
+            size of the language anyway.
+        """
+        raise NotImplementedError()
+
     def explicit(self):
         """ Computes an explicit form for this AbstractSpec, raising an exception
             if this is not possible.
         """
         raise NotImplementedError()
+
+class SpecOp(Enum):
+    """ An enum enconding the different operations that can be
+        performed on specifications.
+    """
+    UNION = 1
+    INTERSECTION = 2
+    NEGATION = 3
