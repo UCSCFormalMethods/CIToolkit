@@ -9,7 +9,12 @@ class Dfa(Spec):
     The Dfa class encodes a Deterministic Finite Automata specification.
     """
     def __init__(self, alphabet: Set[str], states: Set[str], accepting_states: Set[str], start_state: str, transitions: Dict[Tuple(str, str), str],) -> None:
-        # TODO: Add checks to ensure well formed DFA.
+        # Perform checks to ensure well formed DFA.
+        if not accepting_states.issubset(states):
+            raise ValueError("Accepting states are not a subset of the DFA states.")
+
+        if not start_state in states:
+            raise ValueError("The starting state is not included in the DFA states")
 
         # Intializes super class and stores all parameters
         super().__init__(alphabet)
@@ -23,7 +28,11 @@ class Dfa(Spec):
         current_state = self.start_state
 
         for symbol in word:
-            current_state = self.transitions[(current_state, symbol)]
+            if (current_state, symbol) in self.transitions:
+                current_state = self.transitions[(current_state, symbol)]
+            else:
+                raise ValueError("There is no transition from '" + str(current_state) + \
+                  "' for the symbol '" + str(symbol) + "'.")
 
         return current_state in self.accepting_states
 
