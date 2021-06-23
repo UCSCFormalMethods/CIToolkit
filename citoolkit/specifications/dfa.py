@@ -26,3 +26,7 @@ class Dfa(Spec):
             current_state = self.transitions[(current_state, symbol)]
 
         return current_state in self.accepting_states
+
+    def language_size(self):
+        """ Computes the number of strings accepted by this specification."""
+        raise NotImplementedError()
