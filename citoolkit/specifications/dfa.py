@@ -70,37 +70,35 @@ class Dfa(Spec):
         reachable_accepting_states = reachable_states & self.accepting_states
 
         # Use Hopcroft's algorithm to merge nondistingishuable states.
-
         partition_sets = set(reachable_states, reachable_accepting_states)
         working_sets = set(reachable_states, reachable_accepting_states)
 
-        # Continue while a there remains a working set
         while len(working_sets) > 0:
             working_set = working_sets.pop()
 
             # Iterate over each symbol so that we check all transitions.
             for symbol in self.alphabet:
-                # Find all elements that when transitioning with symbol
-                # remain in working_set
-                closed_elements = set()
+                # Find all states that when transitioning with symbol
+                # remain lead to the working_set.
+                incoming_states = set()
 
-                for target_state in working_set:
-                    dest_state = self.transitions[(target_state, symbol)]
-                    if dest_state in target_state:
-                        closed_elements.add(dest_state)
+                for origin_state in reachable_accepting_states:
+                    dest_state = self.transitions[(origin_state, symbol)]
+                    if dest_state in working_set:
+                        incoming_states.add(dest_state)
 
                 # Iterate over all partition sets to find any sets such
-                # that closed_elements is a subset of that set but not
+                # that incoming_states is a subset of that set but not
                 # equal to that set.
                 for partition_set in partition_sets:
                     # Compute the intersection and difference of
-                    # closed_elements and partition_set
-                    intersection_set = partition_set & closed_elements
-                    difference_set = partition_set - closed_elements
+                    # incoming_states and partition_set.
+                    intersection_set = partition_set & incoming_states
+                    difference_set = partition_set - incoming_states
 
                     if len(intersection_set) > 0 and difference_set > 0:
                         # Replace partition set in partition_sets with intersection_set
-                        # and difference_set
+                        # and difference_set.
                         partition_sets.remove(partition_set)
 
                         partition_sets.add(intersection_set)
@@ -120,30 +118,55 @@ class Dfa(Spec):
                         else:
                             working_sets.add(difference_set)
 
+        # Pop one representative from each equivalence class and
+        # creates a map from each state to its representative.
+        minimal_states = set()
+        representative_map = dict()
+
+        for partition_set in partition_sets:
+            representative = partition_set.pop()
+
+            minimal_states.add(representative)
+
+            while len(partition_set) > 0:
+                representative_map[partition_set.pop()] = representative
+
+        # Create transition map for minimal DFA.
+        minimal_transitions = dict()
+
+        for state in minimal_states:
+            for symbol in self.alphabet:
+                target_state = self.transitions[(state, symbol)]
+                minimal_transitions[(state, symbol)] = representative_map[target_state]
+
+        # Create minimal DFA.
+        minimal_accepting_states = minimal_states & reachable_accepting_states
+        start_state_rep = representative_map[self.start_state]
+
+        return Dfa(self.alphabet, minimal_states, minimal_accepting_states, start_state_rep, minimal_transitions)
+
 
     @classmethod
     def dfa_union_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
-        """ Computes the union product construction for two DFAs.
+        """ Computes the union product construction for two DFAs and
+        return its minimized form.
 
         :param dfa_a: The first dfa to use in the product construction.
         :param dfa_b: The second dfa to use in the product construction.
         """
 
-        # TODO: Add minimization
-
-        cls._dfa_product_construction(dfa_a, dfa_b, union=True)
+        return cls._dfa_product_construction(dfa_a, dfa_b, union=True).minimize()
 
     @classmethod
     def dfa_intersection_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
-        """ Computes the union product construction for two DFAs.
+        """ Computes the union product construction for two DFAs and
+        return its minimized form.
 
         :param dfa_a: The first dfa to use in the product construction.
         :param dfa_b: The second dfa to use in the product construction.
         """
 
-        # TODO: Add minimization
-
-        cls._dfa_product_construction(dfa_a, dfa_b, union=False)
+        return cls._dfa_product_construction(dfa_a, dfa_b, union=False).minimize()
 
     @classmethod
     def _dfa_product_construction(cls, dfa_a: Dfa, dfa_b: Dfa, union: bool) -> Dfa:

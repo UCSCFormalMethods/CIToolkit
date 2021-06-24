@@ -12,7 +12,7 @@ class Spec:
     :param alphabet: The alphabet this specification is defined over.
     """
     def __init__(self, alphabet: Set[str]) -> None:
-        self.alphabet = alphabet
+        self.alphabet = frozenset(alphabet)
 
     def accepts(self, word: List[str]) -> bool:
         """ Returns true if the specification accepts word, and false otherwise.
