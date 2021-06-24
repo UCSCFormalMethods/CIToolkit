@@ -149,6 +149,17 @@ class Dfa(Spec):
 
         return Dfa(self.alphabet, minimal_states, minimal_accepting_states, start_state_rep, minimal_transitions)
 
+    def negation(self) -> Dfa:
+        """ Computes and returns a Dfa that accepts words
+        if and only if they are not accepted by self.
+        """
+        states = self.states
+        new_accepting_states = states - self.accepting_states
+        start_state = self.start_state
+        transitions = self.transitions.copy()
+
+        return Dfa(self.alphabet, states, new_accepting_states, start_state, transitions)
+
     def assert_complete(self) -> bool:
         """ Returns true if and only if the DFA is complete,
         meaning all state/symbol combinations have an associated
@@ -160,7 +171,7 @@ class Dfa(Spec):
                     raise ValueError("The transition map is missing a transition for " + str((state, symbol)))
 
     @classmethod
-    def dfa_union_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
+    def union_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
         """ Computes the union product construction for two DFAs and
         return its minimized form.
 
@@ -168,10 +179,10 @@ class Dfa(Spec):
         :param dfa_b: The second dfa to use in the product construction.
         """
 
-        return cls._dfa_product_construction(dfa_a, dfa_b, union=True).minimize()
+        return cls._product_construction(dfa_a, dfa_b, union=True).minimize()
 
     @classmethod
-    def dfa_intersection_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
+    def intersection_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
         """ Computes the union product construction for two DFAs and
         return its minimized form.
 
@@ -179,10 +190,10 @@ class Dfa(Spec):
         :param dfa_b: The second dfa to use in the product construction.
         """
 
-        return cls._dfa_product_construction(dfa_a, dfa_b, union=False).minimize()
+        return cls._product_construction(dfa_a, dfa_b, union=False).minimize()
 
     @classmethod
-    def _dfa_product_construction(cls, dfa_a: Dfa, dfa_b: Dfa, union: bool) -> Dfa:
+    def _product_construction(cls, dfa_a: Dfa, dfa_b: Dfa, union: bool) -> Dfa:
         """ Computes the product construction for two DFAs, for either
         the union or intersection depending on the value of the union
         parameter.
@@ -204,7 +215,7 @@ class Dfa(Spec):
         # Initialize parameters for new Dfa
         new_states = set()
         new_accepting_states = set()
-        new_starting_state = State(dfa_a.start_state, dfa_b.start_state)
+        new_start_state = State(dfa_a.start_state, dfa_b.start_state)
         new_transitions = dict()
 
         # Iterate through every combination of states in the dfa_a
@@ -230,7 +241,8 @@ class Dfa(Spec):
                                                        dfa_b.transitions[(state_b, symbol)])
 
         # Uses the above pieces to create the new product Dfa and returns it.
-        return Dfa(alphabet, new_states, new_accepting_states, new_starting_state, new_transitions)
+        return Dfa(alphabet, new_states, new_accepting_states, new_start_state, new_transitions)
+
 
 class State:
     """ Class representing a state in a DFA. Primarily used for merging states

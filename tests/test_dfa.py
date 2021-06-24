@@ -347,6 +347,15 @@ def test_dfa_minimize_reduction():
     assert not minimized_dfa.accepts("2220000110011000020100002000") and not dfa.accepts("2220000110011000020100002000")
     assert minimized_dfa.accepts("222210000001100002001110002000111") and dfa.accepts("222210000001100002001110002000111")
 
+def test_dfa_union():
+    pass
+
+def test_dfa_intersection():
+    pass
+
+def test_dfa_negation():
+    pass
+
 ###################################################################################################
 # Helper Functions
 ###################################################################################################

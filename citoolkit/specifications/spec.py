@@ -132,8 +132,33 @@ class AbstractSpec(Spec):
         """
         raise NotImplementedError()
 
-    def explicit(self):
+    def explicit(self) -> Spec:
         """ Computes an explicit form for this AbstractSpec, raising an exception
             if this is not possible.
         """
-        raise NotImplementedError()
+        # Import explicit specification classes. (Done here to avoid circular import)
+        from citoolkit.specifications.dfa import Dfa
+
+        # Ensures that children are in explicit form.
+        if isinstance(self.spec_1, AbstractSpec):
+            self.spec_1 = self.spec_1.explicit()
+
+        if isinstance(self.spec_2, AbstractSpec):
+            self.spec_2 = self.spec_2.explicit()
+
+        # Attempts to make an explicit specification, raising an error
+        # if such a construction is not supported.
+        if isinstance(self.spec_1, Dfa) and isinstance(self.spec_2, Dfa):
+            if self.operation == SpecOp.UNION:
+                return Dfa.union_construction(self.spec_1, self.spec_2)
+            elif self.operation == SpecOp.INTERSECTION:
+                return Dfa.intersection_construction(self.spec_1, self.spec_2)
+            elif self.operation == SpecOp.NEGATION:
+                raise NotImplementedError()
+            else:
+                raise NotImplementedError("Explict construction for '" + self.spec_1.__class__.__name__ + \
+                                      "' and '" + self.spec_2.__class__.__name__ + "' with operation '" + \
+                                      str(self.operation) + "' is not supported.")
+        else:
+            raise NotImplementedError("Explict constructions for '" + self.spec_1.__class__.__name__ + \
+                                      "' and '" + self.spec_2.__class__.__name__ + " are not supported.")
