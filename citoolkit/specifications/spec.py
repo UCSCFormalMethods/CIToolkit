@@ -2,9 +2,11 @@
 and the AbstractSpec class, which allows one to perform the union,
 intersection, and negation operations on specifications."""
 
+from __future__ import annotations
+from typing import List, Set
+
 import copy
 from enum import Enum
-from typing import List, Set
 
 class Spec:
     """ The Spec class is a parent class to all specifications.
@@ -26,7 +28,7 @@ class Spec:
         """ Computes the number of strings accepted by this specification."""
         raise NotImplementedError(self.__class__.__name__ + " has not implemented 'language_size'.")
 
-    def __or__(self, other: Spec) -> "AbstractSpec":
+    def __or__(self, other: Spec) -> AbstractSpec:
         """ Computes an abstract specification that accepts only words accepted
             by self or accepted by other. The returned specification will be the
             logical intersection of self and other.
@@ -35,7 +37,7 @@ class Spec:
         """
         return AbstractSpec(self, other, SpecOp.UNION)
 
-    def __and__(self, other: Spec) -> "AbstractSpec":
+    def __and__(self, other: Spec) -> AbstractSpec:
         """ Computes an abstract specification that accepts only words accepted
             by self and accepted by other. The returned specification will be the
             logical intersection of self and other.
@@ -44,13 +46,13 @@ class Spec:
         """
         return AbstractSpec(self, other, SpecOp.INTERSECTION)
 
-    def __invert__(self) -> "AbstractSpec":
+    def __invert__(self) -> AbstractSpec:
         """ Computes an abstract specification that accepts only words not accepted
             by self. The returned specification will be the logical negation of self.
         """
         return AbstractSpec(self, None, SpecOp.NEGATION)
 
-    def __sub__(self, other: Spec) -> "AbstractSpec":
+    def __sub__(self, other: Spec) -> AbstractSpec:
         """ Computes an abstract specification that accepts only words accepted
             by self and not accepted by other. The returned specification will be the
             logical difference of self and other. This is shorthand for using the
@@ -61,6 +63,14 @@ class Spec:
         complement_spec_2 = AbstractSpec(other, None, SpecOp.NEGATION)
 
         return AbstractSpec(self, complement_spec_2, SpecOp.INTERSECTION)
+
+class SpecOp(Enum):
+    """ An enum enconding the different operations that can be
+        performed on specifications.
+    """
+    UNION = 1
+    INTERSECTION = 2
+    NEGATION = 3
 
 class AbstractSpec(Spec):
     """ The AbstractSpec class represents the language that results from a SpecOp
@@ -127,11 +137,3 @@ class AbstractSpec(Spec):
             if this is not possible.
         """
         raise NotImplementedError()
-
-class SpecOp(Enum):
-    """ An enum enconding the different operations that can be
-        performed on specifications.
-    """
-    UNION = 1
-    INTERSECTION = 2
-    NEGATION = 3

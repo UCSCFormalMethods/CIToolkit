@@ -2,6 +2,7 @@
     Based off the implementation by Daniel Fremont for Reactive Control Improvisation (https://github.com/dfremont/rci)
 """
 
+from __future__ import annotations
 from typing import List, Set, Dict, Tuple, Union
 
 from citoolkit.specifications.spec import Spec
@@ -20,21 +21,23 @@ class Dfa(Spec):
     """
     def __init__(self, alphabet: Set[str], states: Set[Union[str, State]], accepting_states: Set[Union[str, State]], \
                  start_state: Union[str, State], transitions: Dict[Tuple(State, str), State]) -> None:
-        # Perform checks to ensure well formed DFA.
-        if not accepting_states.issubset(states):
-            raise ValueError("Accepting states are not a subset of the DFA states.")
-
-        if not start_state in states:
-            raise ValueError("The starting state is not included in the DFA states")
-
         # Intializes super class and stores all parameters. Also ensures
         # all states are of the State class
         super().__init__(alphabet)
-        self.states = set(map(State, states))
-        self.accepting_states = set(map(State, accepting_states))
+        self.states = frozenset(map(State, states))
+        self.accepting_states = frozenset(map(State, accepting_states))
         self.start_state = State(start_state)
 
         self.transitions = {(State(state),symbol):State(dest_state) for ((state, symbol),dest_state) in transitions.items()}
+
+        # Perform checks to ensure well formed DFA.
+        if not self.accepting_states.issubset(self.states):
+            raise ValueError("Accepting states are not a subset of the DFA states.")
+
+        if not self.start_state in self.states:
+            raise ValueError("The starting state is not included in the DFA states")
+
+        self.assert_complete()
 
     def accepts(self, word: List[str]) -> bool:
         current_state = self.start_state
@@ -48,14 +51,14 @@ class Dfa(Spec):
 
         return current_state in self.accepting_states
 
-    def minimize(self) -> "Dfa":
+    def minimize(self) -> Dfa:
         """ Computes and returns a minimal Dfa that accepts the same
             language as self.
         """
         # We first remove any states that are unreachable via a breadth
         # first search.
         current_state = None
-        reachable_states = set(self.start_state)
+        reachable_states = {self.start_state}
         state_queue = [self.start_state]
 
         while len(state_queue) > 0:
@@ -70,8 +73,8 @@ class Dfa(Spec):
         reachable_accepting_states = reachable_states & self.accepting_states
 
         # Use Hopcroft's algorithm to merge nondistingishuable states.
-        partition_sets = set(reachable_states, reachable_accepting_states)
-        working_sets = set(reachable_states, reachable_accepting_states)
+        partition_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
+        working_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
 
         while len(working_sets) > 0:
             working_set = working_sets.pop()
@@ -82,27 +85,27 @@ class Dfa(Spec):
                 # remain lead to the working_set.
                 incoming_states = set()
 
-                for origin_state in reachable_accepting_states:
+                for origin_state in reachable_states:
                     dest_state = self.transitions[(origin_state, symbol)]
                     if dest_state in working_set:
-                        incoming_states.add(dest_state)
+                        incoming_states.add(origin_state)
 
                 # Iterate over all partition sets to find any sets such
                 # that incoming_states is a subset of that set but not
                 # equal to that set.
-                for partition_set in partition_sets:
+                for partition_set in partition_sets.copy():
                     # Compute the intersection and difference of
                     # incoming_states and partition_set.
                     intersection_set = partition_set & incoming_states
                     difference_set = partition_set - incoming_states
 
-                    if len(intersection_set) > 0 and difference_set > 0:
+                    if len(intersection_set) > 0 and len(difference_set) > 0:
                         # Replace partition set in partition_sets with intersection_set
                         # and difference_set.
                         partition_sets.remove(partition_set)
 
-                        partition_sets.add(intersection_set)
-                        partition_sets.add(difference_set)
+                        partition_sets.append(intersection_set)
+                        partition_sets.append(difference_set)
 
                         # If partition_set is in working_sets, replace it with
                         # intersection_set and difference_set. Otherwise, add the
@@ -111,12 +114,12 @@ class Dfa(Spec):
                         if partition_set in working_sets:
                             working_sets.remove(partition_set)
 
-                            working_sets.add(intersection_set)
-                            working_sets.add(difference_set)
-                        elif len(intersection_set) <= difference_set:
-                            working_sets.add(intersection_set)
+                            working_sets.append(intersection_set)
+                            working_sets.append(difference_set)
+                        elif len(intersection_set) <= len(difference_set):
+                            working_sets.append(intersection_set)
                         else:
-                            working_sets.add(difference_set)
+                            working_sets.append(difference_set)
 
         # Pop one representative from each equivalence class and
         # creates a map from each state to its representative.
@@ -125,6 +128,7 @@ class Dfa(Spec):
 
         for partition_set in partition_sets:
             representative = partition_set.pop()
+            representative_map[representative] = representative
 
             minimal_states.add(representative)
 
@@ -145,6 +149,15 @@ class Dfa(Spec):
 
         return Dfa(self.alphabet, minimal_states, minimal_accepting_states, start_state_rep, minimal_transitions)
 
+    def assert_complete(self) -> bool:
+        """ Returns true if and only if the DFA is complete,
+        meaning all state/symbol combinations have an associated
+        transition.
+        """
+        for symbol in self.alphabet:
+            for state in self.states:
+                if (state, symbol) not in self.transitions:
+                    raise ValueError("The transition map is missing a transition for " + str((state, symbol)))
 
     @classmethod
     def dfa_union_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
@@ -232,9 +245,9 @@ class State:
 
         for arg in args:
             if isinstance(arg, str):
-                labels.append(str)
+                labels.append(arg)
             elif isinstance(arg, State):
-                labels += arg.labels
+                labels += list(arg.state_tuple)
             else:
                 raise ValueError("Only strings or State objects can be used to create another state.")
 
@@ -245,6 +258,9 @@ class State:
             return "(" + self.state_tuple[0] + ")"
         else:
             return str(self.state_tuple)
+
+    def __repr__(self):
+        return str(self)
 
     def __eq__(self, other):
         return isinstance(other, State) and (self.state_tuple == other.state_tuple)
