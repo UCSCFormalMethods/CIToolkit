@@ -52,18 +52,110 @@ class Dfa(Spec):
         """ Computes and returns a minimal Dfa that accepts the same
             language as self.
         """
-        raise NotImplementedError()
+        # We first remove any states that are unreachable via a breadth
+        # first search.
+        current_state = None
+        reachable_states = set(self.start_state)
+        state_queue = [self.start_state]
+
+        while len(state_queue) > 0:
+            current_state = state_queue.pop(0)
+
+            for symbol in self.alphabet:
+                next_state = self.transitions[(current_state, symbol)]
+                if next_state not in reachable_states:
+                    reachable_states.add(next_state)
+                    state_queue.append(next_state)
+
+        reachable_accepting_states = reachable_states & self.accepting_states
+
+        # Use Hopcroft's algorithm to merge nondistingishuable states.
+
+        partition_sets = set(reachable_states, reachable_accepting_states)
+        working_sets = set(reachable_states, reachable_accepting_states)
+
+        # Continue while a there remains a working set
+        while len(working_sets) > 0:
+            working_set = working_sets.pop()
+
+            # Iterate over each symbol so that we check all transitions.
+            for symbol in self.alphabet:
+                # Find all elements that when transitioning with symbol
+                # remain in working_set
+                closed_elements = set()
+
+                for target_state in working_set:
+                    dest_state = self.transitions[(target_state, symbol)]
+                    if dest_state in target_state:
+                        closed_elements.add(dest_state)
+
+                # Iterate over all partition sets to find any sets such
+                # that closed_elements is a subset of that set but not
+                # equal to that set.
+                for partition_set in partition_sets:
+                    # Compute the intersection and difference of
+                    # closed_elements and partition_set
+                    intersection_set = partition_set & closed_elements
+                    difference_set = partition_set - closed_elements
+
+                    if len(intersection_set) > 0 and difference_set > 0:
+                        # Replace partition set in partition_sets with intersection_set
+                        # and difference_set
+                        partition_sets.remove(partition_set)
+
+                        partition_sets.add(intersection_set)
+                        partition_sets.add(difference_set)
+
+                        # If partition_set is in working_sets, replace it with
+                        # intersection_set and difference_set. Otherwise, add the
+                        # smaller of the two to working_sets.
+
+                        if partition_set in working_sets:
+                            working_sets.remove(partition_set)
+
+                            working_sets.add(intersection_set)
+                            working_sets.add(difference_set)
+                        elif len(intersection_set) <= difference_set:
+                            working_sets.add(intersection_set)
+                        else:
+                            working_sets.add(difference_set)
+
 
     @classmethod
     def dfa_union_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
+        """ Computes the union product construction for two DFAs.
+
+        :param dfa_a: The first dfa to use in the product construction.
+        :param dfa_b: The second dfa to use in the product construction.
+        """
+
+        # TODO: Add minimization
+
         cls._dfa_product_construction(dfa_a, dfa_b, union=True)
 
     @classmethod
     def dfa_intersection_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
+        """ Computes the union product construction for two DFAs.
+
+        :param dfa_a: The first dfa to use in the product construction.
+        :param dfa_b: The second dfa to use in the product construction.
+        """
+
+        # TODO: Add minimization
+
         cls._dfa_product_construction(dfa_a, dfa_b, union=False)
 
     @classmethod
     def _dfa_product_construction(cls, dfa_a: Dfa, dfa_b: Dfa, union: bool) -> Dfa:
+        """ Computes the product construction for two DFAs, for either
+        the union or intersection depending on the value of the union
+        parameter.
+
+        :param dfa_a: The first dfa to use in the product construction.
+        :param dfa_b: The second dfa to use in the product construction.
+        :param union: If true, use the union rules to decide which states
+            are accepting. If false, use intersection rules.
+        """
         # Performs checks to make sure that the product construction
         # is being used correctly.
         alphabet = dfa_a.alphabet | dfa_b.alphabet
@@ -126,7 +218,27 @@ class State:
         self.state_tuple = tuple(labels)
 
     def __str__(self):
-        return str(self.state_tuple)
+        if len(self.state_tuple) == 1:
+            return "(" + self.state_tuple[0] + ")"
+        else:
+            return str(self.state_tuple)
 
     def __eq__(self, other):
         return isinstance(other, State) and (self.state_tuple == other.state_tuple)
+
+
+    def __hash__(self):
+        return hash(self.state_tuple)
+
+
+class SinkState(State):
+    """ A special state created by the minimization algorithm that is never accepting."""
+    def __init__(self):
+        super().__init__()
+        self.state_tuple = []
+
+    def __str__(self):
+        return "(SINK)"
+
+    def __eq__(self, other):
+        return isinstance(other, SinkState)
