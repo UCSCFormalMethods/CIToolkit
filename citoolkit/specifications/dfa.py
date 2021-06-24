@@ -252,16 +252,3 @@ class State:
 
     def __hash__(self):
         return hash(self.state_tuple)
-
-
-class SinkState(State):
-    """ A special state created by the minimization algorithm that is never accepting."""
-    def __init__(self):
-        super().__init__()
-        self.state_tuple = []
-
-    def __str__(self):
-        return "(SINK)"
-
-    def __eq__(self, other):
-        return isinstance(other, SinkState)
