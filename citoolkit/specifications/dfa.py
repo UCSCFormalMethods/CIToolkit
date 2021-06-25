@@ -127,13 +127,14 @@ class Dfa(Spec):
         representative_map = dict()
 
         for partition_set in partition_sets:
-            representative = partition_set.pop()
-            representative_map[representative] = representative
+            if len(partition_set) > 0:
+                representative = partition_set.pop()
+                representative_map[representative] = representative
 
-            minimal_states.add(representative)
+                minimal_states.add(representative)
 
-            while len(partition_set) > 0:
-                representative_map[partition_set.pop()] = representative
+                while len(partition_set) > 0:
+                    representative_map[partition_set.pop()] = representative
 
         # Create transition map for minimal DFA.
         minimal_transitions = dict()
