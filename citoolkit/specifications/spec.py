@@ -84,9 +84,13 @@ class AbstractSpec(Spec):
     def __init__(self, spec_1: Spec, spec_2: Spec, operation: SpecOp):
         # Performs checks to make sure that AbstractSpec is being used
         # correctly.
-        alphabet = spec_1.alphabet | spec_2.alphabet
-        if alphabet != spec_1.alphabet or alphabet != spec_2.alphabet:
-            raise ValueError("Cannot perform operations on specifications with different alphabets.")
+
+        if spec_2 is not None:
+            alphabet = spec_1.alphabet | spec_2.alphabet
+            if alphabet != spec_1.alphabet or alphabet != spec_2.alphabet:
+                raise ValueError("Cannot perform operations on specifications with different alphabets.")
+        else:
+            alphabet = spec_1.alphabet
 
         if operation not in SpecOp:
             raise ValueError("Unsupported specification operation.")
@@ -104,8 +108,16 @@ class AbstractSpec(Spec):
         super().__init__(alphabet)
 
         self.spec_1 = copy.deepcopy(spec_1)
-        self.spec_2 = copy.deepcopy(spec_2)
+
+        if spec_2 is not None:
+            self.spec_2 = copy.deepcopy(spec_2)
+        else:
+            self.spec_2 = None
+
         self.operation = operation
+
+        # Initializes explicit form to None. It will be assigned when computed
+        self.explicit_form = None
 
     def accepts(self, word: List[str]) -> bool:
         """ Returns true if the specification accepts word, and false otherwise.
@@ -117,7 +129,7 @@ class AbstractSpec(Spec):
             return self.spec_1.accepts(word) or self.spec_2.accepts(word)
         elif self.operation == SpecOp.INTERSECTION:
             return self.spec_1.accepts(word) and self.spec_2.accepts(word)
-        elif self.operation == SpecOp.INTERSECTION:
+        elif self.operation == SpecOp.NEGATION:
             return not self.spec_1.accepts(word)
         else:
             raise NotImplementedError(str(self.operation) + " is not currently supported.")
@@ -139,26 +151,30 @@ class AbstractSpec(Spec):
         # Import explicit specification classes. (Done here to avoid circular import)
         from citoolkit.specifications.dfa import Dfa
 
-        # Ensures that children are in explicit form.
+        # Ensures that children are in explicit form and assign them to shorthand variables.
         if isinstance(self.spec_1, AbstractSpec):
-            self.spec_1 = self.spec_1.explicit()
+            spec_1_explicit = self.spec_1.explicit()
+        else:
+            spec_1_explicit = self.spec_1
 
         if isinstance(self.spec_2, AbstractSpec):
-            self.spec_2 = self.spec_2.explicit()
+            spec_2_explicit = self.spec_2.explicit()
+        else:
+            spec_2_explicit = self.spec_2
 
         # Attempts to make an explicit specification, raising an error
         # if such a construction is not supported.
-        if isinstance(self.spec_1, Dfa) and isinstance(self.spec_2, Dfa):
+        if isinstance(spec_1_explicit, Dfa) and (spec_2_explicit is None or isinstance(spec_2_explicit, Dfa)):
             if self.operation == SpecOp.UNION:
-                return Dfa.union_construction(self.spec_1, self.spec_2)
+                return Dfa.union_construction(spec_1_explicit, spec_2_explicit)
             elif self.operation == SpecOp.INTERSECTION:
-                return Dfa.intersection_construction(self.spec_1, self.spec_2)
+                return Dfa.intersection_construction(spec_1_explicit, spec_2_explicit)
             elif self.operation == SpecOp.NEGATION:
-                raise NotImplementedError()
+                return spec_1_explicit.negation()
             else:
-                raise NotImplementedError("Explict construction for '" + self.spec_1.__class__.__name__ + \
-                                      "' and '" + self.spec_2.__class__.__name__ + "' with operation '" + \
+                raise NotImplementedError("Explict construction for '" + spec_1_explicit.__class__.__name__ + \
+                                      "' and '" + spec_2_explicit.__class__.__name__ + "' with operation '" + \
                                       str(self.operation) + "' is not supported.")
         else:
-            raise NotImplementedError("Explict constructions for '" + self.spec_1.__class__.__name__ + \
-                                      "' and '" + self.spec_2.__class__.__name__ + " are not supported.")
+            raise NotImplementedError("Explict constructions for '" + spec_1_explicit.__class__.__name__ + \
+                                      "' and '" + spec_2_explicit.__class__.__name__ + " are not supported.")

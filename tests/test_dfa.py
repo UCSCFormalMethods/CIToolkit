@@ -2,11 +2,11 @@
 
 import pytest
 
-from citoolkit.specifications.spec import Spec
+from citoolkit.specifications.spec import AbstractSpec
 from citoolkit.specifications.dfa import Dfa, State
 
 ###################################################################################################
-# Tests
+# Basic Tests
 ###################################################################################################
 
 def test_dfa_complete():
@@ -96,21 +96,21 @@ def test_dfa_string_states():
     # Create the DFA and check select strings against Dfa
     dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
 
-    assert not dfa.accepts("")
-    assert not dfa.accepts("0")
-    assert not dfa.accepts("1")
-    assert not dfa.accepts("2")
+    assert not dfa.accepts([])
+    assert not dfa.accepts(list("0"))
+    assert not dfa.accepts(list("1"))
+    assert not dfa.accepts(list("2"))
 
-    assert dfa.accepts("111")
-    assert not dfa.accepts("1112")
+    assert dfa.accepts(list("111"))
+    assert not dfa.accepts(list("1112"))
 
-    assert not dfa.accepts("000")
-    assert not dfa.accepts("222")
+    assert not dfa.accepts(list("000"))
+    assert not dfa.accepts(list("222"))
 
-    assert dfa.accepts("01110")
+    assert dfa.accepts(list("01110"))
 
-    assert not dfa.accepts("00000011000020011100020001")
-    assert dfa.accepts("0000001100002001110002000111")
+    assert not dfa.accepts(list("00000011000020011100020001"))
+    assert dfa.accepts(list("0000001100002001110002000111"))
 
 def test_dfa_class_states():
     """ Creates a simple Dfa and ensures that select
@@ -143,21 +143,21 @@ def test_dfa_class_states():
     # Create the DFA and check select strings against Dfa
     dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
 
-    assert not dfa.accepts("")
-    assert not dfa.accepts("0")
-    assert not dfa.accepts("1")
-    assert not dfa.accepts("2")
+    assert not dfa.accepts([])
+    assert not dfa.accepts(list("0"))
+    assert not dfa.accepts(list("1"))
+    assert not dfa.accepts(list("2"))
 
-    assert dfa.accepts("111")
-    assert not dfa.accepts("1112")
+    assert dfa.accepts(list("111"))
+    assert not dfa.accepts(list("1112"))
 
-    assert not dfa.accepts("000")
-    assert not dfa.accepts("222")
+    assert not dfa.accepts(list("000"))
+    assert not dfa.accepts(list("222"))
 
-    assert dfa.accepts("01110")
+    assert dfa.accepts(list("01110"))
 
-    assert not dfa.accepts("00000011000020011100020001")
-    assert dfa.accepts("0000001100002001110002000111")
+    assert not dfa.accepts(list("00000011000020011100020001"))
+    assert dfa.accepts(list("0000001100002001110002000111"))
 
 def test_dfa_mixed_states():
     """ Creates a simple Dfa and ensures that select
@@ -191,21 +191,21 @@ def test_dfa_mixed_states():
     # Create the DFA and check select strings against Dfa
     dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
 
-    assert not dfa.accepts("")
-    assert not dfa.accepts("0")
-    assert not dfa.accepts("1")
-    assert not dfa.accepts("2")
+    assert not dfa.accepts([])
+    assert not dfa.accepts(list("0"))
+    assert not dfa.accepts(list("1"))
+    assert not dfa.accepts(list("2"))
 
-    assert dfa.accepts("111")
-    assert not dfa.accepts("1112")
+    assert dfa.accepts(list("111"))
+    assert not dfa.accepts(list("1112"))
 
-    assert not dfa.accepts("000")
-    assert not dfa.accepts("222")
+    assert not dfa.accepts(list("000"))
+    assert not dfa.accepts(list("222"))
 
-    assert dfa.accepts("01110")
+    assert dfa.accepts(list("01110"))
 
-    assert not dfa.accepts("00000011000020011100020001")
-    assert dfa.accepts("0000001100002001110002000111")
+    assert not dfa.accepts(list("00000011000020011100020001"))
+    assert dfa.accepts(list("0000001100002001110002000111"))
 
 def test_dfa_minimize_no_reduction():
     """ Creates a simple Dfa that is already minimal,
@@ -245,21 +245,21 @@ def test_dfa_minimize_no_reduction():
 
     assert len(dfa.states) == len(minimized_dfa.states)
 
-    assert not minimized_dfa.accepts("")
-    assert not minimized_dfa.accepts("0")
-    assert not minimized_dfa.accepts("1")
-    assert not minimized_dfa.accepts("2")
+    assert not dfa.accepts([])
+    assert not dfa.accepts(list("0"))
+    assert not dfa.accepts(list("1"))
+    assert not dfa.accepts(list("2"))
 
-    assert minimized_dfa.accepts("111")
-    assert not minimized_dfa.accepts("1112")
+    assert dfa.accepts(list("111"))
+    assert not dfa.accepts(list("1112"))
 
-    assert not minimized_dfa.accepts("000")
-    assert not minimized_dfa.accepts("222")
+    assert not dfa.accepts(list("000"))
+    assert not dfa.accepts(list("222"))
 
-    assert minimized_dfa.accepts("01110")
+    assert dfa.accepts(list("01110"))
 
-    assert not minimized_dfa.accepts("00000011000020011100020001")
-    assert minimized_dfa.accepts("0000001100002001110002000111")
+    assert not dfa.accepts(list("00000011000020011100020001"))
+    assert dfa.accepts(list("0000001100002001110002000111"))
 
 def test_dfa_minimize_reduction():
     """ Creates a Dfa that has many redundancies,
@@ -275,9 +275,9 @@ def test_dfa_minimize_reduction():
     r_states = {"Reject_A", "Reject_B", "Reject_C"}
     dr_states = {"DeadReject_A", "DeadReject_B"}
     da_states = {"DeadAccept_A", "DeadAccept_B"}
-    states = s_states | a_states | r_states | da_states
+    states = s_states | a_states | r_states | dr_states |da_states
 
-    accepting_states = a_states
+    accepting_states = a_states | da_states
     start_state = "Start_A"
 
     # Create transitions map
@@ -335,26 +335,269 @@ def test_dfa_minimize_reduction():
 
     assert len(minimized_dfa.states) == 3
 
-    assert not minimized_dfa.accepts("") and not dfa.accepts("")
-    assert not minimized_dfa.accepts("0") and not dfa.accepts("0")
-    assert minimized_dfa.accepts("1") and dfa.accepts("1")
-    assert not minimized_dfa.accepts("2") and not dfa.accepts("2")
+    assert not minimized_dfa.accepts([]) and not dfa.accepts([])
+    assert not minimized_dfa.accepts(list("0")) and not dfa.accepts(list("0"))
+    assert minimized_dfa.accepts(list("1")) and dfa.accepts(list("1"))
+    assert not minimized_dfa.accepts(list("2")) and not dfa.accepts(list("2"))
 
-    assert not minimized_dfa.accepts("000") and not dfa.accepts("000")
-    assert minimized_dfa.accepts("111") and dfa.accepts("111")
-    assert not minimized_dfa.accepts("222") and not dfa.accepts("222")
+    assert not minimized_dfa.accepts(list("000")) and not dfa.accepts(list("000"))
+    assert minimized_dfa.accepts(list("111")) and dfa.accepts(list("111"))
+    assert not minimized_dfa.accepts(list("222")) and not dfa.accepts(list("222"))
 
-    assert not minimized_dfa.accepts("2220000110011000020100002000") and not dfa.accepts("2220000110011000020100002000")
-    assert minimized_dfa.accepts("222210000001100002001110002000111") and dfa.accepts("222210000001100002001110002000111")
+    assert not minimized_dfa.accepts(list("2220000110011000020100002000")) and not dfa.accepts(list("2220000110011000020100002000"))
+    assert minimized_dfa.accepts(list("222210000001100002001110002000111")) and dfa.accepts(list("222210000001100002001110002000111"))
 
 def test_dfa_union():
-    pass
+    """ Creates two DFAs, one which accepts iff
+    a string contains a "1" symbol and another which
+    accepts iff a string contains a "2" symbol. Then ensure
+    that their symbolic and explicit union have an equivalent
+    and correct language
+    """
+
+    alphabet = {"0","1","2"}
+
+    # Create DFA that accepts once it encounters a "1"
+    states_1 = {"Reject", "Accept"}
+    accepting_states_1 = {"Accept"}
+    start_state_1 = "Reject"
+
+    transitions_1 = {}
+
+    transitions_1[("Reject", "0")] = "Reject"
+    transitions_1[("Reject", "1")] = "Accept"
+    transitions_1[("Reject", "2")] = "Reject"
+
+    transitions_1[("Accept", "0")] = "Accept"
+    transitions_1[("Accept", "1")] = "Accept"
+    transitions_1[("Accept", "2")] = "Accept"
+
+    dfa_1 = Dfa(alphabet, states_1, accepting_states_1, start_state_1, transitions_1)
+
+    # Create DFA that accepts once it encounters a "2"
+    states_2 = {"Reject", "Accept"}
+    accepting_states_2 = {"Accept"}
+    start_state_2 = "Reject"
+
+    transitions_2 = {}
+
+    transitions_2[("Reject", "0")] = "Reject"
+    transitions_2[("Reject", "1")] = "Reject"
+    transitions_2[("Reject", "2")] = "Accept"
+
+    transitions_2[("Accept", "0")] = "Accept"
+    transitions_2[("Accept", "1")] = "Accept"
+    transitions_2[("Accept", "2")] = "Accept"
+
+    dfa_2 = Dfa(alphabet, states_2, accepting_states_2, start_state_2, transitions_2)
+
+    # Create abstract spec for the union of dfa_1 and dfa_2. Then compute its explicit form.
+    abstract_union = dfa_1 | dfa_2
+
+    explicit_union = abstract_union.explicit()
+
+    assert isinstance(abstract_union, AbstractSpec)
+    assert isinstance(explicit_union, Dfa)
+
+    assert not abstract_union.accepts([]) and not explicit_union.accepts([])
+
+    assert not abstract_union.accepts(list("0")) and not explicit_union.accepts(list("0"))
+    assert abstract_union.accepts(list("1")) and explicit_union.accepts(list("1"))
+    assert abstract_union.accepts(list("2")) and explicit_union.accepts(list("2"))
+
+    assert not abstract_union.accepts(list("000")) and not explicit_union.accepts(list("000"))
+    assert abstract_union.accepts(list("111")) and explicit_union.accepts(list("111"))
+    assert abstract_union.accepts(list("222")) and explicit_union.accepts(list("222"))
+
+    assert abstract_union.accepts(list("010")) and explicit_union.accepts(list("010"))
+    assert abstract_union.accepts(list("020")) and explicit_union.accepts(list("020"))
+    assert abstract_union.accepts(list("12")) and explicit_union.accepts(list("12"))
 
 def test_dfa_intersection():
-    pass
+    """ Creates two DFAs, one which accepts iff
+    a string contains a "1" symbol and another which
+    accepts iff a string contains a "2" symbol. Then ensure
+    that their symbolic and explicit intersection
+    have an equivalent and correct language
+    """
+
+    alphabet = {"0","1","2"}
+
+    # Create DFA that accepts once it encounters a "1"
+    states_1 = {"Reject", "Accept"}
+    accepting_states_1 = {"Accept"}
+    start_state_1 = "Reject"
+
+    transitions_1 = {}
+
+    transitions_1[("Reject", "0")] = "Reject"
+    transitions_1[("Reject", "1")] = "Accept"
+    transitions_1[("Reject", "2")] = "Reject"
+
+    transitions_1[("Accept", "0")] = "Accept"
+    transitions_1[("Accept", "1")] = "Accept"
+    transitions_1[("Accept", "2")] = "Accept"
+
+    dfa_1 = Dfa(alphabet, states_1, accepting_states_1, start_state_1, transitions_1)
+
+    # Create DFA that accepts once it encounters a "2"
+    states_2 = {"Reject", "Accept"}
+    accepting_states_2 = {"Accept"}
+    start_state_2 = "Reject"
+
+    transitions_2 = {}
+
+    transitions_2[("Reject", "0")] = "Reject"
+    transitions_2[("Reject", "1")] = "Reject"
+    transitions_2[("Reject", "2")] = "Accept"
+
+    transitions_2[("Accept", "0")] = "Accept"
+    transitions_2[("Accept", "1")] = "Accept"
+    transitions_2[("Accept", "2")] = "Accept"
+
+    dfa_2 = Dfa(alphabet, states_2, accepting_states_2, start_state_2, transitions_2)
+
+    # Create abstract spec for the intersection of dfa_1 and dfa_2. Then compute its explicit form.
+    abstract_intersection = dfa_1 & dfa_2
+
+    explicit_intersection = abstract_intersection.explicit()
+
+    assert isinstance(abstract_intersection, AbstractSpec)
+    assert isinstance(explicit_intersection, Dfa)
+
+    assert not abstract_intersection.accepts([]) and not explicit_intersection.accepts([])
+
+    assert not abstract_intersection.accepts(list("0")) and not explicit_intersection.accepts(list("0"))
+    assert not abstract_intersection.accepts(list("1")) and not explicit_intersection.accepts(list("1"))
+    assert not abstract_intersection.accepts(list("2")) and not explicit_intersection.accepts(list("2"))
+
+    assert not abstract_intersection.accepts(list("000")) and not explicit_intersection.accepts(list("000"))
+    assert not abstract_intersection.accepts(list("111")) and not explicit_intersection.accepts(list("111"))
+    assert not abstract_intersection.accepts(list("222")) and not explicit_intersection.accepts(list("222"))
+
+    assert not abstract_intersection.accepts(list("010")) and not explicit_intersection.accepts(list("010"))
+    assert not abstract_intersection.accepts(list("020")) and not explicit_intersection.accepts(list("020"))
+    assert abstract_intersection.accepts(list("12")) and explicit_intersection.accepts(list("12"))
+    assert abstract_intersection.accepts(list("012210")) and explicit_intersection.accepts(list("012210"))
 
 def test_dfa_negation():
-    pass
+    """ Creates a DFA which accepts iff a string contains a "1"
+    symbol. Then ensure that its symbolic and explicit negation
+    have an equivalent and correct language
+    """
+
+    alphabet = {"0","1","2"}
+
+    # Create DFA that accepts once it encounters a "1"
+    states = {"Reject", "Accept"}
+    accepting_states = {"Accept"}
+    start_state = "Reject"
+
+    transitions = {}
+
+    transitions[("Reject", "0")] = "Reject"
+    transitions[("Reject", "1")] = "Accept"
+    transitions[("Reject", "2")] = "Reject"
+
+    transitions[("Accept", "0")] = "Accept"
+    transitions[("Accept", "1")] = "Accept"
+    transitions[("Accept", "2")] = "Accept"
+
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    # Create abstract spec for the negation of dfa and compute its explicit form.
+    abstract_negation = ~dfa
+
+    explicit_negation = abstract_negation.explicit()
+
+    assert isinstance(abstract_negation, AbstractSpec)
+    assert isinstance(explicit_negation, Dfa)
+
+    assert abstract_negation.accepts([]) and explicit_negation.accepts([])
+
+    assert abstract_negation.accepts(list("0")) and explicit_negation.accepts(list("0"))
+    assert not abstract_negation.accepts(list("1")) and not explicit_negation.accepts(list("1"))
+    assert abstract_negation.accepts(list("2")) and explicit_negation.accepts(list("2"))
+
+    assert abstract_negation.accepts(list("000")) and explicit_negation.accepts(list("000"))
+    assert not abstract_negation.accepts(list("111")) and not explicit_negation.accepts(list("111"))
+    assert abstract_negation.accepts(list("222")) and explicit_negation.accepts(list("222"))
+
+    assert not abstract_negation.accepts(list("010")) and not explicit_negation.accepts(list("010"))
+    assert abstract_negation.accepts(list("020")) and explicit_negation.accepts(list("020"))
+    assert not abstract_negation.accepts(list("12")) and not explicit_negation.accepts(list("12"))
+    assert not abstract_negation.accepts(list("012210")) and not explicit_negation.accepts(list("012210"))
+
+def test_dfa_difference():
+    """ Creates two DFAs, one which accepts iff
+    a string contains a "1" symbol and another which
+    accepts iff a string contains a "2" symbol. Then ensure
+    that their symbolic and explicit difference
+    have an equivalent and correct language
+    """
+
+    alphabet = {"0","1","2"}
+
+    # Create DFA that accepts once it encounters a "1"
+    states_1 = {"Reject", "Accept"}
+    accepting_states_1 = {"Accept"}
+    start_state_1 = "Reject"
+
+    transitions_1 = {}
+
+    transitions_1[("Reject", "0")] = "Reject"
+    transitions_1[("Reject", "1")] = "Accept"
+    transitions_1[("Reject", "2")] = "Reject"
+
+    transitions_1[("Accept", "0")] = "Accept"
+    transitions_1[("Accept", "1")] = "Accept"
+    transitions_1[("Accept", "2")] = "Accept"
+
+    dfa_1 = Dfa(alphabet, states_1, accepting_states_1, start_state_1, transitions_1)
+
+    # Create DFA that accepts once it encounters a "2"
+    states_2 = {"Reject", "Accept"}
+    accepting_states_2 = {"Accept"}
+    start_state_2 = "Reject"
+
+    transitions_2 = {}
+
+    transitions_2[("Reject", "0")] = "Reject"
+    transitions_2[("Reject", "1")] = "Reject"
+    transitions_2[("Reject", "2")] = "Accept"
+
+    transitions_2[("Accept", "0")] = "Accept"
+    transitions_2[("Accept", "1")] = "Accept"
+    transitions_2[("Accept", "2")] = "Accept"
+
+    dfa_2 = Dfa(alphabet, states_2, accepting_states_2, start_state_2, transitions_2)
+
+    # Create abstract spec for the difference of dfa_1 and dfa_2. Then compute its explicit form.
+    abstract_difference = dfa_1 - dfa_2
+
+    explicit_difference = abstract_difference.explicit()
+
+    assert isinstance(abstract_difference, AbstractSpec)
+    assert isinstance(explicit_difference, Dfa)
+
+    assert not abstract_difference.accepts([]) and not explicit_difference.accepts([])
+
+    assert not abstract_difference.accepts(list("0")) and not explicit_difference.accepts(list("0"))
+    assert abstract_difference.accepts(list("1")) and explicit_difference.accepts(list("1"))
+    assert not abstract_difference.accepts(list("2")) and not explicit_difference.accepts(list("2"))
+
+    assert not abstract_difference.accepts(list("000")) and not explicit_difference.accepts(list("000"))
+    assert abstract_difference.accepts(list("111")) and explicit_difference.accepts(list("111"))
+    assert not abstract_difference.accepts(list("222")) and not explicit_difference.accepts(list("222"))
+
+    assert abstract_difference.accepts(list("010")) and explicit_difference.accepts(list("010"))
+    assert not abstract_difference.accepts(list("020")) and not explicit_difference.accepts(list("020"))
+    assert not abstract_difference.accepts(list("12")) and not explicit_difference.accepts(list("12"))
+    assert not abstract_difference.accepts(list("012210")) and not explicit_difference.accepts(list("012210"))
+
+###################################################################################################
+# Advanced Tests
+###################################################################################################
 
 ###################################################################################################
 # Helper Functions

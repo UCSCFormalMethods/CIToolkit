@@ -178,7 +178,6 @@ class Dfa(Spec):
         :param dfa_a: The first dfa to use in the product construction.
         :param dfa_b: The second dfa to use in the product construction.
         """
-
         return cls._product_construction(dfa_a, dfa_b, union=True).minimize()
 
     @classmethod
@@ -237,7 +236,7 @@ class Dfa(Spec):
                 # Determines the transition for this new state for each symbol
                 # and adds them to new_transitions.
                 for symbol in alphabet:
-                    new_transitions[new_state] = State(dfa_a.transitions[(state_a, symbol)], \
+                    new_transitions[(new_state, symbol)] = State(dfa_a.transitions[(state_a, symbol)], \
                                                        dfa_b.transitions[(state_b, symbol)])
 
         # Uses the above pieces to create the new product Dfa and returns it.
