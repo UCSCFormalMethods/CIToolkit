@@ -28,7 +28,8 @@ class Dfa(Spec):
         self.accepting_states = frozenset(map(State, accepting_states))
         self.start_state = State(start_state)
 
-        self.transitions = {(State(state),symbol):State(dest_state) for ((state, symbol),dest_state) in transitions.items()}
+        self.transitions = {(State(state),symbol):State(dest_state) for \
+                            ((state, symbol),dest_state) in transitions.items()}
 
         # Perform checks to ensure well formed DFA.
         if not self.accepting_states.issubset(self.states):
@@ -37,9 +38,31 @@ class Dfa(Spec):
         if not self.start_state in self.states:
             raise ValueError("The starting state is not included in the DFA states")
 
-        self.assert_complete()
+        for symbol in self.alphabet:
+            for state in self.states:
+                if (state, symbol) not in self.transitions:
+                    raise ValueError("The transition map is missing a transition for " + str((state, symbol)))
+
+                if self.transitions[(state, symbol)] not in self.states:
+                    raise ValueError("The transition from state '" + str(state) + "' with symbol '" + str(symbol) +\
+                                     "' leads to '" + str(self.transitions[(state, symbol)]) + "', which is not a state.")
+
+        # Initialize cache values to None
+        self._topological_ordering = None
+        self._accepting_path_counts = None
+
+    ####################################################################################################
+    # DFA Property Functions
+    ####################################################################################################
 
     def accepts(self, word: List[str]) -> bool:
+        # Checks that word is composed only of symbols in the alphabet.
+        for symbol in word:
+            if symbol not in self.alphabet:
+                raise ValueError("'" + str(word) + "' contains the symbol '" + \
+                                 str(symbol) + "' which is not in the Dfa's alphabet.")
+
+        # Checks if word accepts
         current_state = self.start_state
 
         for symbol in word:
@@ -51,12 +74,11 @@ class Dfa(Spec):
 
         return current_state in self.accepting_states
 
-    def minimize(self) -> Dfa:
-        """ Computes and returns a minimal Dfa that accepts the same
-            language as self.
+    def states_partition(self) -> List[Set[State]]:
+        """ Uses Hopcroft's algorithm to partition all this DFA's states
+        into equivalence classes, excluding unreachable states.
         """
-        # We first remove any states that are unreachable via a breadth
-        # first search.
+        # We first remove any states that are unreachable via a breadth first search.
         current_state = None
         reachable_states = {self.start_state}
         state_queue = [self.start_state]
@@ -121,20 +143,153 @@ class Dfa(Spec):
                         else:
                             working_sets.append(difference_set)
 
+        real_partition_sets = []
+
+        for partition_set in partition_sets:
+            if len(partition_set) != 0:
+                real_partition_sets.append(partition_set)
+
+        return real_partition_sets
+
+    def language_size(self) -> int:
+        """ Returns the number of words accepted by this Dfa."""
+        accepting_path_counts = self.compute_accepting_path_counts()
+
+        return accepting_path_counts[self.start_state]
+
+    def compute_accepting_path_counts(self) -> Dict[State, int]:
+        """ Computes the number of accepting paths from a state
+        to an accepting state for all states.
+        """
+        # Check if we have already computed accepting path counts
+        if self._accepting_path_counts is not None:
+            return self._accepting_path_counts
+        else:
+            self._accepting_path_counts = {state:0 for state in self.states}
+
+        # Compute topological ordering to ensure that we traverse
+        # Dfa in well defined order, specifically a reverse topological
+        # order.
+        rev_topological_ordering = self.states_topological()[::-1]
+
+        # Compute accepting paths for each state
+        for state in rev_topological_ordering:
+            accepting_paths = 0
+
+            # If state is accepting, it has an accepting path to itself.
+            if state in self.accepting_states:
+                accepting_paths += 1
+
+            # Add accepting paths of states that can be reached with a transition
+            for symbol in self.alphabet:
+                transition_state = self.transitions[(state, symbol)]
+                if transition_state in rev_topological_ordering:
+                    accepting_paths += self._accepting_path_counts[transition_state]
+
+            # Add accepting paths count to dictionary
+            self._accepting_path_counts[state] = accepting_paths
+
+        return self._accepting_path_counts
+
+    def states_topological(self) -> List[State]:
+        """ Returns a topologically sorted list of this DFA's states, excluding those
+        that are unreachable or dead.
+        """
+        # Check if we have already computed a topological ordering
+        if self._topological_ordering is not None:
+            return list(self._topological_ordering)
+
+        # Remove all unreachable or dead states. Unreachable states are automatically
+        # excluded by partitioning algorithm.
+        partition_sets = self.states_partition()
+        feasible_sets = []
+
+        # Copy over all non dead state sets to feasible_sets.
+        for partition_set in partition_sets:
+            # If a set contains an accepting state, it must be feasible. Otherwise,
+            # if it can leave the set it is also feasible.
+            if len(partition_set & self.accepting_states) > 0:
+                feasible_sets.append(partition_set)
+            else:
+                # Peek a representative of partition_set
+                state = partition_set.pop()
+                partition_set.add(state)
+
+                for symbol in self.alphabet:
+                    if self.transitions[(state, symbol)] not in partition_set:
+                        feasible_sets.append(partition_set)
+                        break
+
+        # Initialize topological ordering variables.
+        topological_ordering = []
+        working_states = set().union(*feasible_sets)
+        states_indegree = {state:0 for state in working_states}
+
+        # Calculate initial indegree for all states
+        for state in working_states:
+            for symbol in self.alphabet:
+                transition_state = self.transitions[(state, symbol)]
+                if transition_state in working_states:
+                    states_indegree[transition_state] += 1
+
+        # Intialize free_states queue
+        free_states = []
+        for state in frozenset(working_states):
+            if states_indegree[state] == 0:
+                free_states.append(state)
+                topological_ordering.append(state)
+                working_states.remove(state)
+
+        # Continue to update indegree for states and add to free_states
+        # queue until no more free states can be found.
+        while len(free_states) > 0:
+            # Pops next free state and updates states_indegree accordingly
+            next_free_state = free_states.pop(0)
+
+            for symbol in self.alphabet:
+                transition_state = self.transitions[(next_free_state, symbol)]
+                if transition_state in working_states:
+                    states_indegree[transition_state] -= 1
+
+            # Removes any states that now have indegree 0 and adds them
+            # to free_states and our ordering.
+            for state in frozenset(working_states):
+                if states_indegree[state] == 0:
+                    free_states.append(state)
+                    topological_ordering.append(state)
+                    working_states.remove(state)
+
+        # Checks that we have emptied working_states. If not, we have a cycle.
+        if len(working_states) > 0:
+            raise ValueError("Cannot compute a topological_ordering for a cyclical DFA.")
+
+        self._topological_ordering = tuple(topological_ordering)
+
+        return topological_ordering
+
+    ####################################################################################################
+    # DFA Modification Functions
+    ####################################################################################################
+
+    def minimize(self) -> Dfa:
+        """ Computes and returns a minimal Dfa that accepts the same
+            language as self.
+        """
+        partition_sets = self.states_partition()
+
         # Pop one representative from each equivalence class and
         # creates a map from each state to its representative.
         minimal_states = set()
         representative_map = dict()
 
         for partition_set in partition_sets:
-            if len(partition_set) > 0:
-                representative = partition_set.pop()
-                representative_map[representative] = representative
+            representative = partition_set.pop()
+            representative_map[representative] = representative
 
-                minimal_states.add(representative)
+            minimal_states.add(representative)
 
-                while len(partition_set) > 0:
-                    representative_map[partition_set.pop()] = representative
+            while len(partition_set) > 0:
+                representative_map[partition_set.pop()] = representative
 
         # Create transition map for minimal DFA.
         minimal_transitions = dict()
@@ -145,7 +300,7 @@ class Dfa(Spec):
                 minimal_transitions[(state, symbol)] = representative_map[target_state]
 
         # Create minimal DFA.
-        minimal_accepting_states = minimal_states & reachable_accepting_states
+        minimal_accepting_states = minimal_states & self.accepting_states
         start_state_rep = representative_map[self.start_state]
 
         return Dfa(self.alphabet, minimal_states, minimal_accepting_states, start_state_rep, minimal_transitions)
@@ -161,15 +316,9 @@ class Dfa(Spec):
 
         return Dfa(self.alphabet, states, new_accepting_states, start_state, transitions)
 
-    def assert_complete(self) -> bool:
-        """ Returns true if and only if the DFA is complete,
-        meaning all state/symbol combinations have an associated
-        transition.
-        """
-        for symbol in self.alphabet:
-            for state in self.states:
-                if (state, symbol) not in self.transitions:
-                    raise ValueError("The transition map is missing a transition for " + str((state, symbol)))
+    ####################################################################################################
+    # Constructor Functions
+    ####################################################################################################
 
     @classmethod
     def union_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
@@ -243,6 +392,61 @@ class Dfa(Spec):
         # Uses the above pieces to create the new product Dfa and returns it.
         return Dfa(alphabet, new_states, new_accepting_states, new_start_state, new_transitions)
 
+    @classmethod
+    def max_length_dfa(cls, alphabet, length_requirement) -> Dfa:
+        """ Returns a Dfa that accepts all strings over alphabet with length at most
+        length_requirement.
+
+        :param length_requirement: The maximum length of strings that the returned DFA should accept.
+        """
+
+        if length_requirement < 0:
+            raise ValueError("length_requirement must be non-negative.")
+
+        states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
+
+        accepting_states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)}
+        start_state = "Seen0"
+
+        transitions = {}
+
+        for state_num in range(length_requirement):
+            for symbol in alphabet:
+                transitions[("Seen" + str(state_num), symbol)] = "Seen" + str(state_num+1)
+
+        for symbol in alphabet:
+            transitions[("Seen" + str(length_requirement), symbol)] = "Sink"
+            transitions[("Sink", symbol)] = "Sink"
+
+        return Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    @classmethod
+    def exact_length_dfa(cls, alphabet, length_requirement) -> Dfa:
+        """ Returns a Dfa that accepts all strings over alphabet with length exactly
+        length_requirement.
+
+        :param length_requirement: The length of strings that the returned DFA should accept.
+        """
+
+        if length_requirement < 0:
+            raise ValueError("length_requirement must be non-negative.")
+
+        states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
+
+        accepting_states = {("Seen" + str(length_requirement))}
+        start_state = "Seen0"
+
+        transitions = {}
+
+        for state_num in range(length_requirement):
+            for symbol in alphabet:
+                transitions[("Seen" + str(state_num), symbol)] = "Seen" + str(state_num+1)
+
+        for symbol in alphabet:
+            transitions[("Seen" + str(length_requirement), symbol)] = "Sink"
+            transitions[("Sink", symbol)] = "Sink"
+
+        return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
 class State:
     """ Class representing a state in a DFA. Primarily used for merging states
@@ -275,7 +479,8 @@ class State:
         return str(self)
 
     def __eq__(self, other):
-        return isinstance(other, State) and (self.state_tuple == other.state_tuple)
+        return (isinstance(other, State) and (self.state_tuple == other.state_tuple)) or \
+               (isinstance(other, str) and (len(self.state_tuple) == 1) and (other == self.state_tuple[0]))
 
 
     def __hash__(self):

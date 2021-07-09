@@ -142,12 +142,38 @@ class AbstractSpec(Spec):
             possible, and then check if we have a "hack" to compute the
             size of the language anyway.
         """
-        raise NotImplementedError()
+        # Attempt to compute explicit form, and if so rely on the explicit form's
+        # language_size implementation
+        try:
+            explicit_form = self.explicit()
+            return explicit_form.language_size()
+        except NotImplementedError:
+            pass
+
+        # Check if have a "hack" to compute language_size anyway
+
+
+        # Otherwise, raise a NotImplementedError
+        if self.spec_1.explicit is not None:
+            refined_spec_1 = self.spec_1.explicit
+        else:
+            refined_spec_1 = self.spec_1
+
+        if self.spec_2.explicit is not None:
+            refined_spec_2 = self.spec_2.explicit
+        else:
+            refined_spec_2 = self.spec_2
+
+        raise NotImplementedError("Computation for language_size for '" + refined_spec_1.__class__.__name__ + \
+                                      "' and '" + refined_spec_2.__class__.__name__ + " are not supported.")
 
     def explicit(self) -> Spec:
         """ Computes an explicit form for this AbstractSpec, raising an exception
             if this is not possible.
         """
+        if self.explicit_form is not None:
+            return self.explicit_form
+
         # Import explicit specification classes. (Done here to avoid circular import)
         from citoolkit.specifications.dfa import Dfa
 
@@ -166,11 +192,11 @@ class AbstractSpec(Spec):
         # if such a construction is not supported.
         if isinstance(spec_1_explicit, Dfa) and (spec_2_explicit is None or isinstance(spec_2_explicit, Dfa)):
             if self.operation == SpecOp.UNION:
-                return Dfa.union_construction(spec_1_explicit, spec_2_explicit)
+                self.explicit_form = Dfa.union_construction(spec_1_explicit, spec_2_explicit)
             elif self.operation == SpecOp.INTERSECTION:
-                return Dfa.intersection_construction(spec_1_explicit, spec_2_explicit)
+                self.explicit_form = Dfa.intersection_construction(spec_1_explicit, spec_2_explicit)
             elif self.operation == SpecOp.NEGATION:
-                return spec_1_explicit.negation()
+                self.explicit_form = spec_1_explicit.negation()
             else:
                 raise NotImplementedError("Explict construction for '" + spec_1_explicit.__class__.__name__ + \
                                       "' and '" + spec_2_explicit.__class__.__name__ + "' with operation '" + \
@@ -178,3 +204,5 @@ class AbstractSpec(Spec):
         else:
             raise NotImplementedError("Explict constructions for '" + spec_1_explicit.__class__.__name__ + \
                                       "' and '" + spec_2_explicit.__class__.__name__ + " are not supported.")
+
+        return self.explicit_form

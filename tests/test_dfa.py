@@ -1,8 +1,10 @@
 """ Tests for the Dfa class"""
 
-import pytest
+import math
 import random
 import itertools
+
+import pytest
 
 from citoolkit.specifications.spec import AbstractSpec
 from citoolkit.specifications.dfa import Dfa, State
@@ -208,6 +210,87 @@ def test_dfa_mixed_states():
 
     assert not dfa.accepts(list("00000011000020011100020001"))
     assert dfa.accepts(list("0000001100002001110002000111"))
+
+def test_dfa_topological_ordering():
+    """ Create an acyclic DFA and ensure that a correct 
+    topologically sorted list of states is computed.
+    """
+    # Create an acyclic DFA
+    alphabet = {"0", "1"}
+    states = {"A", "B", "C", "D", "E", "F", "Sink"}
+    accepting_states = {"F"}
+    start_state = "A"
+
+    transitions = {}
+    transitions[("A","0")] = "B"
+    transitions[("A","1")] = "C"
+    transitions[("B","0")] = "C"
+    transitions[("B","1")] = "C"
+    transitions[("C","0")] = "D"
+    transitions[("C","1")] = "E"
+    transitions[("D","0")] = "E"
+    transitions[("D","1")] = "F"
+    transitions[("E","0")] = "F"
+    transitions[("E","1")] = "F"
+    transitions[("F","0")] = "Sink"
+    transitions[("F","1")] = "Sink"
+    transitions[("Sink", "0")] = "Sink"
+    transitions[("Sink", "1")] = "Sink"
+
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    # Ensures that the one correct topological sort is generated.
+    assert dfa.states_topological() == ["A", "B", "C", "D", "E", "F"]
+
+def test_dfa_topological_ordering_cycle():
+    """ Create a simple DFA with a reachable and accepting cycle 
+    and ensure that a ValueError is raised.
+    """
+    # Create a cyclic DFA
+    alphabet = {"0", "1"}
+    states = {"A", "B", "C", "D", "Sink"}
+    accepting_states = {"D"}
+    start_state = "A"
+
+    transitions = {}
+    transitions[("A","0")] = "B"
+    transitions[("A","1")] = "C"
+    transitions[("B","0")] = "D"
+    transitions[("B","1")] = "Sink"
+    transitions[("C","0")] = "B"
+    transitions[("C","1")] = "Sink"
+    transitions[("D","0")] = "C"
+    transitions[("D","1")] = "Sink"
+    transitions[("Sink", "0")] = "Sink"
+    transitions[("Sink", "1")] = "Sink"
+
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    # Ensures that a ValueError is rasied as a cyclical DFA does not
+    # have a well defined topological odering.
+    with pytest.raises(ValueError):
+        dfa.states_topological()
+
+def test_dfa_language_size():
+    """ Creates a Dfa that accepts only words of length
+    7 and ensures that language_size returns the
+    correct result.
+    """
+    dfa = Dfa.exact_length_dfa({"0","1"}, 7)
+
+    assert dfa.language_size() == 2**7
+
+def test_dfa_language_size_abstract():
+    """ Creates an abstract specification that is
+    the union of two exact length Dfas and ensures
+    that language_size returns the correct result.
+    """
+    dfa_1 = Dfa.exact_length_dfa({"0","1"}, 5)
+    dfa_2 = Dfa.exact_length_dfa({"0","1"}, 7)
+
+    abstract_dfa = dfa_1 | dfa_2
+
+    assert abstract_dfa.language_size() == (2**5 + 2**7)
 
 def test_dfa_minimize_no_reduction():
     """ Creates a simple Dfa that is already minimal,
@@ -597,19 +680,54 @@ def test_dfa_difference():
     assert not abstract_difference.accepts(list("12")) and not explicit_difference.accepts(list("12"))
     assert not abstract_difference.accepts(list("012210")) and not explicit_difference.accepts(list("012210"))
 
+def test_dfa_max_length_constructor():
+    """ Tests that the Dfa returned by the max_length_dfa
+    constructor works as expected.
+    """
+    dfa = Dfa.max_length_dfa({"0", "1"}, 7)
+
+    assert dfa.accepts("")
+    assert dfa.accepts("0")
+    assert dfa.accepts("1")
+    assert dfa.accepts("01")
+    assert dfa.accepts("011")
+    assert dfa.accepts("0110")
+    assert dfa.accepts("01101")
+    assert dfa.accepts("011010")
+    assert dfa.accepts("0110100")
+    assert not dfa.accepts("01101000")
+    assert not dfa.accepts("000000001111000000001100001000111100110110110")
+
+def test_dfa_exact_length_constructor():
+    """ Tests that the Dfa returned by the exact_length_dfa
+    constructor works as expected.
+    """
+    dfa = Dfa.exact_length_dfa({"0","1"}, 7)
+
+    assert not dfa.accepts("")
+    assert not dfa.accepts("0")
+    assert not dfa.accepts("1")
+    assert not dfa.accepts("01")
+    assert not dfa.accepts("011")
+    assert not dfa.accepts("0110")
+    assert not dfa.accepts("01101")
+    assert not dfa.accepts("011010")
+    assert dfa.accepts("0110100")
+    assert not dfa.accepts("01101000")
+    assert not dfa.accepts("000000001111000000001100001000111100110110110")
+
 ###################################################################################################
 # Randomized Tests
 ###################################################################################################
 
 # Randomized tests default parameters
-RANDOM_TEST_NUM_ITERS = 100          # Default to 100, but can set lower when writing new tests.
-RANDOM_MAX_NUM_RAND_WORD = 100000    # Default to 100000, but can set lower when writing new tests.
+RANDOM_TEST_NUM_ITERS = 1000    # Default to 1000, but can set lower when writing new tests.
 
-RANDOM_DFA_MIN_STATES = 10
-RANDOM_DFA_MAX_STATES = 15
+RANDOM_DFA_MIN_STATES = 1
+RANDOM_DFA_MAX_STATES = 10
 
 RANDOM_DFA_MIN_SYMBOLS = 1
-RANDOM_DFA_MAX_SYMBOLS = 4
+RANDOM_DFA_MAX_SYMBOLS = 3
 
 @pytest.mark.slow
 def test_dfa_minimize_random():
@@ -630,23 +748,28 @@ def test_dfa_minimize_random():
         assert isinstance(min_dfa, Dfa)
         assert len(min_dfa.states) <= len(orig_dfa.states)
 
-        # Iterate through random words to check that specs are equivalent
-        for _ in range(min(RANDOM_MAX_NUM_RAND_WORD, len(orig_dfa.alphabet) ** len(orig_dfa.states))):
-            word = generate_random_word(orig_dfa.alphabet, len(orig_dfa.states))
-            assert orig_dfa.accepts(word) == min_dfa.accepts(word)
+        # Iterate through every possible word that has length <= the number
+        # of states in the original DFAs to ensure that the specs are equivalent.
+        for word_length in range(len(orig_dfa.states)+1):
+            for word in itertools.product(orig_dfa.alphabet, repeat=word_length):
+                assert orig_dfa.accepts(word) == min_dfa.accepts(word)
 
 @pytest.mark.slow
 def test_dfa_union_random():
     """ For RANDOM_TEST_NUM_ITERS iterations, generates 2 random DFAs with
-    the number of states between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
-    and the number of symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS.
-    Then takes the logical and explicit union of the 2 DFAs and ensures that they
-    are consistent on all strings of length less than or equal to the number of states.
+    the number of states between the square root of RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
+    (which puts the product construction size between these bounds) and the number of
+    symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS. Then takes the
+    logical and explicit union of the 2 DFAs and ensures that they are consistent
+    on all strings of length less than or equal to the number of states.
     """
     for _ in range(RANDOM_TEST_NUM_ITERS):
+        min_states_sqrt = int(math.sqrt(RANDOM_DFA_MIN_STATES))
+        max_states_sqrt = int(math.sqrt(RANDOM_DFA_MAX_STATES))
+
         # Generate random Dfa and calculate its minimized form.
-        dfa_1 = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
-        dfa_2 = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
+        dfa_1 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
+        dfa_2 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
 
         abstract_dfa = dfa_1 | dfa_2
         explicit_dfa = abstract_dfa.explicit()
@@ -655,23 +778,28 @@ def test_dfa_union_random():
         assert isinstance(abstract_dfa, AbstractSpec)
         assert isinstance(explicit_dfa, Dfa)
 
-        # Iterate through random words to check that specs are equivalent
-        for _ in range(min(RANDOM_MAX_NUM_RAND_WORD, len(explicit_dfa.alphabet) ** len(explicit_dfa.states))):
-            word = generate_random_word(explicit_dfa.alphabet, len(explicit_dfa.states))
-            assert abstract_dfa.accepts(word) == explicit_dfa.accepts(word)
+        # Iterate through every possible word that has length <= the number
+        # of states in the new Dfa to ensure they are equivalent.
+        for word_length in range(len(explicit_dfa.states)+1):
+            for word in itertools.product(explicit_dfa.alphabet, repeat=word_length):
+                assert abstract_dfa.accepts(word) == explicit_dfa.accepts(word)
 
 @pytest.mark.slow
 def test_dfa_intersection_random():
     """ For RANDOM_TEST_NUM_ITERS iterations, generates 2 random DFAs with
-    the number of states between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
-    and the number of symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS.
-    Then takes the logical and explicit intersection of the 2 DFAs and ensures that they
-    are consistent on all strings of length less than or equal to the number of states.
+    the number of states between the square root of RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
+    (which puts the product construction size between these bounds) and the number of
+    symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS. Then takes the
+    logical and explicit intersection of the 2 DFAs and ensures that they are consistent
+    on all strings of length less than or equal to the number of states.
     """
     for _ in range(RANDOM_TEST_NUM_ITERS):
+        min_states_sqrt = int(math.sqrt(RANDOM_DFA_MIN_STATES))
+        max_states_sqrt = int(math.sqrt(RANDOM_DFA_MAX_STATES))
+
         # Generate random Dfa and calculate its minimized form.
-        dfa_1 = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
-        dfa_2 = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
+        dfa_1 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
+        dfa_2 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
 
         abstract_dfa = dfa_1 & dfa_2
         explicit_dfa = abstract_dfa.explicit()
@@ -680,10 +808,11 @@ def test_dfa_intersection_random():
         assert isinstance(abstract_dfa, AbstractSpec)
         assert isinstance(explicit_dfa, Dfa)
 
-        # Iterate through random words to check that specs are equivalent
-        for _ in range(min(RANDOM_MAX_NUM_RAND_WORD, len(explicit_dfa.alphabet) ** len(explicit_dfa.states))):
-            word = generate_random_word(explicit_dfa.alphabet, len(explicit_dfa.states))
-            assert abstract_dfa.accepts(word) == explicit_dfa.accepts(word)
+        # Iterate through every possible word that has length <= the number
+        # of states in the new Dfa to ensure they are equivalent.
+        for word_length in range(len(explicit_dfa.states)+1):
+            for word in itertools.product(explicit_dfa.alphabet, repeat=word_length):
+                assert abstract_dfa.accepts(word) == explicit_dfa.accepts(word)
 
 @pytest.mark.slow
 def test_dfa_negation_random():
@@ -703,35 +832,38 @@ def test_dfa_negation_random():
         assert isinstance(abstract_dfa, AbstractSpec)
         assert isinstance(explicit_dfa, Dfa)
 
-        # Iterate through random words to check that specs are equivalent
-        for _ in range(min(RANDOM_MAX_NUM_RAND_WORD, len(explicit_dfa.alphabet) ** len(explicit_dfa.states))):
-            word = generate_random_word(explicit_dfa.alphabet, len(explicit_dfa.states))
-            assert abstract_dfa.accepts(word) == explicit_dfa.accepts(word)
+        # Iterate through every possible word that has length <= the number
+        # of states in the new DFA to ensure that the specs are equivalent.
+        for word_length in range(len(explicit_dfa.states)+1):
+            for word in itertools.product(explicit_dfa.alphabet, repeat=word_length):
+                assert abstract_dfa.accepts(word) == explicit_dfa.accepts(word)
 
 @pytest.mark.slow
-def test_dfa_difference_random():
-    """ For RANDOM_TEST_NUM_ITERS iterations, generates 2 random DFAs with
+def test_dfa_language_size_random():
+    """ For RANDOM_TEST_NUM_ITERS iterations, generates a random DFA with
     the number of states between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
     and the number of symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS.
-    Then takes the logical and explicit intersection of the 2 DFAs and ensures that they
-    are consistent on all strings of length less than or equal to the number of states.
+    Then intersects this with a Dfa that accepts all words with length less than max_length,
+    a random number between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES. Enumerates
+    all words in the alphabet of length at most max_length ensures the count is correct.
     """
     for _ in range(RANDOM_TEST_NUM_ITERS):
-        # Generate random Dfa and calculate its minimized form.
-        dfa_1 = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
-        dfa_2 = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
+        max_length = random.randint(RANDOM_DFA_MIN_STATES,RANDOM_DFA_MAX_STATES)
 
-        abstract_dfa = dfa_1 - dfa_2
-        explicit_dfa = abstract_dfa.explicit()
+        base_dfa = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
+        length_limit_dfa = Dfa.max_length_dfa(base_dfa.alphabet, max_length)
 
-        # Check that construction is valid
-        assert isinstance(abstract_dfa, AbstractSpec)
-        assert isinstance(explicit_dfa, Dfa)
+        dfa = base_dfa & length_limit_dfa
+        explicit_dfa = dfa.explicit()
 
-        # Iterate through random words to check that specs are equivalent
-        for _ in range(min(RANDOM_MAX_NUM_RAND_WORD, len(explicit_dfa.alphabet) ** len(explicit_dfa.states))):
-            word = generate_random_word(explicit_dfa.alphabet, len(explicit_dfa.states))
-            assert abstract_dfa.accepts(word) == explicit_dfa.accepts(word)
+        enumerated_count = 0
+
+        for word_length in range(max_length+1):
+            for word in itertools.product(base_dfa.alphabet, repeat=word_length):
+                if explicit_dfa.accepts(word):
+                    enumerated_count += 1
+
+        assert explicit_dfa.language_size() == enumerated_count
 
 ###################################################################################################
 # Helper Functions
@@ -779,19 +911,3 @@ def generate_random_dfa(min_states, max_states, min_symbols, max_symbols, alphab
 
     # Create and return Dfa
     return Dfa(alphabet, states, accepting_states, start_state, transitions)
-
-def generate_random_word(alphabet, max_word_length):
-    """ Generates a random word..
-
-    :param alphabet: The alphabet the word is generated over
-    :param max_word_length: The maximum length of the generated word
-    """
-    world_length = random.randint(1, max_word_length)
-    sorted_alphabet = sorted(alphabet)
-
-    word = []
-
-    for _ in range(world_length):
-        word.append(sorted_alphabet[random.randint(0, len(alphabet)-1)])
-
-    return word
