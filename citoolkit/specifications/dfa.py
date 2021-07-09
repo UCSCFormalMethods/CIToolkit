@@ -5,6 +5,8 @@
 from __future__ import annotations
 from typing import List, Set, Dict, Tuple, Union
 
+import random
+
 from citoolkit.specifications.spec import Spec
 
 class Dfa(Spec):
@@ -74,88 +76,59 @@ class Dfa(Spec):
 
         return current_state in self.accepting_states
 
-    def states_partition(self) -> List[Set[State]]:
-        """ Uses Hopcroft's algorithm to partition all this DFA's states
-        into equivalence classes, excluding unreachable states.
-        """
-        # We first remove any states that are unreachable via a breadth first search.
-        current_state = None
-        reachable_states = {self.start_state}
-        state_queue = [self.start_state]
-
-        while len(state_queue) > 0:
-            current_state = state_queue.pop(0)
-
-            for symbol in self.alphabet:
-                next_state = self.transitions[(current_state, symbol)]
-                if next_state not in reachable_states:
-                    reachable_states.add(next_state)
-                    state_queue.append(next_state)
-
-        reachable_accepting_states = reachable_states & self.accepting_states
-
-        # Use Hopcroft's algorithm to merge nondistingishuable states.
-        partition_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
-        working_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
-
-        while len(working_sets) > 0:
-            working_set = working_sets.pop()
-
-            # Iterate over each symbol so that we check all transitions.
-            for symbol in self.alphabet:
-                # Find all states that when transitioning with symbol
-                # remain lead to the working_set.
-                incoming_states = set()
-
-                for origin_state in reachable_states:
-                    dest_state = self.transitions[(origin_state, symbol)]
-                    if dest_state in working_set:
-                        incoming_states.add(origin_state)
-
-                # Iterate over all partition sets to find any sets such
-                # that incoming_states is a subset of that set but not
-                # equal to that set.
-                for partition_set in partition_sets.copy():
-                    # Compute the intersection and difference of
-                    # incoming_states and partition_set.
-                    intersection_set = partition_set & incoming_states
-                    difference_set = partition_set - incoming_states
-
-                    if len(intersection_set) > 0 and len(difference_set) > 0:
-                        # Replace partition set in partition_sets with intersection_set
-                        # and difference_set.
-                        partition_sets.remove(partition_set)
-
-                        partition_sets.append(intersection_set)
-                        partition_sets.append(difference_set)
-
-                        # If partition_set is in working_sets, replace it with
-                        # intersection_set and difference_set. Otherwise, add the
-                        # smaller of the two to working_sets.
-
-                        if partition_set in working_sets:
-                            working_sets.remove(partition_set)
-
-                            working_sets.append(intersection_set)
-                            working_sets.append(difference_set)
-                        elif len(intersection_set) <= len(difference_set):
-                            working_sets.append(intersection_set)
-                        else:
-                            working_sets.append(difference_set)
-
-        real_partition_sets = []
-
-        for partition_set in partition_sets:
-            if len(partition_set) != 0:
-                real_partition_sets.append(partition_set)
-
-        return real_partition_sets
-
     def language_size(self) -> int:
         """ Returns the number of words accepted by this Dfa."""
         accepting_path_counts = self.compute_accepting_path_counts()
 
         return accepting_path_counts[self.start_state]
+
+    def sample(self) -> Tuple[str]:
+        """ Samples a word uniformly at random from the language of
+        this Dfa and returns the sampled word.
+        """
+        # Compute or retrieve dictionary containing counts for accepting
+        # paths per state.
+        accepting_path_counts = self.compute_accepting_path_counts()
+
+        # Initialize sample variables
+        current_state = self.start_state
+        state_count = accepting_path_counts[current_state]
+        generated_word = []
+
+        while True:
+            # Select a random number in the range of all possible
+            # remaining words in our language from our current stage
+            remaining_count = random.randint(0, state_count-1)
+
+            # Check if the current state is an accepting one, and
+            # if so, have we finished generating words.
+            if current_state in self.accepting_states:
+                if remaining_count == 0:
+                    # Word generation complete, return the current word
+                    return tuple(generated_word)
+
+                # Word generation is not complete, but we must adjust
+                # the count to account for the possible word we are skipping.
+                remaining_count -= 1
+
+            # As word generation is not complete, we now pick the next transition.
+            for symbol in self.alphabet:
+                destination_state = self.transitions[(current_state, symbol)]
+                destination_count = accepting_path_counts[destination_state]
+
+                # Check our current count to see if we continue to
+                # the destination state.
+                if remaining_count < destination_count:
+                    # Transition to destination state, and update state
+                    # variables accordingly.
+                    current_state = destination_state
+                    state_count = destination_count
+                    generated_word.append(symbol)
+                    break
+
+                # Do not transition to destination state. Update
+                # remaining count and check next symbol.
+                remaining_count -= destination_count
 
     def compute_accepting_path_counts(self) -> Dict[State, int]:
         """ Computes the number of accepting paths from a state
@@ -266,6 +239,83 @@ class Dfa(Spec):
         self._topological_ordering = tuple(topological_ordering)
 
         return topological_ordering
+
+    def states_partition(self) -> List[Set[State]]:
+        """ Uses Hopcroft's algorithm to partition all this DFA's states
+        into equivalence classes, excluding unreachable states.
+        """
+        # We first remove any states that are unreachable via a breadth first search.
+        current_state = None
+        reachable_states = {self.start_state}
+        state_queue = [self.start_state]
+
+        while len(state_queue) > 0:
+            current_state = state_queue.pop(0)
+
+            for symbol in self.alphabet:
+                next_state = self.transitions[(current_state, symbol)]
+                if next_state not in reachable_states:
+                    reachable_states.add(next_state)
+                    state_queue.append(next_state)
+
+        reachable_accepting_states = reachable_states & self.accepting_states
+
+        # Use Hopcroft's algorithm to merge nondistingishuable states.
+        partition_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
+        working_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
+
+        while len(working_sets) > 0:
+            working_set = working_sets.pop()
+
+            # Iterate over each symbol so that we check all transitions.
+            for symbol in self.alphabet:
+                # Find all states that when transitioning with symbol
+                # remain lead to the working_set.
+                incoming_states = set()
+
+                for origin_state in reachable_states:
+                    dest_state = self.transitions[(origin_state, symbol)]
+                    if dest_state in working_set:
+                        incoming_states.add(origin_state)
+
+                # Iterate over all partition sets to find any sets such
+                # that incoming_states is a subset of that set but not
+                # equal to that set.
+                for partition_set in partition_sets.copy():
+                    # Compute the intersection and difference of
+                    # incoming_states and partition_set.
+                    intersection_set = partition_set & incoming_states
+                    difference_set = partition_set - incoming_states
+
+                    if len(intersection_set) > 0 and len(difference_set) > 0:
+                        # Replace partition set in partition_sets with intersection_set
+                        # and difference_set.
+                        partition_sets.remove(partition_set)
+
+                        partition_sets.append(intersection_set)
+                        partition_sets.append(difference_set)
+
+                        # If partition_set is in working_sets, replace it with
+                        # intersection_set and difference_set. Otherwise, add the
+                        # smaller of the two to working_sets.
+
+                        if partition_set in working_sets:
+                            working_sets.remove(partition_set)
+
+                            working_sets.append(intersection_set)
+                            working_sets.append(difference_set)
+                        elif len(intersection_set) <= len(difference_set):
+                            working_sets.append(intersection_set)
+                        else:
+                            working_sets.append(difference_set)
+
+        real_partition_sets = []
+
+        for partition_set in partition_sets:
+            if len(partition_set) != 0:
+                real_partition_sets.append(partition_set)
+
+        return real_partition_sets
 
     ####################################################################################################
     # DFA Modification Functions

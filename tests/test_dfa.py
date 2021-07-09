@@ -292,6 +292,58 @@ def test_dfa_language_size_abstract():
 
     assert abstract_dfa.language_size() == (2**5 + 2**7)
 
+def test_dfa_sample():
+    """ Create a simple Dfa that when uniformly sampled
+    should generate the following words with relatively
+    uniform probabilities: [[], ["A"], ["A", "A"], ["B"]]
+    """
+    # Create test Dfa
+    alphabet = {"A", "B"}
+    states = {"Start", "Top", "Bottom1", "Bottom2", "Sink"}
+    accepting_states = {"Start", "Top", "Bottom1", "Bottom2"}
+    start_state = "Start"
+
+    transitions = dict()
+
+    transitions[("Start", "A")] = "Bottom1"
+    transitions[("Start", "B")] = "Top"
+    transitions[("Top", "A")] = "Sink"
+    transitions[("Top", "B")] = "Sink"
+    transitions[("Bottom1", "A")] = "Bottom2"
+    transitions[("Bottom1", "B")] = "Sink"
+    transitions[("Bottom2", "A")] = "Sink"
+    transitions[("Bottom2", "B")] = "Sink"
+    transitions[("Sink", "A")] = "Sink"
+    transitions[("Sink", "B")] = "Sink"
+
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    # Sample 100,000 words and keep track of
+    # how many of each are sampled.
+    dfa_language = [tuple(), tuple("A"), ("A", "A"), tuple("B")]
+
+    sample_counts = dict()
+
+    for word in dfa_language:
+        sample_counts[word] = 0
+
+    for _ in range(100000):
+        # Sample a word from our Dfa's language
+        sampled_word = dfa.sample()
+
+        # Ensure we didn't sample a word not in our language
+        assert sampled_word in dfa_language
+
+        # Increment the count for the word we sampled
+        sample_counts[tuple(sampled_word)] += 1
+
+    # Assert the sampled ratios are relatively correct
+    for word in dfa_language:
+        word_prob = sample_counts[word]/100000
+
+        assert word_prob > .24
+        assert word_prob < .26
+
 def test_dfa_minimize_no_reduction():
     """ Creates a simple Dfa that is already minimal,
     minimizes it, and ensures that select words are
@@ -882,18 +934,14 @@ def generate_random_dfa(min_states, max_states, min_symbols, max_symbols, alphab
 
     if alphabet is None:
         num_symbols = random.randint(min_symbols, max_symbols)
+        alphabet = set(map(str, range(num_symbols)))
     else:
         num_symbols = len(alphabet)
-
-    # Create alphabet and states
-    alphabet = set(map(str, range(num_symbols)))
 
     states = set()
 
     for state_num in range(1, num_states+1):
         states.add("State_" + str(state_num))
-
-
 
     # Picks a random number of accepting states
     shuffled_state_list = sorted(list(states))
