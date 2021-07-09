@@ -58,6 +58,8 @@ class Dfa(Spec):
     ####################################################################################################
 
     def accepts(self, word: List[str]) -> bool:
+        """ Returns true if this Dfa accepts word, and false otherwise.
+        """
         # Checks that word is composed only of symbols in the alphabet.
         for symbol in word:
             if symbol not in self.alphabet:

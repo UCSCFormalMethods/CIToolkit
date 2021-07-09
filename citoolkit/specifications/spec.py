@@ -3,7 +3,7 @@ and the AbstractSpec class, which allows one to perform the union,
 intersection, and negation operations on specifications."""
 
 from __future__ import annotations
-from typing import List, Set
+from typing import List, Set, Tuple
 
 import copy
 from enum import Enum
@@ -27,6 +27,10 @@ class Spec:
     def language_size(self) -> int:
         """ Computes the number of strings accepted by this specification."""
         raise NotImplementedError(self.__class__.__name__ + " has not implemented 'language_size'.")
+
+    def sample(self) -> Tuple[str]:
+        """ Generate a word uniformly at random from this specification."""
+        raise NotImplementedError(self.__class__.__name__ + " has not implemented 'sample'.")
 
     def __or__(self, other: Spec) -> AbstractSpec:
         """ Computes an abstract specification that accepts only words accepted
@@ -164,8 +168,43 @@ class AbstractSpec(Spec):
         else:
             refined_spec_2 = self.spec_2
 
-        raise NotImplementedError("Computation for language_size for '" + refined_spec_1.__class__.__name__ + \
-                                      "' and '" + refined_spec_2.__class__.__name__ + " are not supported.")
+        raise NotImplementedError("Computation if language_size for abstract specifications of types '" \
+                                  + refined_spec_1.__class__.__name__ + "' and '" + refined_spec_2.__class__.__name__ \
+                                  + " with operation " + str(self.operation) + " is not supported.")
+
+    def sample(self) -> Tuple[str]:
+        """ Samples uniformly at random from the language of this specification.
+            For an AbstractSpec, we first try to compute it's explicit form,
+            in which case we can rely on the subclasses' sample method.
+            Otherwise, we make as much of the AbstractSpec tree as explicit as
+            possible, and then check if we have a "hack" to sample from the
+            language anyway.
+        """
+        # Attempt to compute explicit form, and if so rely on the explicit form's
+        # sample implementation
+        try:
+            explicit_form = self.explicit()
+            return explicit_form.sample()
+        except NotImplementedError:
+            pass
+
+        # Check if have a "hack" to compute language_size anyway
+
+
+        # Otherwise, raise a NotImplementedError
+        if self.spec_1.explicit is not None:
+            refined_spec_1 = self.spec_1.explicit
+        else:
+            refined_spec_1 = self.spec_1
+
+        if self.spec_2.explicit is not None:
+            refined_spec_2 = self.spec_2.explicit
+        else:
+            refined_spec_2 = self.spec_2
+
+        raise NotImplementedError("Uniform sampling for abstract specifications of types '" \
+                                  + refined_spec_1.__class__.__name__ + "' and '" + refined_spec_2.__class__.__name__ \
+                                  + " with operation " + str(self.operation) + " is not supported.")
 
     def explicit(self) -> Spec:
         """ Computes an explicit form for this AbstractSpec, raising an exception

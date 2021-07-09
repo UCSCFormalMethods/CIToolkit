@@ -295,7 +295,9 @@ def test_dfa_language_size_abstract():
 def test_dfa_sample():
     """ Create a simple Dfa that when uniformly sampled
     should generate the following words with relatively
-    uniform probabilities: [[], ["A"], ["A", "A"], ["B"]]
+    uniform probabilities: [[], ["A"], ["A", "A"], ["B"]].
+    Then verify that the sampling is over the correct
+    words and reasonably accurate.
     """
     # Create test Dfa
     alphabet = {"A", "B"}
@@ -343,6 +345,64 @@ def test_dfa_sample():
 
         assert word_prob > .24
         assert word_prob < .26
+
+def test_dfa_sample_abstract():
+    """ Create a simple Dfa that when uniformly sampled
+    should generate the following words with relatively
+    uniform probabilities: [[], ["A"], ["A", "A"], ["B"]].
+    Then intersect it with a Dfa that accepts only words
+    of length 1. Then verify that the sampling is over the
+    correct words and reasonably accurate.
+    """
+    # Create test Dfa
+    alphabet = {"A", "B"}
+    states = {"Start", "Top", "Bottom1", "Bottom2", "Sink"}
+    accepting_states = {"Start", "Top", "Bottom1", "Bottom2"}
+    start_state = "Start"
+
+    transitions = dict()
+
+    transitions[("Start", "A")] = "Bottom1"
+    transitions[("Start", "B")] = "Top"
+    transitions[("Top", "A")] = "Sink"
+    transitions[("Top", "B")] = "Sink"
+    transitions[("Bottom1", "A")] = "Bottom2"
+    transitions[("Bottom1", "B")] = "Sink"
+    transitions[("Bottom2", "A")] = "Sink"
+    transitions[("Bottom2", "B")] = "Sink"
+    transitions[("Sink", "A")] = "Sink"
+    transitions[("Sink", "B")] = "Sink"
+
+    main_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+    length_dfa = Dfa.exact_length_dfa(alphabet, 1)
+
+    dfa = main_dfa & length_dfa
+
+    # Sample 100,000 words and keep track of
+    # how many of each are sampled.
+    dfa_language = [tuple("A"), tuple("B")]
+
+    sample_counts = dict()
+
+    for word in dfa_language:
+        sample_counts[word] = 0
+
+    for _ in range(100000):
+        # Sample a word from our Dfa's language
+        sampled_word = dfa.sample()
+
+        # Ensure we didn't sample a word not in our language
+        assert sampled_word in dfa_language
+
+        # Increment the count for the word we sampled
+        sample_counts[tuple(sampled_word)] += 1
+
+    # Assert the sampled ratios are relatively correct
+    for word in dfa_language:
+        word_prob = sample_counts[word]/100000
+
+        assert word_prob > .49
+        assert word_prob < .51
 
 def test_dfa_minimize_no_reduction():
     """ Creates a simple Dfa that is already minimal,
