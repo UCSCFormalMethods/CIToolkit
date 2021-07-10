@@ -24,12 +24,20 @@ class Spec:
         """
         raise NotImplementedError(self.__class__.__name__ + " has not implemented 'accepts'.")
 
-    def language_size(self) -> int:
-        """ Computes the number of strings accepted by this specification."""
+    def language_size(self, min_length=None, max_length=None) -> int:
+        """ Computes the number of strings accepted by this specification.
+
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
+        """
         raise NotImplementedError(self.__class__.__name__ + " has not implemented 'language_size'.")
 
-    def sample(self) -> Tuple[str]:
-        """ Generate a word uniformly at random from this specification."""
+    def sample(self, min_length=None, max_length=None) -> Tuple[str]:
+        """ Generate a word uniformly at random from this specification.
+
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
+        """
         raise NotImplementedError(self.__class__.__name__ + " has not implemented 'sample'.")
 
     def __or__(self, other: Spec) -> AbstractSpec:
@@ -138,19 +146,22 @@ class AbstractSpec(Spec):
         else:
             raise NotImplementedError(str(self.operation) + " is not currently supported.")
 
-    def language_size(self) -> int:
+    def language_size(self, min_length=None, max_length=None) -> int:
         """ Computes the number of strings accepted by this specification.
             For an AbstractSpec, we first try to compute it's explicit form,
             in which case we can rely on the subclasses' counting method.
             Otherwise, we make as much of the AbstractSpec tree as explicit as
             possible, and then check if we have a "hack" to compute the
             size of the language anyway.
+
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
         """
         # Attempt to compute explicit form, and if so rely on the explicit form's
         # language_size implementation
         try:
             explicit_form = self.explicit()
-            return explicit_form.language_size()
+            return explicit_form.language_size(min_length,max_length)
         except NotImplementedError:
             pass
 
@@ -172,19 +183,22 @@ class AbstractSpec(Spec):
                                   + refined_spec_1.__class__.__name__ + "' and '" + refined_spec_2.__class__.__name__ \
                                   + " with operation " + str(self.operation) + " is not supported.")
 
-    def sample(self) -> Tuple[str]:
+    def sample(self, min_length=None, max_length=None) -> Tuple[str]:
         """ Samples uniformly at random from the language of this specification.
             For an AbstractSpec, we first try to compute it's explicit form,
             in which case we can rely on the subclasses' sample method.
             Otherwise, we make as much of the AbstractSpec tree as explicit as
             possible, and then check if we have a "hack" to sample from the
             language anyway.
+
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
         """
         # Attempt to compute explicit form, and if so rely on the explicit form's
         # sample implementation
         try:
             explicit_form = self.explicit()
-            return explicit_form.sample()
+            return explicit_form.sample(min_length, max_length)
         except NotImplementedError:
             pass
 

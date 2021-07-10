@@ -7,7 +7,7 @@ import itertools
 import pytest
 
 from citoolkit.specifications.spec import AbstractSpec
-from citoolkit.specifications.dfa import Dfa, State
+from citoolkit.specifications.dfa import Dfa, State, DfaCycleError
 
 ###################################################################################################
 # Basic Tests
@@ -243,7 +243,7 @@ def test_dfa_topological_ordering():
     assert dfa.states_topological() == ["A", "B", "C", "D", "E", "F"]
 
 def test_dfa_topological_ordering_cycle():
-    """ Create a simple DFA with a reachable and accepting cycle 
+    """ Create a simple DFA with a reachable and accepting cycle
     and ensure that a ValueError is raised.
     """
     # Create a cyclic DFA
@@ -268,7 +268,7 @@ def test_dfa_topological_ordering_cycle():
 
     # Ensures that a ValueError is rasied as a cyclical DFA does not
     # have a well defined topological odering.
-    with pytest.raises(ValueError):
+    with pytest.raises(DfaCycleError):
         dfa.states_topological()
 
 def test_dfa_language_size():
@@ -291,6 +291,15 @@ def test_dfa_language_size_abstract():
     abstract_dfa = dfa_1 | dfa_2
 
     assert abstract_dfa.language_size() == (2**5 + 2**7)
+
+def test_dfa_language_size_param():
+    """ Creates a Dfa that accepts only words of length
+    7 and ensures that language_size returns the
+    correct result.
+    """
+    dfa = Dfa.max_length_dfa({"0","1"}, 7)
+
+    assert dfa.language_size(min_length=5, max_length=7) == 2**5 + 2**6 + 2**7
 
 def test_dfa_sample():
     """ Create a simple Dfa that when uniformly sampled
@@ -403,6 +412,65 @@ def test_dfa_sample_abstract():
 
         assert word_prob > .49
         assert word_prob < .51
+
+def test_dfa_sample_param():
+    """ Create a simple Dfa that when uniformly sampled
+    should generate the following words with relatively
+    uniform probabilities: [[], ["A"], ["A", "A"], ["B"]].
+    Then intersect it with a Dfa that accepts only words
+    of length 1. Then verify that the sampling is over the
+    correct words and reasonably accurate.
+    """
+    # Create test Dfa
+    alphabet = {"A", "B"}
+    states = {"Start", "Top", "Bottom1", "Bottom2", "Bottom3", "Bottom4", "Sink"}
+    accepting_states = {"Start", "Top", "Bottom1", "Bottom2", "Bottom3", "Bottom4"}
+    start_state = "Start"
+
+    transitions = dict()
+
+    transitions[("Start", "A")] = "Bottom1"
+    transitions[("Start", "B")] = "Top"
+    transitions[("Top", "A")] = "Sink"
+    transitions[("Top", "B")] = "Sink"
+    transitions[("Bottom1", "A")] = "Bottom2"
+    transitions[("Bottom1", "B")] = "Sink"
+    transitions[("Bottom2", "A")] = "Bottom3"
+    transitions[("Bottom2", "B")] = "Sink"
+    transitions[("Bottom3", "A")] = "Bottom4"
+    transitions[("Bottom3", "B")] = "Sink"
+    transitions[("Bottom4", "A")] = "Sink"
+    transitions[("Bottom4", "B")] = "Sink"
+    transitions[("Sink", "A")] = "Sink"
+    transitions[("Sink", "B")] = "Sink"
+
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    # Sample 100,000 words and keep track of
+    # how many of each are sampled.
+    dfa_language = [tuple("A"), tuple("B"), ("A", "A"), ("A", "A", "A")]
+
+    sample_counts = dict()
+
+    for word in dfa_language:
+        sample_counts[word] = 0
+
+    for _ in range(100000):
+        # Sample a word from our Dfa's language
+        sampled_word = dfa.sample(min_length=1, max_length=3)
+
+        # Ensure we didn't sample a word not in our language
+        assert sampled_word in dfa_language
+
+        # Increment the count for the word we sampled
+        sample_counts[tuple(sampled_word)] += 1
+
+    # Assert the sampled ratios are relatively correct
+    for word in dfa_language:
+        word_prob = sample_counts[word]/100000
+
+        assert word_prob > .24
+        assert word_prob < .26
 
 def test_dfa_minimize_no_reduction():
     """ Creates a simple Dfa that is already minimal,
@@ -792,6 +860,42 @@ def test_dfa_difference():
     assert not abstract_difference.accepts(list("12")) and not explicit_difference.accepts(list("12"))
     assert not abstract_difference.accepts(list("012210")) and not explicit_difference.accepts(list("012210"))
 
+def test_dfa_exact_length_constructor():
+    """ Tests that the Dfa returned by the exact_length_dfa
+    constructor works as expected.
+    """
+    dfa = Dfa.exact_length_dfa({"0","1"}, 7)
+
+    assert not dfa.accepts("")
+    assert not dfa.accepts("0")
+    assert not dfa.accepts("1")
+    assert not dfa.accepts("01")
+    assert not dfa.accepts("011")
+    assert not dfa.accepts("0110")
+    assert not dfa.accepts("01101")
+    assert not dfa.accepts("011010")
+    assert dfa.accepts("0110100")
+    assert not dfa.accepts("01101000")
+    assert not dfa.accepts("000000001111000000001100001000111100110110110")
+
+def test_dfa_min_length_constructor():
+    """ Tests that the Dfa returned by the min_length_dfa
+    constructor works as expected.
+    """
+    dfa = Dfa.min_length_dfa({"0", "1"}, 7)
+
+    assert not dfa.accepts("")
+    assert not dfa.accepts("0")
+    assert not dfa.accepts("1")
+    assert not dfa.accepts("01")
+    assert not dfa.accepts("011")
+    assert not dfa.accepts("0110")
+    assert not dfa.accepts("01101")
+    assert not dfa.accepts("011010")
+    assert dfa.accepts("0110100")
+    assert dfa.accepts("01101000")
+    assert dfa.accepts("000000001111000000001100001000111100110110110")
+
 def test_dfa_max_length_constructor():
     """ Tests that the Dfa returned by the max_length_dfa
     constructor works as expected.
@@ -810,23 +914,6 @@ def test_dfa_max_length_constructor():
     assert not dfa.accepts("01101000")
     assert not dfa.accepts("000000001111000000001100001000111100110110110")
 
-def test_dfa_exact_length_constructor():
-    """ Tests that the Dfa returned by the exact_length_dfa
-    constructor works as expected.
-    """
-    dfa = Dfa.exact_length_dfa({"0","1"}, 7)
-
-    assert not dfa.accepts("")
-    assert not dfa.accepts("0")
-    assert not dfa.accepts("1")
-    assert not dfa.accepts("01")
-    assert not dfa.accepts("011")
-    assert not dfa.accepts("0110")
-    assert not dfa.accepts("01101")
-    assert not dfa.accepts("011010")
-    assert dfa.accepts("0110100")
-    assert not dfa.accepts("01101000")
-    assert not dfa.accepts("000000001111000000001100001000111100110110110")
 
 ###################################################################################################
 # Randomized Tests

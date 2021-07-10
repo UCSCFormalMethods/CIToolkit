@@ -52,6 +52,7 @@ class Dfa(Spec):
         # Initialize cache values to None
         self._topological_ordering = None
         self._accepting_path_counts = None
+        self._bounded_dfas = {}
 
     ####################################################################################################
     # DFA Property Functions
@@ -78,59 +79,119 @@ class Dfa(Spec):
 
         return current_state in self.accepting_states
 
-    def language_size(self) -> int:
-        """ Returns the number of words accepted by this Dfa."""
-        accepting_path_counts = self.compute_accepting_path_counts()
+    def language_size(self, min_length = None, max_length = None) -> int:
+        """ Returns the number of words accepted by this Dfa.
 
-        return accepting_path_counts[self.start_state]
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
+        """
+        # Check if we need to recurse to a length bounded DFA or if we can
+        # simply use this DFA
+        if min_length == 0:
+            min_length = None
 
-    def sample(self) -> Tuple[str]:
+        if min_length is not None or max_length is not None:
+            # Compute the bounded Dfa if we haven't already
+            if (min_length, max_length) not in self._bounded_dfas.keys():
+                bounded_dfa = self
+
+                if min_length is not None:
+                    bounded_dfa = bounded_dfa & Dfa.min_length_dfa(self.alphabet, min_length)
+
+                if max_length is not None:
+                    bounded_dfa = bounded_dfa & Dfa.max_length_dfa(self.alphabet, max_length)
+
+                self._bounded_dfas[(min_length, max_length)] = bounded_dfa.explicit()
+
+            # Get the language_size of the appropriate bounded Dfa.
+            return self._bounded_dfas[(min_length, max_length)].language_size()
+
+        else:
+            # No length requirement, so simply compute accepting paths
+            # for this Dfa and return number of paths from the start state.
+            try:
+                accepting_path_counts = self.compute_accepting_path_counts()
+            except DfaCycleError as exception:
+                raise DfaCycleError("Cannot compute language size for a Dfa with an infinite language.") from exception
+
+            return accepting_path_counts[self.start_state]
+
+    def sample(self, min_length = None, max_length = None) -> Tuple[str]:
         """ Samples a word uniformly at random from the language of
         this Dfa and returns the sampled word.
+
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
         """
-        # Compute or retrieve dictionary containing counts for accepting
-        # paths per state.
-        accepting_path_counts = self.compute_accepting_path_counts()
+        # Check if we need to recurse to a length bounded DFA or if we can
+        # simply use this DFA
+        if min_length == 0:
+            min_length = None
 
-        # Initialize sample variables
-        current_state = self.start_state
-        state_count = accepting_path_counts[current_state]
-        generated_word = []
+        if min_length is not None or max_length is not None:
+            # Compute the bounded Dfa if we haven't already
+            if (min_length, max_length) not in self._bounded_dfas.keys():
+                bounded_dfa = self
 
-        while True:
-            # Select a random number in the range of all possible
-            # remaining words in our language from our current stage
-            remaining_count = random.randint(0, state_count-1)
+                if min_length is not None:
+                    bounded_dfa = bounded_dfa & Dfa.min_length_dfa(self.alphabet, min_length)
 
-            # Check if the current state is an accepting one, and
-            # if so, have we finished generating words.
-            if current_state in self.accepting_states:
-                if remaining_count == 0:
-                    # Word generation complete, return the current word
-                    return tuple(generated_word)
+                if max_length is not None:
+                    bounded_dfa = bounded_dfa & Dfa.max_length_dfa(self.alphabet, max_length)
 
-                # Word generation is not complete, but we must adjust
-                # the count to account for the possible word we are skipping.
-                remaining_count -= 1
+                self._bounded_dfas[(min_length, max_length)] = bounded_dfa.explicit()
 
-            # As word generation is not complete, we now pick the next transition.
-            for symbol in self.alphabet:
-                destination_state = self.transitions[(current_state, symbol)]
-                destination_count = accepting_path_counts[destination_state]
+            # Get the language_size of the appropriate bounded Dfa.
+            return self._bounded_dfas[(min_length, max_length)].sample()
+        else:
+            # No length requirement, so simply sample this Dfa
 
-                # Check our current count to see if we continue to
-                # the destination state.
-                if remaining_count < destination_count:
-                    # Transition to destination state, and update state
-                    # variables accordingly.
-                    current_state = destination_state
-                    state_count = destination_count
-                    generated_word.append(symbol)
-                    break
+            # Compute or retrieve dictionary containing counts for accepting
+            # paths per state.
+            try:
+                accepting_path_counts = self.compute_accepting_path_counts()
+            except DfaCycleError as exception:
+                raise DfaCycleError("Cannot sample uniformly from a Dfa with an infinite language.") from exception
 
-                # Do not transition to destination state. Update
-                # remaining count and check next symbol.
-                remaining_count -= destination_count
+            # Initialize sample variables
+            current_state = self.start_state
+            state_count = accepting_path_counts[current_state]
+            generated_word = []
+
+            while True:
+                # Select a random number in the range of all possible
+                # remaining words in our language from our current stage
+                remaining_count = random.randint(0, state_count-1)
+
+                # Check if the current state is an accepting one, and
+                # if so, have we finished generating words.
+                if current_state in self.accepting_states:
+                    if remaining_count == 0:
+                        # Word generation complete, return the current word
+                        return tuple(generated_word)
+
+                    # Word generation is not complete, but we must adjust
+                    # the count to account for the possible word we are skipping.
+                    remaining_count -= 1
+
+                # As word generation is not complete, we now pick the next transition.
+                for symbol in self.alphabet:
+                    destination_state = self.transitions[(current_state, symbol)]
+                    destination_count = accepting_path_counts[destination_state]
+
+                    # Check our current count to see if we continue to
+                    # the destination state.
+                    if remaining_count < destination_count:
+                        # Transition to destination state, and update state
+                        # variables accordingly.
+                        current_state = destination_state
+                        state_count = destination_count
+                        generated_word.append(symbol)
+                        break
+
+                    # Do not transition to destination state. Update
+                    # remaining count and check next symbol.
+                    remaining_count -= destination_count
 
     def compute_accepting_path_counts(self) -> Dict[State, int]:
         """ Computes the number of accepting paths from a state
@@ -236,7 +297,7 @@ class Dfa(Spec):
 
         # Checks that we have emptied working_states. If not, we have a cycle.
         if len(working_states) > 0:
-            raise ValueError("Cannot compute a topological_ordering for a cyclical DFA.")
+            raise DfaCycleError("Cannot compute a topological_ordering for a DFA with a cycle.")
 
         self._topological_ordering = tuple(topological_ordering)
 
@@ -372,18 +433,18 @@ class Dfa(Spec):
     # Constructor Functions
     ####################################################################################################
 
-    @classmethod
-    def union_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
+    @staticmethod
+    def union_construction(dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
         """ Computes the union product construction for two DFAs and
         return its minimized form.
 
         :param dfa_a: The first dfa to use in the product construction.
         :param dfa_b: The second dfa to use in the product construction.
         """
-        return cls._product_construction(dfa_a, dfa_b, union=True).minimize()
+        return Dfa._product_construction(dfa_a, dfa_b, union=True).minimize()
 
-    @classmethod
-    def intersection_construction(cls, dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
+    @staticmethod
+    def intersection_construction(dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
         """ Computes the union product construction for two DFAs and
         return its minimized form.
 
@@ -391,10 +452,10 @@ class Dfa(Spec):
         :param dfa_b: The second dfa to use in the product construction.
         """
 
-        return cls._product_construction(dfa_a, dfa_b, union=False).minimize()
+        return Dfa._product_construction(dfa_a, dfa_b, union=False).minimize()
 
-    @classmethod
-    def _product_construction(cls, dfa_a: Dfa, dfa_b: Dfa, union: bool) -> Dfa:
+    @staticmethod
+    def _product_construction(dfa_a: Dfa, dfa_b: Dfa, union: bool) -> Dfa:
         """ Computes the product construction for two DFAs, for either
         the union or intersection depending on the value of the union
         parameter.
@@ -444,12 +505,12 @@ class Dfa(Spec):
         # Uses the above pieces to create the new product Dfa and returns it.
         return Dfa(alphabet, new_states, new_accepting_states, new_start_state, new_transitions)
 
-    @classmethod
-    def max_length_dfa(cls, alphabet, length_requirement) -> Dfa:
-        """ Returns a Dfa that accepts all strings over alphabet with length at most
+    @staticmethod
+    def exact_length_dfa(alphabet, length_requirement) -> Dfa:
+        """ Returns a Dfa that accepts all strings over alphabet with length exactly
         length_requirement.
 
-        :param length_requirement: The maximum length of strings that the returned DFA should accept.
+        :param length_requirement: The length of strings that the returned DFA should accept.
         """
 
         if length_requirement < 0:
@@ -457,7 +518,7 @@ class Dfa(Spec):
 
         states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
 
-        accepting_states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)}
+        accepting_states = {("Seen" + str(length_requirement))}
         start_state = "Seen0"
 
         transitions = {}
@@ -472,12 +533,12 @@ class Dfa(Spec):
 
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
-    @classmethod
-    def exact_length_dfa(cls, alphabet, length_requirement) -> Dfa:
-        """ Returns a Dfa that accepts all strings over alphabet with length exactly
+    @staticmethod
+    def min_length_dfa(alphabet, length_requirement) -> Dfa:
+        """ Returns a Dfa that accepts all strings over alphabet with length at least
         length_requirement.
 
-        :param length_requirement: The length of strings that the returned DFA should accept.
+        :param length_requirement: The maximum length of strings that the returned DFA should accept.
         """
 
         if length_requirement < 0:
@@ -485,7 +546,35 @@ class Dfa(Spec):
 
         states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
 
-        accepting_states = {("Seen" + str(length_requirement))}
+        accepting_states = {"Seen" + str(length_requirement), "Sink"}
+        start_state = "Seen0"
+
+        transitions = {}
+
+        for state_num in range(length_requirement):
+            for symbol in alphabet:
+                transitions[("Seen" + str(state_num), symbol)] = "Seen" + str(state_num+1)
+
+        for symbol in alphabet:
+            transitions[("Seen" + str(length_requirement), symbol)] = "Sink"
+            transitions[("Sink", symbol)] = "Sink"
+
+        return Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    @staticmethod
+    def max_length_dfa(alphabet, length_requirement) -> Dfa:
+        """ Returns a Dfa that accepts all strings over alphabet with length at most
+        length_requirement.
+
+        :param length_requirement: The maximum length of strings that the returned DFA should accept.
+        """
+
+        if length_requirement < 0:
+            raise ValueError("length_requirement must be non-negative.")
+
+        states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
+
+        accepting_states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)}
         start_state = "Seen0"
 
         transitions = {}
@@ -537,3 +626,8 @@ class State:
 
     def __hash__(self):
         return hash(self.state_tuple)
+
+class DfaCycleError(Exception):
+    """ An error raised when trying to compute language size for or sample
+    from a Dfa that contains a cycle.
+    """
