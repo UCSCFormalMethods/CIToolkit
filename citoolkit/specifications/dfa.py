@@ -58,7 +58,7 @@ class Dfa(Spec):
     # DFA Property Functions
     ####################################################################################################
 
-    def accepts(self, word: List[str]) -> bool:
+    def accepts(self, word: Tuple[str]) -> bool:
         """ Returns true if this Dfa accepts word, and false otherwise.
         """
         # Checks that word is composed only of symbols in the alphabet.
