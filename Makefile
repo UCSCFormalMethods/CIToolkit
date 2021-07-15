@@ -1,13 +1,31 @@
+RUN_PYTEST = poetry run pytest -v -ra
+
+.PHONY: enter_env, make_env, update, test, test_basic, test_full, test_basic_debug, test_full_debug, docs
+
+enter_env: make_env
+	poetry shell
+
+make_env:
+	poetry install
+
+update:
+	poetry update
+
 test: test_basic
 
-test_basic:
-	python3 -m pytest -v -ra -m "not slow"
+test_basic: make_env
+	$(RUN_PYTEST) -m "not slow"
 
-test_full:
-	python3 -m pytest -v -ra
+test_full: make_env
+	$(RUN_PYTEST)
 
-test_basic_debug:
-	python3 -m pytest -v -ra --capture=no -m "not slow"
+test_basic_debug: make_env
+	$(RUN_PYTEST) --capture=no -m "not slow"
 
-test_full_debug:
-	python3 -m pytest -v -ra --capture=no
+test_full_debug: make_env
+	$(RUN_PYTEST) --capture=no
+
+docs: make_env
+	poetry run make -C docs clean
+	poetry run make -C docs api_doc
+	poetry run make -C docs html

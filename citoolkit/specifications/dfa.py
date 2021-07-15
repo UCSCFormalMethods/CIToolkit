@@ -1,6 +1,4 @@
-""" Contains the Dfa specification class.
-    Based off the implementation by Daniel Fremont for Reactive Control Improvisation (https://github.com/dfremont/rci)
-"""
+""" Contains the Dfa specification class."""
 
 from __future__ import annotations
 from typing import List, Set, Dict, Tuple, Union
@@ -10,8 +8,10 @@ import random
 from citoolkit.specifications.spec import Spec
 
 class Dfa(Spec):
-    """
-    The Dfa class encodes a Deterministic Finite Automata specification.
+    """ The Dfa class encodes a Deterministic Finite Automata specification.
+
+    Note: All state variables in all parameters can be State objects or strings. 
+    Any strings will be converted to State objects internally.
 
     :param alphabet: The alphabet this Dfa is defined over.
     :param states: The set of all states in this Dfa.
@@ -19,10 +19,12 @@ class Dfa(Spec):
         Must be a subset of states.
     :param start_state: The start state in this Dfa. Must be a member of states.
     :param transitions: A dictionary mapping every combination of state in states
-        and symbol in alphabet to a state in states. (state, symbol) -> state
+        and symbol in alphabet to a state in states. Must be of the form (state, symbol) -> state
+    :raises ValueError: Raised if the Dfa parameters are flawed so that they do
+        not make a well defined Dfa. I.e. the transition map is not complete.
     """
     def __init__(self, alphabet: Set[str], states: Set[Union[str, State]], accepting_states: Set[Union[str, State]], \
-                 start_state: Union[str, State], transitions: Dict[Tuple(State, str), State]) -> None:
+                 start_state: Union[str, State], transitions: Dict[Tuple[State, str], State]) -> None:
         # Intializes super class and stores all parameters. Also ensures
         # all states are of the State class
         super().__init__(alphabet)
@@ -58,8 +60,14 @@ class Dfa(Spec):
     # DFA Property Functions
     ####################################################################################################
 
-    def accepts(self, word: Tuple[str]) -> bool:
+    def accepts(self, word: Tuple[str,...]) -> bool:
         """ Returns true if this Dfa accepts word, and false otherwise.
+
+        :param word: The candidate word that is checked for belonging in
+            the language of this Dfa.
+        :raises ValueError: Raised if the word contains symbols not in
+            this Dfa's alphabet.
+        :returns: True if this Dfa accepts word and false otherwise.
         """
         # Checks that word is composed only of symbols in the alphabet.
         for symbol in word:
@@ -71,19 +79,21 @@ class Dfa(Spec):
         current_state = self.start_state
 
         for symbol in word:
-            if (current_state, symbol) in self.transitions:
-                current_state = self.transitions[(current_state, symbol)]
-            else:
-                raise ValueError("There is no transition from '" + str(current_state) + \
-                  "' for the symbol '" + str(symbol) + "'.")
+            current_state = self.transitions[(current_state, symbol)]
 
         return current_state in self.accepting_states
 
-    def language_size(self, min_length = None, max_length = None) -> int:
+    def language_size(self, min_length: int = None, max_length: int = None) -> int:
         """ Returns the number of words accepted by this Dfa.
 
         :param min_length: An inclusive lower bound on word size to consider.
         :param max_length: An inclusive upper bound on word size to consider.
+        :raises DfaCycleError: Raised if when computing topological ordering,
+            the Dfa is determined to by cyclical. In this case language size
+            is infinite.
+        :returns: The number of words that are in the language accepted
+            by this Dfa, considering only words of length between min_length
+            and max_length inclusive if defined.
         """
         # Check if we need to recurse to a length bounded DFA or if we can
         # simply use this DFA
@@ -116,12 +126,18 @@ class Dfa(Spec):
 
             return accepting_path_counts[self.start_state]
 
-    def sample(self, min_length = None, max_length = None) -> Tuple[str]:
+    def sample(self, min_length: int = None, max_length: int = None) -> Tuple[str,...]:
         """ Samples a word uniformly at random from the language of
         this Dfa and returns the sampled word.
 
         :param min_length: An inclusive lower bound on word size to consider.
         :param max_length: An inclusive upper bound on word size to consider.
+        :raises DfaCycleError: Raised if when computing topological ordering,
+            the Dfa is determined to by cyclical. In this case language size
+            is infinite and so we cannot sample uniformly.
+        :returns: A single word sampled uniformly at random from the language
+            of this Dfa, considering only words of length between min_length
+            and max_length inclusive if defined.
         """
         # Check if we need to recurse to a length bounded DFA or if we can
         # simply use this DFA
@@ -196,6 +212,12 @@ class Dfa(Spec):
     def compute_accepting_path_counts(self) -> Dict[State, int]:
         """ Computes the number of accepting paths from a state
         to an accepting state for all states.
+
+        :raises DfaCycleError: Raised if when computing topological ordering,
+            the Dfa is determined to by cyclical. In this case there are infinite
+            accepting paths.
+        :returns: A dictionary mapping each state in the Dfa to the number of accepting
+            paths reachable from that state.
         """
         # Check if we have already computed accepting path counts
         if self._accepting_path_counts is not None:
@@ -230,6 +252,12 @@ class Dfa(Spec):
     def states_topological(self) -> List[State]:
         """ Returns a topologically sorted list of this DFA's states, excluding those
         that are unreachable or dead.
+
+        :raises DfaCycleError: Raised if when computing topological ordering,
+            the Dfa is determined to by cyclical. In this case, a toplogical
+            ordering is not well defined.
+        :returns: A topologically ordered list of states, such that no state
+            can be transitioned to from a state later in the ordering.
         """
         # Check if we have already computed a topological ordering
         if self._topological_ordering is not None:
@@ -304,8 +332,13 @@ class Dfa(Spec):
         return topological_ordering
 
     def states_partition(self) -> List[Set[State]]:
-        """ Uses Hopcroft's algorithm to partition all this DFA's states
+        """ Uses Hopcroft's algorithm to partition all this Dfa's states
         into equivalence classes, excluding unreachable states.
+
+        :returns: A list of sets that partition the states in this Dfa into equivalence
+            classes. For any two states in the same class and any sequence of transitions,
+            either both states reach an accepting state on that sequence or both states reach
+            a rejecting state on that sequence.
         """
         # We first remove any states that are unreachable via a breadth first search.
         current_state = None
@@ -374,6 +407,7 @@ class Dfa(Spec):
 
         real_partition_sets = []
 
+        # Remove all empty partition sets.
         for partition_set in partition_sets:
             if len(partition_set) != 0:
                 real_partition_sets.append(partition_set)
@@ -387,6 +421,9 @@ class Dfa(Spec):
     def minimize(self) -> Dfa:
         """ Computes and returns a minimal Dfa that accepts the same
             language as self.
+
+            :returns: The complete Dfa with the smallest number of states that
+                accepts the same language as this Dfa.
         """
         partition_sets = self.states_partition()
 
@@ -421,6 +458,8 @@ class Dfa(Spec):
     def negation(self) -> Dfa:
         """ Computes and returns a Dfa that accepts words
         if and only if they are not accepted by self.
+
+            :returns: A Dfa that accepts only words not in this Dfa's language.
         """
         states = self.states
         new_accepting_states = states - self.accepting_states
@@ -438,8 +477,10 @@ class Dfa(Spec):
         """ Computes the union product construction for two DFAs and
         return its minimized form.
 
-        :param dfa_a: The first dfa to use in the product construction.
-        :param dfa_b: The second dfa to use in the product construction.
+        :param dfa_a: The first Dfa to use in the product construction.
+        :param dfa_b: The second Dfa to use in the product construction.
+
+        :returns: A Dfa that accepts words accepted by dfa_a or dfa_b.
         """
         return Dfa._product_construction(dfa_a, dfa_b, union=True).minimize()
 
@@ -450,6 +491,8 @@ class Dfa(Spec):
 
         :param dfa_a: The first dfa to use in the product construction.
         :param dfa_b: The second dfa to use in the product construction.
+
+        :returns: A Dfa that accepts words accepted by dfa_a and dfa_b.
         """
 
         return Dfa._product_construction(dfa_a, dfa_b, union=False).minimize()
@@ -464,6 +507,10 @@ class Dfa(Spec):
         :param dfa_b: The second dfa to use in the product construction.
         :param union: If true, use the union rules to decide which states
             are accepting. If false, use intersection rules.
+        :raises ValueError: Raised if parameters are such that the product
+            construction is not well defined over those parameters.
+        :returns: A product Dfa of dfa_a and dfa_b, that accepts according
+            to union or intersection rules depending on the value of union.
         """
         # Performs checks to make sure that the product construction
         # is being used correctly.
@@ -506,11 +553,14 @@ class Dfa(Spec):
         return Dfa(alphabet, new_states, new_accepting_states, new_start_state, new_transitions)
 
     @staticmethod
-    def exact_length_dfa(alphabet, length_requirement) -> Dfa:
+    def exact_length_dfa(alphabet: Set[str], length_requirement: int) -> Dfa:
         """ Returns a Dfa that accepts all strings over alphabet with length exactly
         length_requirement.
 
-        :param length_requirement: The length of strings that the returned DFA should accept.
+        :param length_requirement: The length of strings that the returned
+            DFA should accept.
+        :returns: A Dfa that accepts all strings over alphabet with length exactly
+            length_requirement.
         """
 
         if length_requirement < 0:
@@ -534,11 +584,14 @@ class Dfa(Spec):
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
     @staticmethod
-    def min_length_dfa(alphabet, length_requirement) -> Dfa:
+    def min_length_dfa(alphabet: Set[str], length_requirement: int) -> Dfa:
         """ Returns a Dfa that accepts all strings over alphabet with length at least
         length_requirement.
 
-        :param length_requirement: The maximum length of strings that the returned DFA should accept.
+        :param length_requirement: The maximum length of strings that the returned
+            DFA should accept.
+        :returns: A Dfa that accepts all strings over alphabet with length at least
+            length_requirement.
         """
 
         if length_requirement < 0:
@@ -562,11 +615,14 @@ class Dfa(Spec):
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
     @staticmethod
-    def max_length_dfa(alphabet, length_requirement) -> Dfa:
+    def max_length_dfa(alphabet: Set[str], length_requirement: int) -> Dfa:
         """ Returns a Dfa that accepts all strings over alphabet with length at most
         length_requirement.
 
-        :param length_requirement: The maximum length of strings that the returned DFA should accept.
+        :param length_requirement: The maximum length of strings that the returned
+            DFA should accept.
+        :returns: A Dfa that accepts all strings over alphabet with length at most
+            length_requirement.
         """
 
         if length_requirement < 0:
@@ -593,10 +649,11 @@ class State:
     """ Class representing a state in a DFA. Primarily used for merging states
     and pretty printing them.
 
-    :param *args: A sequence of strings or other State objects that will be
+    :param * args: A sequence of strings or other State objects that will be
         merged into a new state.
+    :raises ValueError: Raised if a non string or state object is passed in args.
     """
-    def __init__(self, *args: Union[str, State]):
+    def __init__(self, *args: Union[str, State]) -> None:
         # Parses
         labels = []
 
@@ -608,23 +665,41 @@ class State:
             else:
                 raise ValueError("Only strings or State objects can be used to create another state.")
 
-        self.state_tuple = tuple(labels)
+        self.state_tuple: Tuple[str,...] = tuple(labels)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """ Pretty prints the State as a Tuple.
+
+        :returns: A pretty printed version of the state
+        """
         if len(self.state_tuple) == 1:
             return "(" + self.state_tuple[0] + ")"
         else:
             return str(self.state_tuple)
 
-    def __repr__(self):
-        return str(self)
+    def __repr__(self) -> str:
+        """ Prints the State object as a reconstructable version of the object.
 
-    def __eq__(self, other):
-        return (isinstance(other, State) and (self.state_tuple == other.state_tuple)) or \
-               (isinstance(other, str) and (len(self.state_tuple) == 1) and (other == self.state_tuple[0]))
+        :returns: A reconstructable string interpretation of the State object.
+        """
+        return "State" + str(self)
 
+    def __eq__(self, other: object) -> bool:
+        """ Checks equality, either with another State or a string.
+
+        :returns: True if the state values represent the same State, returns false
+            otherwise.
+        """
+        if isinstance(other, State):
+            return self.state_tuple == other.state_tuple
+        if isinstance(other, str):
+            return len(self.state_tuple) == 1 and other == self.state_tuple[0]
+        else:
+            return NotImplemented
 
     def __hash__(self):
+        """ Returns a hash of the State's interior tuple
+        """
         return hash(self.state_tuple)
 
 class DfaCycleError(Exception):

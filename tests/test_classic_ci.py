@@ -63,7 +63,7 @@ def test_classic_ci_improvise():
     assert improvisation_count[tuple("010101")]/100000 > 0.115
     assert improvisation_count[tuple("010101")]/100000 < 0.135
 
-def test_classic_ci_improviser():
+def test_classic_ci_generator():
     """ Test a simple classic CI instance."""
     # Create a hard constraint Dfa that accepts all words of the form "{01}*"
     alphabet = {"0", "1"}

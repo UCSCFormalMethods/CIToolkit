@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "citoolkit"
+version = "0.1.0"
+description = "A library containing tools to create and solve instances of the Control Improvisation problem and its extensions. Primarily maintained by Eric Vin <evin@ucsc.edu>"
+authors = ["Eric Vin <evin@ucsc.edu>", "Daniel J. Fremont <dfremont@ucsc.edu>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+pytest-randomly = "^3.8.0"
+Sphinx = "^4.1.1"
+sphinx-rtd-theme = "^0.5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow",
+]
