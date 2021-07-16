@@ -11,7 +11,7 @@ from citoolkit.improvisers.improviser import Improviser, InfeasibleImproviserErr
 from citoolkit.specifications.spec import Spec
 
 class ClassicCI(Improviser):
-    """ An improviser for the "Control Improvisation" problem.
+    """ An improviser for the original Control Improvisation problem.
 
     :param hard_constraint: A specification that must accept all improvisations
     :param soft_constraint: A specification that must accept improvisations with

@@ -16,7 +16,7 @@ As long as a specification can support these operations and extend the Spec base
 
 The specifications provided natively by this library are:
 
-* Deterministic Finite Automaton (DFA): :mod:`citoolkit.specifications.dfa.Dfa`
+* :mod:`Deterministic Finite Automaton (DFA)<citoolkit.specifications.dfa.Dfa>`
 
 In addition, support the standard union, intersection, negation and difference operations. This is done primarily through the use of the ``AbstractSpec`` class, which creates logical trees of specifications. This allows to run the ``accepts`` function any combination of specs with any of the 4 supported operations. The ``AbstractSpec`` class also has an ``explicit`` method, which allows one to attempt to collapse a tree of abstract specifications into a single concrete Spec subclass. To implement the ``language_size`` and ``sample`` methods, the ``AbstractSpec`` class first tries to compute its explicit form. If this fails, sometimes we can still implement these methods through a more specialized approach. Otherwise, a ``NotImplementedError`` is raised. All of this logic is handled in the ``AbstractSpec`` class, and must be augmented to support new specifications.
 
@@ -27,4 +27,4 @@ The improviser classes are implementations of the algorithms to solve the Contro
 
 The improvisers provided natively by this library are:
 
-* Control Improvisation (CI): Outlined in detail in `[Fremont et al. 2017] <https://arxiv.org/abs/1704.06319>`_. Allows for an explicit hard constraint, a soft constraint that can be violated within a provided tolerance, and explicit randomness bounds on the probability of generating each word.
+* :mod:`Control Improvisation (CI)<citoolkit.improvisers.classic_ci.ClassicCI>`: Outlined in detail in `[Fremont et al. 2017] <https://arxiv.org/abs/1704.06319>`_. Allows for an explicit hard constraint, a soft constraint that can be violated within a provided tolerance, and explicit randomness bounds on the probability of generating each word.
