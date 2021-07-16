@@ -199,11 +199,11 @@ class AbstractSpec(Spec):
 
     def sample(self, min_length: int = None, max_length: int = None) -> Tuple[str,...]:
         """ Samples uniformly at random from the language of this specification.
-            For an AbstractSpec, we first try to compute it's explicit form,
-            in which case we can rely on the subclasses' sample method.
-            Otherwise, we make as much of the AbstractSpec tree as explicit as
-            possible, and then check if we have a "hack" to sample from the
-            language anyway.
+        For an AbstractSpec, we first try to compute it's explicit form,
+        in which case we can rely on the subclasses' sample method.
+        Otherwise, we make as much of the AbstractSpec tree as explicit as
+        possible, and then check if we have a "hack" to sample from the
+        language anyway.
 
         :param min_length: An inclusive lower bound on word size to consider.
         :param max_length: An inclusive upper bound on word size to consider.

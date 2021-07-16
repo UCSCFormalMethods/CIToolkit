@@ -7,13 +7,20 @@ maintainers = ["Eric Vin <evin@ucsc.edu>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
 pytest-randomly = "^3.8.0"
 Sphinx = "^4.1.1"
+sphinx-autodoc-typehints = "^1.12.0"
 sphinx-rtd-theme = "^0.5.2"
+
+[tool.poetry.extras]
+docs = [
+    "sphinx",
+    "sphinx-autodoc-typehints"
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
