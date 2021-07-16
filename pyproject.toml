@@ -7,7 +7,7 @@ maintainers = ["Eric Vin <evin@ucsc.edu>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
