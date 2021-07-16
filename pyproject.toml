@@ -8,18 +8,19 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.4"
-pytest-randomly = "^3.8.0"
-Sphinx = "^4.1.1"
-sphinx-autodoc-typehints = "^1.12.0"
-sphinx-rtd-theme = "^0.5.2"
+pytest = {version = "^6.2.4", optional = true}
+pytest-randomly = {version = "^3.8.0", optional = true}
+sphinx = {version = "^4.1.1", optional = true}
+sphinx-autodoc-typehints = {version = "^1.12.0", optional = true}
+sphinx-rtd-theme = {version = "^0.5.2", optional = true}
 
 [tool.poetry.extras]
-docs = [
+dev = [
+    "pytest",
+    "pytest-randomly",
     "sphinx",
-    "sphinx-autodoc-typehints"
+    "sphinx-autodoc-typehints",
+    "sphinx-rtd-theme"
 ]
 
 [build-system]

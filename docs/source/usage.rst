@@ -27,4 +27,4 @@ The improviser classes are implementations of the algorithms to solve the Contro
 
 The improvisers provided natively by this library are:
 
-* :mod:`Control Improvisation (CI)<citoolkit.improvisers.classic_ci.ClassicCI>`: Outlined in detail in `[Fremont et al. 2017] <https://arxiv.org/abs/1704.06319>`_. Allows for an explicit hard constraint, a soft constraint that can be violated within a provided tolerance, and explicit randomness bounds on the probability of generating each word.
+* :mod:`Control Improvisation (CI)<citoolkit.improvisers.classic_ci.ClassicCI>`: Outlined in detail in `[Fremont et al. 2017] <https://arxiv.org/abs/1704.06319>`_. Allows for a hard constraint that must always be satisfied, a soft constraint that can be violated within a provided tolerance, and explicit randomness bounds on the probability of generating each word.

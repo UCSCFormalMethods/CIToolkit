@@ -6,7 +6,7 @@ enter_env: make_env
 	poetry shell
 
 make_env:
-	poetry install
+	poetry install -E dev
 
 update:
 	poetry update
