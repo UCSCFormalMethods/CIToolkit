@@ -1,8 +1,10 @@
 [tool.poetry]
 name = "citoolkit"
 version = "0.1.0"
-description = "A library containing tools to create and solve instances of the Control Improvisation problem and its extensions. Primarily maintained by Eric Vin <evin@ucsc.edu>"
+description = "A library containing tools to create and solve instances of the Control Improvisation problem and its extensions."
 authors = ["Eric Vin <evin@ucsc.edu>", "Daniel J. Fremont <dfremont@ucsc.edu>"]
+maintainers = ["Eric Vin <evin@ucsc.edu>"]
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
