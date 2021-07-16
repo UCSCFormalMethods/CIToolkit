@@ -1,1 +1,2 @@
-citoolkit
+Sphinx
+sphinx-rtd-theme
