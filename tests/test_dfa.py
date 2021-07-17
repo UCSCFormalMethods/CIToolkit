@@ -914,6 +914,29 @@ def test_dfa_max_length_constructor():
     assert not dfa.accepts("01101000")
     assert not dfa.accepts("000000001111000000001100001000111100110110110")
 
+@pytest.mark.slow
+def test_dfa_massive_1():
+    """ Tests that a massive union of relatively 
+    equally sized Dfas can be simplified correctly.
+    """
+    alphabet = {"0","1"}
+
+    union_dfa = Dfa.min_length_dfa(alphabet, 1000) | Dfa.max_length_dfa(alphabet, 1000)
+    explicit_dfa = union_dfa.explicit()
+
+    assert len(explicit_dfa.states) == 1
+
+@pytest.mark.slow
+def test_dfa_massive_2():
+    """ Tests that a massive union of a very small and 
+    very large Dfa can be simplified correctly.
+    """
+    alphabet = {"0","1"}
+
+    union_dfa = Dfa.min_length_dfa(alphabet, 1) | Dfa.max_length_dfa(alphabet, 1000000)
+    explicit_dfa = union_dfa.explicit()
+
+    assert len(explicit_dfa.states) == 1
 
 ###################################################################################################
 # Randomized Tests
@@ -1047,6 +1070,7 @@ def test_dfa_language_size_random():
     all words in the alphabet of length at most max_length ensures the count is correct.
     """
     for _ in range(RANDOM_TEST_NUM_ITERS):
+        # Pick a length and create a random dfa that acceps words up to that length
         max_length = random.randint(RANDOM_DFA_MIN_STATES,RANDOM_DFA_MAX_STATES)
 
         base_dfa = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
@@ -1055,6 +1079,7 @@ def test_dfa_language_size_random():
         dfa = base_dfa & length_limit_dfa
         explicit_dfa = dfa.explicit()
 
+        # Enumerate all words to ensure that the calculated language size is correct.
         enumerated_count = 0
 
         for word_length in range(max_length+1):

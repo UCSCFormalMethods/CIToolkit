@@ -1,19 +1,19 @@
-"""Contains the Improviser class, from which all CI improvisers should inherit."""
+""" Contains the Improviser class, from which all CI improvisers should inherit."""
 
 from __future__ import annotations
-from typing import Tuple, Iterator
+from typing import Iterator
 
 class Improviser:
     """ The Improviser class is a parent class to all CI improvisers. """
 
-    def improvise(self) -> Tuple[str,...]:
+    def improvise(self) -> tuple[str,...]:
         """ Improvise a single word.
 
         :returns: A single improvised word.
         """
         raise NotImplementedError(self.__class__.__name__ + " has not implemented 'generate'.")
 
-    def generator(self) -> Iterator[Tuple[str,...]]:
+    def generator(self) -> Iterator[tuple[str,...]]:
         """ Create a generator that continually improvises words.
 
         :returns: An iterable that will indefinitely improvise words.

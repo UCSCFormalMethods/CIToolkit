@@ -3,7 +3,6 @@ for the Classic CI problem.
 """
 
 from __future__ import annotations
-from typing import Tuple
 
 import random
 
@@ -24,8 +23,8 @@ class ClassicCI(Improviser):
     :raises ValueError: If passed parameters are not of the correct type.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-    def __init__(self, hard_constraint: Spec, soft_constraint: Spec, length_bounds: Tuple[int, int], \
-                 epsilon: float, prob_bounds: Tuple[float, float]) -> None:
+    def __init__(self, hard_constraint: Spec, soft_constraint: Spec, length_bounds: tuple[int, int], \
+                 epsilon: float, prob_bounds: tuple[float, float]) -> None:
         # Checks that parameters are well formed
         if not isinstance(hard_constraint, Spec):
             raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
@@ -74,7 +73,7 @@ class ClassicCI(Improviser):
             raise InfeasibleImproviserError("Violation of condition epsilon/min_prob >= i_size. Instead, " \
                                             + str(epsilon/max_prob) + " >= " + str(i_size))
 
-    def improvise(self) -> Tuple[str,...]:
+    def improvise(self) -> tuple[str,...]:
         """ Improvise a single word.
 
         :returns: A single improvised word.

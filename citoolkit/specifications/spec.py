@@ -3,7 +3,7 @@ and the AbstractSpec class, which allows one to perform the union,
 intersection, and negation operations on specifications."""
 
 from __future__ import annotations
-from typing import Set, Tuple, Union
+from typing import Optional
 
 import copy
 from enum import Enum
@@ -14,11 +14,11 @@ class Spec(ABC):
 
     :param alphabet: The alphabet this specification is defined over.
     """
-    def __init__(self, alphabet: Set[str]) -> None:
+    def __init__(self, alphabet: set[str]) -> None:
         self.alphabet = frozenset(alphabet)
 
     @abstractmethod
-    def accepts(self, word: Tuple[str,...]) -> bool:
+    def accepts(self, word: tuple[str,...]) -> bool:
         """ Returns true if the specification accepts word, and false otherwise.
 
         :param word: The word which is checked for membership in the lanugage
@@ -36,7 +36,7 @@ class Spec(ABC):
         """
 
     @abstractmethod
-    def sample(self, min_length: int = None, max_length: int = None) -> Tuple[str,...]:
+    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
         """ Generate a word uniformly at random from this specification.
 
         :param min_length: An inclusive lower bound on word size to consider.
@@ -101,7 +101,7 @@ class AbstractSpec(Spec):
     :param operation: The operation to be performed on spec_1/spec_2.
     :raises ValueError: Raised if a parameter is not supported or incompatible.
     """
-    def __init__(self, spec_1: Spec, spec_2: Union[Spec,None], operation: SpecOp) -> None:
+    def __init__(self, spec_1: Spec, spec_2: Optional[Spec], operation: SpecOp) -> None:
         # Performs checks to make sure that AbstractSpec is being used
         # correctly.
 
@@ -127,19 +127,14 @@ class AbstractSpec(Spec):
         # copies if appropriate.
         super().__init__(alphabet)
 
-        self.spec_1 = copy.deepcopy(spec_1)
-
-        if spec_2 is not None:
-            self.spec_2 = copy.deepcopy(spec_2)
-        else:
-            self.spec_2 = None
-
+        self.spec_1 = spec_1
+        self.spec_2 = spec_2
         self.operation = operation
 
         # Initializes explicit form to None. It will be assigned when computed
         self.explicit_form = None
 
-    def accepts(self, word: Tuple[str,...]) -> bool:
+    def accepts(self, word: tuple[str,...]) -> bool:
         """ Returns true if the specification accepts word, and false otherwise.
 
         :param word: The word which is checked for membership in the lanugage
@@ -197,7 +192,7 @@ class AbstractSpec(Spec):
                                   + refined_spec_1.__class__.__name__ + "' and '" + refined_spec_2.__class__.__name__ \
                                   + " with operation " + str(self.operation) + " is not supported.")
 
-    def sample(self, min_length: int = None, max_length: int = None) -> Tuple[str,...]:
+    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
         """ Samples uniformly at random from the language of this specification.
         For an AbstractSpec, we first try to compute it's explicit form,
         in which case we can rely on the subclasses' sample method.

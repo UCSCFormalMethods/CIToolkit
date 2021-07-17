@@ -1,7 +1,7 @@
 """ Contains the Dfa specification class."""
 
 from __future__ import annotations
-from typing import List, Set, Dict, Tuple, Union
+from typing import Union
 
 import random
 
@@ -10,7 +10,7 @@ from citoolkit.specifications.spec import Spec
 class Dfa(Spec):
     """ The Dfa class encodes a Deterministic Finite Automata specification.
 
-    Note: All state variables in all parameters can be State objects or strings. 
+    Note: All state variables in all parameters can be State objects or strings.
     Any strings will be converted to State objects internally.
 
     :param alphabet: The alphabet this Dfa is defined over.
@@ -23,8 +23,8 @@ class Dfa(Spec):
     :raises ValueError: Raised if the Dfa parameters are flawed so that they do
         not make a well defined Dfa. I.e. the transition map is not complete.
     """
-    def __init__(self, alphabet: Set[str], states: Set[Union[str, State]], accepting_states: Set[Union[str, State]], \
-                 start_state: Union[str, State], transitions: Dict[Tuple[State, str], State]) -> None:
+    def __init__(self, alphabet: set[str], states: set[Union[str, State]], accepting_states: set[Union[str, State]], \
+                 start_state: Union[str, State], transitions: dict[tuple[State, str], State]) -> None:
         # Intializes super class and stores all parameters. Also ensures
         # all states are of the State class
         super().__init__(alphabet)
@@ -60,7 +60,7 @@ class Dfa(Spec):
     # DFA Property Functions
     ####################################################################################################
 
-    def accepts(self, word: Tuple[str,...]) -> bool:
+    def accepts(self, word: tuple[str,...]) -> bool:
         """ Returns true if this Dfa accepts word, and false otherwise.
 
         :param word: The candidate word that is checked for belonging in
@@ -126,7 +126,7 @@ class Dfa(Spec):
 
             return accepting_path_counts[self.start_state]
 
-    def sample(self, min_length: int = None, max_length: int = None) -> Tuple[str,...]:
+    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
         """ Samples a word uniformly at random from the language of
         this Dfa and returns the sampled word.
 
@@ -209,7 +209,7 @@ class Dfa(Spec):
                     # remaining count and check next symbol.
                     remaining_count -= destination_count
 
-    def compute_accepting_path_counts(self) -> Dict[State, int]:
+    def compute_accepting_path_counts(self) -> dict[State, int]:
         """ Computes the number of accepting paths from a state
         to an accepting state for all states.
 
@@ -249,7 +249,7 @@ class Dfa(Spec):
 
         return self._accepting_path_counts
 
-    def states_topological(self) -> List[State]:
+    def states_topological(self) -> list[State]:
         """ Returns a topologically sorted list of this DFA's states, excluding those
         that are unreachable or dead.
 
@@ -331,7 +331,7 @@ class Dfa(Spec):
 
         return topological_ordering
 
-    def states_partition(self) -> List[Set[State]]:
+    def states_partition(self) -> list[set[State]]:
         """ Uses Hopcroft's algorithm to partition all this Dfa's states
         into equivalence classes, excluding unreachable states.
 
@@ -553,7 +553,7 @@ class Dfa(Spec):
         return Dfa(alphabet, new_states, new_accepting_states, new_start_state, new_transitions)
 
     @staticmethod
-    def exact_length_dfa(alphabet: Set[str], length_requirement: int) -> Dfa:
+    def exact_length_dfa(alphabet: set[str], length_requirement: int) -> Dfa:
         """ Returns a Dfa that accepts all strings over alphabet with length exactly
         length_requirement.
 
@@ -584,7 +584,7 @@ class Dfa(Spec):
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
     @staticmethod
-    def min_length_dfa(alphabet: Set[str], length_requirement: int) -> Dfa:
+    def min_length_dfa(alphabet: set[str], length_requirement: int) -> Dfa:
         """ Returns a Dfa that accepts all strings over alphabet with length at least
         length_requirement.
 
@@ -615,7 +615,7 @@ class Dfa(Spec):
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
     @staticmethod
-    def max_length_dfa(alphabet: Set[str], length_requirement: int) -> Dfa:
+    def max_length_dfa(alphabet: set[str], length_requirement: int) -> Dfa:
         """ Returns a Dfa that accepts all strings over alphabet with length at most
         length_requirement.
 
@@ -665,7 +665,7 @@ class State:
             else:
                 raise ValueError("Only strings or State objects can be used to create another state.")
 
-        self.state_tuple: Tuple[str,...] = tuple(labels)
+        self.state_tuple: tuple[str,...] = tuple(labels)
 
     def __str__(self) -> str:
         """ Pretty prints the State as a Tuple.
