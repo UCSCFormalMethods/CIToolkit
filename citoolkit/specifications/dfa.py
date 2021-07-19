@@ -25,7 +25,7 @@ class Dfa(Spec):
     """
     def __init__(self, alphabet: set[str], states: set[Union[str, State]], accepting_states: set[Union[str, State]], \
                  start_state: Union[str, State], transitions: dict[tuple[State, str], State]) -> None:
-        # Intializes super class and stores all parameters. Also ensures
+        # Intializes super class and stores all attributes. Also ensures
         # all states are of the State class
         super().__init__(alphabet)
         self.states = frozenset(map(State, states))
@@ -57,7 +57,7 @@ class Dfa(Spec):
         self._bounded_dfas = {}
 
     ####################################################################################################
-    # DFA Property Functions
+    # Spec Functions
     ####################################################################################################
 
     def accepts(self, word: tuple[str,...]) -> bool:
@@ -69,19 +69,7 @@ class Dfa(Spec):
             this Dfa's alphabet.
         :returns: True if this Dfa accepts word and false otherwise.
         """
-        # Checks that word is composed only of symbols in the alphabet.
-        for symbol in word:
-            if symbol not in self.alphabet:
-                raise ValueError("'" + str(word) + "' contains the symbol '" + \
-                                 str(symbol) + "' which is not in the Dfa's alphabet.")
-
-        # Checks if word accepts
-        current_state = self.start_state
-
-        for symbol in word:
-            current_state = self.transitions[(current_state, symbol)]
-
-        return current_state in self.accepting_states
+        return self.get_terminal_state(word) in self.accepting_states
 
     def language_size(self, min_length: int = None, max_length: int = None) -> int:
         """ Returns the number of words accepted by this Dfa.
@@ -208,6 +196,34 @@ class Dfa(Spec):
                     # Do not transition to destination state. Update
                     # remaining count and check next symbol.
                     remaining_count -= destination_count
+
+    ####################################################################################################
+    # DFA Property Functions
+    ####################################################################################################
+
+    def get_terminal_state(self, word: tuple[str,...]) -> bool:
+        """ Returns the terminal state reached in this Dfa after consuming
+        all symbols in word.
+
+        :param word: The word to be run through this Dfa.
+        :raises ValueError: Raised if the word contains symbols not in
+            this Dfa's alphabet.
+        :returns: The terminal state reached in the Dfa after all symbols
+            have been consumed.
+        """
+        # Checks that word is composed only of symbols in the alphabet.
+        for symbol in word:
+            if symbol not in self.alphabet:
+                raise ValueError("'" + str(word) + "' contains the symbol '" + \
+                                 str(symbol) + "' which is not in the Dfa's alphabet.")
+
+        # Consumes all symbols in word and returns the final state reached.
+        current_state = self.start_state
+
+        for symbol in word:
+            current_state = self.transitions[(current_state, symbol)]
+
+        return current_state
 
     def compute_accepting_path_counts(self) -> dict[State, int]:
         """ Computes the number of accepting paths from a state

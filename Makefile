@@ -1,4 +1,4 @@
-RUN_PYTEST = poetry run pytest -v -ra
+RUN_PYTEST = poetry run pytest -v -ra --randomly-dont-reorganize
 
 .PHONY: enter_env make_env update test test_basic test_full test_basic_debug test_full_debug docs build clean
 

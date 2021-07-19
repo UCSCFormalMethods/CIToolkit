@@ -5,7 +5,6 @@ intersection, and negation operations on specifications."""
 from __future__ import annotations
 from typing import Optional
 
-import copy
 from enum import Enum
 from abc import ABC, abstractmethod
 
@@ -123,7 +122,7 @@ class AbstractSpec(Spec):
           and (not isinstance(spec_1, Spec) or spec_2 is not None):
             raise ValueError("The negation operation require one specification as input.")
 
-        # Intializes super class and stores all parameters, or their
+        # Intializes super class and stores all attributes, or their
         # copies if appropriate.
         super().__init__(alphabet)
 

@@ -1,6 +1,7 @@
 """ Contains the LabelFunc class, from which all labelling functions should inherit."""
 
 from __future__ import annotations
+from typing import Optional
 
 from abc import ABC, abstractmethod
 
@@ -16,7 +17,7 @@ class LabellingFunc(ABC):
         self.labels = frozenset(labels)
 
     @abstractmethod
-    def label_word(self, word: tuple[str, ...]) -> str:
+    def label_word(self, word: tuple[str, ...]) -> Optional[str]:
         """ Returns the appropriate label for a word. If the word
         has no label, returns None.
 
@@ -31,18 +32,4 @@ class LabellingFunc(ABC):
 
         :returns: A dictionary mapping each label to a Spec object that
             accepts only words labelled with that label by this labelling function.
-        """
-
-    @abstractmethod
-    @staticmethod
-    def recompose(decomp_labelling_func) -> LabellingFunc:
-        """ Takes a decomposed LabellingFunc and uses it to
-        reconstruct the associated LabellingFunc.
-
-        :param decomp_labelling_func: A dictionary mapping each label
-            to a Spec object that accepts only words labelled with that
-            label.
-        :returns: A labelling function that maps each word accepted
-            by one of the Specs in decomp_labelling_func to
-            the label that maps to that Spec.
         """
