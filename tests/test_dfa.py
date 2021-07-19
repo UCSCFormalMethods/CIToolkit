@@ -916,7 +916,7 @@ def test_dfa_max_length_constructor():
 
 @pytest.mark.slow
 def test_dfa_massive_1():
-    """ Tests that a massive union of relatively 
+    """ Tests that a massive union of relatively
     equally sized Dfas can be simplified correctly.
     """
     alphabet = {"0","1"}
@@ -928,7 +928,7 @@ def test_dfa_massive_1():
 
 @pytest.mark.slow
 def test_dfa_massive_2():
-    """ Tests that a massive union of a very small and 
+    """ Tests that a massive union of a very small and
     very large Dfa can be simplified correctly.
     """
     alphabet = {"0","1"}
