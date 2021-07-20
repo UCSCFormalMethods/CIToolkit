@@ -3,8 +3,6 @@
 from __future__ import annotations
 from typing import Optional
 
-import itertools
-
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.labellingfunctions.labelling_func import LabellingFunc
 
@@ -29,7 +27,9 @@ class LabellingDfa(LabellingFunc):
 
         # Perform checks to ensure a well formed Labelling Dfa.
         if not set(self.label_map.keys()) == self.dfa.accepting_states:
-            raise ValueError("All accepting states must have an associated label in label_map.")
+            for target_state in label_map.keys():
+                if target_state not in self.dfa.accepting_states:
+                    raise ValueError("The accepting state '" + target_state + "' is missing an associated label in label_map")
 
         for label in labels:
             if not isinstance(label, str):
@@ -42,7 +42,7 @@ class LabellingDfa(LabellingFunc):
     # LabellingFunc Functions
     ####################################################################################################
 
-    def label_word(self, word) -> Optional[str]:
+    def label(self, word) -> Optional[str]:
         """ Returns the appropriate label for a word. This label is
         found by first checking if the interior Dfa accepts a word.
         If it does, then the accepting state that the Dfa terminates
@@ -54,7 +54,7 @@ class LabellingDfa(LabellingFunc):
         :returns: The label associated with this word.
         """
         if self.dfa.accepts(word):
-            return self.label_map(self.dfa.get_terminal_state(word))
+            return self.label_map[self.dfa.get_terminal_state(word)]
 
         return None
 

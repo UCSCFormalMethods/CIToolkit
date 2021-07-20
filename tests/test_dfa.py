@@ -65,7 +65,7 @@ def test_dfa_not_complete():
     transitions[("3_Seen", "0")] = "3_Seen"
     transitions[("3_Seen", "1")] = "3_Seen"
 
-    # Create the DFA and check select strings against Dfa
+    # Create the DFA, which should raise an exception
     with pytest.raises(ValueError):
         Dfa(alphabet, states, accepting_states, start_state, transitions)
 
@@ -211,8 +211,55 @@ def test_dfa_mixed_states():
     assert not dfa.accepts(list("00000011000020011100020001"))
     assert dfa.accepts(list("0000001100002001110002000111"))
 
+def test_dfa_no_accepting():
+    """ Creates a simple Dfa and ensures that select
+    words are correctly accepted or rejected. Dfa is
+    constructed with string states.
+    """
+
+    # Create a DFA that only accepts strings that contain 3 "1"
+    # symbols in a row with no "2" inputs after them.
+    alphabet = {"0", "1", "2"}
+    states = {"0_Seen", "1_Seen", "2_Seen", "3_Seen"}
+    accepting_states = set()
+    start_state = "0_Seen"
+
+    # Initialize transitions map so that all transitions go
+    # to "0_Seen"
+    transitions = {}
+    for state in states:
+        for symbol in alphabet:
+            transitions[(state, symbol)] = "0_Seen"
+
+    # Complete transitions map.
+    transitions[("0_Seen", "1")] = "1_Seen"
+    transitions[("1_Seen", "1")] = "2_Seen"
+    transitions[("2_Seen", "1")] = "3_Seen"
+
+    transitions[("3_Seen", "0")] = "3_Seen"
+    transitions[("3_Seen", "1")] = "3_Seen"
+
+    # Create the DFA and check select strings against Dfa
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    assert not dfa.accepts([])
+    assert not dfa.accepts(list("0"))
+    assert not dfa.accepts(list("1"))
+    assert not dfa.accepts(list("2"))
+
+    assert not dfa.accepts(list("111"))
+    assert not dfa.accepts(list("1112"))
+
+    assert not dfa.accepts(list("000"))
+    assert not dfa.accepts(list("222"))
+
+    assert not dfa.accepts(list("01110"))
+
+    assert not dfa.accepts(list("00000011000020011100020001"))
+    assert not dfa.accepts(list("0000001100002001110002000111"))
+
 def test_dfa_topological_ordering():
-    """ Create an acyclic DFA and ensure that a correct 
+    """ Create an acyclic DFA and ensure that a correct
     topologically sorted list of states is computed.
     """
     # Create an acyclic DFA

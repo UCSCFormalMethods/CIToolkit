@@ -17,7 +17,7 @@ class LabellingFunc(ABC):
         self.labels = frozenset(labels)
 
     @abstractmethod
-    def label_word(self, word: tuple[str, ...]) -> Optional[str]:
+    def label(self, word: tuple[str, ...]) -> Optional[str]:
         """ Returns the appropriate label for a word. If the word
         has no label, returns None.
 
