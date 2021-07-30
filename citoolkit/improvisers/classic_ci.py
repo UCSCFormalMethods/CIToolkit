@@ -41,9 +41,14 @@ class ClassicCI(Improviser):
         if (len(prob_bounds) != 2) or (prob_bounds[0] < 0) or (prob_bounds[0] > prob_bounds[1]) or (prob_bounds[1] > 1):
             raise ValueError("The prob_bounds parameter should contain two floats, with 0 <= prob_bounds[0] <= prob_bounds[1] <= 1.")
 
-        # Initializes improviser values. In this case i refers to I\A instead of I
+        # Store all constructor parameters
+        self.hard_constraint = hard_constraint
+        self.soft_constraint = soft_constraint
         self.length_bounds = length_bounds
+        self.epsilon = epsilon
+        self.prob_bounds = prob_bounds
 
+        # Initializes improviser values. In this case i refers to I\A instead of I
         self.i_spec = hard_constraint - soft_constraint
         self.a_spec = hard_constraint & soft_constraint
 
@@ -62,15 +67,15 @@ class ClassicCI(Improviser):
             else:
                 inv_min_prob = 1/min_prob
 
-            raise InfeasibleImproviserError("Violation of condition 1/max_prob <= (i_size + a_size) <= 1/min_prob. Instead, " \
+            raise InfeasibleImproviserError("Violation of condition 1/prob_bounds[1] <= (i_size + a_size) <= 1/prob_bounds[0]. Instead, " \
                                             + str(1/max_prob) + " <= " + str(i_size + a_size) + " <= " + str(inv_min_prob))
 
         if (1 - epsilon)/max_prob > a_size:
-            raise InfeasibleImproviserError("Violation of condition (1 - epsilon)/max_prob <= a_size. Instead, " \
+            raise InfeasibleImproviserError("Violation of condition (1 - epsilon)/prob_bounds[1] <= a_size. Instead, " \
                                             + str((1 - epsilon)/max_prob) + " <= " + str(a_size))
 
         if min_prob != 0 and epsilon/min_prob < i_size:
-            raise InfeasibleImproviserError("Violation of condition epsilon/min_prob >= i_size. Instead, " \
+            raise InfeasibleImproviserError("Violation of condition epsilon/prob_bounds[0] >= i_size. Instead, " \
                                             + str(epsilon/max_prob) + " >= " + str(i_size))
 
     def improvise(self) -> tuple[str,...]:
@@ -78,9 +83,9 @@ class ClassicCI(Improviser):
 
         :returns: A single improvised word.
         """
-        spec_choice = random.random()
+        rand = random.random()
 
-        if spec_choice < self.i_prob:
+        if rand < self.i_prob:
             return self.i_spec.sample(*self.length_bounds)
         else:
             return self.a_spec.sample(*self.length_bounds)
