@@ -77,8 +77,8 @@ class LabelledCI(Improviser):
 
         for label in label_func.labels:
             base_label_class = hard_constraint & label_specs[label]
-            self.i_specs[label] = base_label_class
-            self.a_specs[label] = base_label_class - soft_constraint
+            self.i_specs[label] = base_label_class - soft_constraint
+            self.a_specs[label] = base_label_class & soft_constraint
 
         # Pick the conditional probabilities i_prob and a_prob for each label class.
         self.i_probs = {}
@@ -98,22 +98,26 @@ class LabelledCI(Improviser):
         min_label_prob, max_label_prob = label_prob_bounds
 
         # Compute number of label classes that are assigned max_label_prob.
-        num_max_prob_classes = int((1 - len(label_func.labels)*min_label_prob)/(max_label_prob - min_label_prob))
+        # Note: The enumerate below is 0 indexed unlike in paper.
+        if min_label_prob != max_label_prob:
+            num_max_prob_classes = int((1 - len(label_func.labels)*min_label_prob)/(max_label_prob - min_label_prob))
+        else:
+            num_max_prob_classes = len(label_func.labels)
 
         # Probability assigned to the class at index (num_max_prob_classes + 1) at sorted_label_classes.
         mid_class_prob = 1 - max_label_prob*num_max_prob_classes - min_label_prob*(len(label_func.labels) - num_max_prob_classes - 1)
 
         for label_num, label in enumerate(sorted(label_func.labels, key=lambda x: self.a_probs[x], reverse=True)):
-            if label_num <= num_max_prob_classes:
+            if label_num < num_max_prob_classes:
                 self.label_prob[label] = max_label_prob
-            elif label_num == num_max_prob_classes + 1:
+            elif label_num == num_max_prob_classes:
                 self.label_prob[label] = mid_class_prob
             else:
                 self.label_prob[label] = min_label_prob
 
         # Place improviser values in form used by improvise function
         self.sorted_labels = sorted(label_func.labels)
-        self.sorted_labels_costs = [self.label_prob[label] for label in self.sorted_labels]
+        self.sorted_labels_weights = [self.label_prob[label] for label in self.sorted_labels]
 
         # Checks that improviser is feasible. If not raise an InfeasibleImproviserError.
         if len(label_func.labels) < (1/max_label_prob) or (min_label_prob != 0 and len(label_func.labels) > (1/min_label_prob)):
@@ -135,9 +139,9 @@ class LabelledCI(Improviser):
                 else:
                     inv_min_word_prob = 1/min_word_prob
 
-                raise InfeasibleImproviserError("Violation for label '" + label + "' \
-                                                of condition 1/word_prob_bounds[" + label + "][1] <= label_class_size <= 1/word_prob_bounds[" + label + "][0]. \
-                                                Instead, " + str(1/max_word_prob) + " <= " + str(label_class_size) + " <= " + str(inv_min_word_prob))
+                raise InfeasibleImproviserError("Violation for label '" + label + "' " +
+                                                "of condition 1/word_prob_bounds[" + label + "][1] <= label_class_size <= 1/word_prob_bounds[" + label + "][0]." +
+                                                " Instead, " + str(1/max_word_prob) + " <= " + str(label_class_size) + " <= " + str(inv_min_word_prob))
 
         soft_constraint_prob = sum([self.label_prob[label]*self.a_probs[label] for label in label_func.labels])
 
@@ -149,7 +153,7 @@ class LabelledCI(Improviser):
 
         :returns: A single improvised word.
         """
-        selected_label = random.choices(population=self.sorted_labels, weights=self.sorted_labels_costs)
+        selected_label = random.choices(population=self.sorted_labels, weights=self.sorted_labels_weights, k=1)[0]
 
         rand = random.random()
 

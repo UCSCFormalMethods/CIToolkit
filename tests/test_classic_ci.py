@@ -41,11 +41,8 @@ def test_classic_ci_improvise():
     # Create improviser and map to count all words
     improviser = ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds)
 
-    improvisations = [tuple("01"), tuple("0101"), tuple("010101")]
-    improvisation_count = {}
-
-    for improvisation in improvisations:
-        improvisation_count[improvisation] = 0
+    improvisations = {tuple("01"), tuple("0101"), tuple("010101")}
+    improvisation_count = {improvisation:0 for improvisation in improvisations}
 
     # Sample a collection of words from the improviser.
     for _ in range(100000):
@@ -55,13 +52,17 @@ def test_classic_ci_improvise():
 
         improvisation_count[word] += 1
 
+    # Check that improviser probability distributions sum to
+    # one and are bounded appropriately.
+    assert improviser.i_prob + improviser.a_prob == pytest.approx(1)
+    assert prob_bounds[0] <= improviser.i_prob/improviser.i_spec.language_size(*length_bounds) <= prob_bounds[1]
+    assert prob_bounds[0] <= improviser.a_prob/improviser.a_spec.language_size(*length_bounds) <= prob_bounds[1]
+    assert improviser.a_prob >= 1 - epsilon
+
     # Check counts for improvisations
-    assert improvisation_count[tuple("01")]/100000 > 0.74
-    assert improvisation_count[tuple("01")]/100000 < 0.76
-    assert improvisation_count[tuple("0101")]/100000 > 0.115
-    assert improvisation_count[tuple("0101")]/100000 < 0.135
-    assert improvisation_count[tuple("010101")]/100000 > 0.115
-    assert improvisation_count[tuple("010101")]/100000 < 0.135
+    assert 0.74  < improvisation_count[tuple("01")]/100000 < 0.76
+    assert 0.115 < improvisation_count[tuple("0101")]/100000 < 0.135
+    assert 0.115 < improvisation_count[tuple("010101")]/100000 < 0.135
 
 def test_classic_ci_generator():
     """ Test a simple classic CI instance."""
@@ -112,12 +113,9 @@ def test_classic_ci_generator():
             break
 
     # Check counts for improvisations
-    assert improvisation_count[tuple("01")]/100000 > 0.74
-    assert improvisation_count[tuple("01")]/100000 < 0.76
-    assert improvisation_count[tuple("0101")]/100000 > 0.115
-    assert improvisation_count[tuple("0101")]/100000 < 0.135
-    assert improvisation_count[tuple("010101")]/100000 > 0.115
-    assert improvisation_count[tuple("010101")]/100000 < 0.135
+    assert 0.74  < improvisation_count[tuple("01")]/100000 < 0.76
+    assert 0.115 < improvisation_count[tuple("0101")]/100000 < 0.135
+    assert 0.115 < improvisation_count[tuple("010101")]/100000 < 0.135
 
 def test_classic_ci_infeasible():
     """ Tests that an infeasible classic CI instance raises an exception"""
@@ -145,8 +143,16 @@ def test_classic_ci_infeasible():
     # Fix length and probability bounds
     length_bounds = (0,6)
     prob_bounds = (0,.75)
-    epsilon = 0
+    epsilon = 0.5
 
-    # Attempt to solve for improviser, which should raise exception.
+    # Check that various parameter tweaks that render the
+    # problem infeasible are identified by the improviser.
+
     with pytest.raises(InfeasibleImproviserError):
-        ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds)
+        ClassicCI(hard_constraint, soft_constraint, length_bounds, 0, prob_bounds)
+
+    with pytest.raises(InfeasibleImproviserError):
+        ClassicCI(hard_constraint, soft_constraint, (3,6), epsilon, prob_bounds)
+
+    with pytest.raises(InfeasibleImproviserError):
+        ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, (.25,.25))
