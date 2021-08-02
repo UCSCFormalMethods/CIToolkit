@@ -19,12 +19,6 @@ test_basic: make_env
 test_full: make_env
 	$(RUN_PYTEST)
 
-test_basic_debug: make_env
-	$(RUN_PYTEST) --capture=no -m "not slow"
-
-test_full_debug: make_env
-	$(RUN_PYTEST) --capture=no
-
 docs: make_env
 	poetry run make -C docs clean
 	poetry run make -C docs api_doc

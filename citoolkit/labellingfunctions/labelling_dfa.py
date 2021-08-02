@@ -21,7 +21,7 @@ class LabellingDfa(LabellingFunc):
         # Initialize super class and stores attributes.
         self.dfa = dfa
         self.label_map = {State(state):label for (state,label) in label_map.items()}
-        labels = set(self.label_map.values())
+        labels = frozenset(self.label_map.values())
 
         super().__init__(self.dfa.alphabet, labels)
 

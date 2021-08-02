@@ -1,10 +1,14 @@
 """ Tests for the ClassicCI class"""
 
+import random
+
 import pytest
 
 from citoolkit.improvisers.improviser import InfeasibleImproviserError
 from citoolkit.improvisers.classic_ci import ClassicCI
 from citoolkit.specifications.dfa import Dfa
+
+from .test_dfa import generate_random_dfa
 
 ###################################################################################################
 # Basic Tests
@@ -145,9 +149,11 @@ def test_classic_ci_infeasible():
     prob_bounds = (0,.75)
     epsilon = 0.5
 
+    # Ensure that the base LCI problem is feasible
+    ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds)
+
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
-
     with pytest.raises(InfeasibleImproviserError):
         ClassicCI(hard_constraint, soft_constraint, length_bounds, 0, prob_bounds)
 
@@ -156,3 +162,86 @@ def test_classic_ci_infeasible():
 
     with pytest.raises(InfeasibleImproviserError):
         ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, (.25,.25))
+
+###################################################################################################
+# Randomized Tests
+###################################################################################################
+
+# Randomized tests default parameters
+_RANDOM_CI_TEST_NUM_ITERS = 1000
+_RANDOM_CI_TEST_NUM_SAMPLES = 25000
+_MIN_WORD_LENGTH_BOUND = 0
+_MAX_WORD_LENGTH_BOUND = 10
+
+@pytest.mark.slow
+def test_classic_ci_improvise_random():
+    """ Tests generating a random Classic CI improviser
+    instances and ensuring that they either are infeasible
+    or are feasible and improvise correctly. Primarily to
+    detect any crashes. Generates feasible hard constraint
+    all the time, feasible epsilon at least 50% of the time,
+    and feasible prob_bounds at least 50% of the time. This
+    results in roughly 25%-50% of the generated improvisers being
+    feasible.
+    """
+    for _ in range(_RANDOM_CI_TEST_NUM_ITERS):
+        # Generate random set of ClassicCI parameters.
+        min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
+        max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
+        length_bounds = (min_length, max_length)
+
+        hard_constraint = generate_random_dfa(max_states=8)
+
+        while hard_constraint.language_size(*length_bounds) == 0:
+            hard_constraint = generate_random_dfa()
+
+        soft_constraint = generate_random_dfa(max_states=8, alphabet=hard_constraint.alphabet)
+
+        if random.random() < 0.5:
+            epsilon = random.uniform(0,1)
+        else:
+            a_prob = (hard_constraint & soft_constraint).language_size(*length_bounds)/hard_constraint.language_size(*length_bounds)
+            epsilon = random.uniform(1-a_prob, 1)
+
+        if random.random() < 0.5:
+            min_prob = random.uniform(0,1)
+            max_prob = random.uniform(min_prob, 1)
+        else:
+            min_prob = random.uniform(0,1/hard_constraint.language_size(*length_bounds))
+            max_prob = random.uniform(1/hard_constraint.language_size(*length_bounds), 1)
+        prob_bounds = (min_prob, max_prob)
+
+        # Attempt to create the improviser. If it is a feasible problem,
+        # attempt to sample it and ensure that the output distribution
+        # is relatively correct.
+        try:
+            improviser = ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds)
+        except InfeasibleImproviserError:
+            continue
+
+        # Sample the improviser and ensure that the sampled distribution
+        # is correct.
+        improvisation_count = {}
+
+        for _ in range(_RANDOM_CI_TEST_NUM_SAMPLES):
+            word = improviser.improvise()
+
+            if word not in improvisation_count.keys():
+                improvisation_count[word] = 1
+            else:
+                improvisation_count[word] += 1
+
+        # Ensures the sampled distribution is relatively correct within a tolerance.
+        for word in improvisation_count:
+            assert hard_constraint.accepts(word)
+
+        a_count = 0
+
+        for word, count in improvisation_count.items():
+            if soft_constraint.accepts(word):
+                a_count += count
+
+        assert a_count/_RANDOM_CI_TEST_NUM_SAMPLES >= .99 - epsilon
+
+        for word, count in improvisation_count.items():
+            assert min_prob - 0.01 <= count/_RANDOM_CI_TEST_NUM_SAMPLES <= max_prob + 0.01

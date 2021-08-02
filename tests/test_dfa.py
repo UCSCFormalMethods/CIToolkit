@@ -990,26 +990,26 @@ def test_dfa_massive_2():
 ###################################################################################################
 
 # Randomized tests default parameters
-RANDOM_TEST_NUM_ITERS = 1000    # Default to 1000, but can set lower when writing new tests.
+_RANDOM_DFA_TEST_NUM_ITERS = 1000    # Default to 1000, but can set lower when writing new tests.
 
-RANDOM_DFA_MIN_STATES = 1
-RANDOM_DFA_MAX_STATES = 10
+_RANDOM_DFA_MIN_STATES = 1
+_RANDOM_DFA_MAX_STATES = 10
 
-RANDOM_DFA_MIN_SYMBOLS = 1
-RANDOM_DFA_MAX_SYMBOLS = 3
+_RANDOM_DFA_MIN_SYMBOLS = 1
+_RANDOM_DFA_MAX_SYMBOLS = 3
 
 @pytest.mark.slow
 def test_dfa_minimize_random():
-    """ For RANDOM_TEST_NUM_ITERS iterations, generates a random DFA with
-    the number of states between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
-    and the number of symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS.
+    """ For _RANDOM_DFA_TEST_NUM_ITERS iterations, generates a random DFA with
+    the number of states between _RANDOM_DFA_MIN_STATES and _RANDOM_DFA_MAX_STATES
+    and the number of symbols between _RANDOM_DFA_MIN_SYMBOLS and _RANDOM_DFA_MAX_SYMBOLS.
     Then minimizes the dfa and ensures that the minimizes version and
     the complete version either accept or reject all strings of length
     less than or equal to the number of states.
     """
-    for _ in range(RANDOM_TEST_NUM_ITERS):
+    for _ in range(_RANDOM_DFA_TEST_NUM_ITERS):
         # Generate random Dfa and calculate its minimized form.
-        orig_dfa = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
+        orig_dfa = generate_random_dfa()
         min_dfa = orig_dfa.minimize()
 
         # Check that construction is valid
@@ -1025,20 +1025,20 @@ def test_dfa_minimize_random():
 
 @pytest.mark.slow
 def test_dfa_union_random():
-    """ For RANDOM_TEST_NUM_ITERS iterations, generates 2 random DFAs with
-    the number of states between the square root of RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
+    """ For _RANDOM_DFA_TEST_NUM_ITERS iterations, generates 2 random DFAs with
+    the number of states between the square root of _RANDOM_DFA_MIN_STATES and _RANDOM_DFA_MAX_STATES
     (which puts the product construction size between these bounds) and the number of
-    symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS. Then takes the
+    symbols between _RANDOM_DFA_MIN_SYMBOLS and _RANDOM_DFA_MAX_SYMBOLS. Then takes the
     logical and explicit union of the 2 DFAs and ensures that they are consistent
     on all strings of length less than or equal to the number of states.
     """
-    for _ in range(RANDOM_TEST_NUM_ITERS):
-        min_states_sqrt = int(math.sqrt(RANDOM_DFA_MIN_STATES))
-        max_states_sqrt = int(math.sqrt(RANDOM_DFA_MAX_STATES))
+    for _ in range(_RANDOM_DFA_TEST_NUM_ITERS):
+        min_states_sqrt = int(math.sqrt(_RANDOM_DFA_MIN_STATES))
+        max_states_sqrt = int(math.sqrt(_RANDOM_DFA_MAX_STATES))
 
         # Generate random Dfa and calculate its minimized form.
-        dfa_1 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
-        dfa_2 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
+        dfa_1 = generate_random_dfa(min_states_sqrt, max_states_sqrt, _RANDOM_DFA_MIN_SYMBOLS, _RANDOM_DFA_MAX_SYMBOLS)
+        dfa_2 = generate_random_dfa(min_states_sqrt, max_states_sqrt, _RANDOM_DFA_MIN_SYMBOLS, _RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
 
         abstract_dfa = dfa_1 | dfa_2
         explicit_dfa = abstract_dfa.explicit()
@@ -1055,20 +1055,20 @@ def test_dfa_union_random():
 
 @pytest.mark.slow
 def test_dfa_intersection_random():
-    """ For RANDOM_TEST_NUM_ITERS iterations, generates 2 random DFAs with
-    the number of states between the square root of RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
+    """ For _RANDOM_DFA_TEST_NUM_ITERS iterations, generates 2 random DFAs with
+    the number of states between the square root of _RANDOM_DFA_MIN_STATES and _RANDOM_DFA_MAX_STATES
     (which puts the product construction size between these bounds) and the number of
-    symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS. Then takes the
+    symbols between _RANDOM_DFA_MIN_SYMBOLS and _RANDOM_DFA_MAX_SYMBOLS. Then takes the
     logical and explicit intersection of the 2 DFAs and ensures that they are consistent
     on all strings of length less than or equal to the number of states.
     """
-    for _ in range(RANDOM_TEST_NUM_ITERS):
-        min_states_sqrt = int(math.sqrt(RANDOM_DFA_MIN_STATES))
-        max_states_sqrt = int(math.sqrt(RANDOM_DFA_MAX_STATES))
+    for _ in range(_RANDOM_DFA_TEST_NUM_ITERS):
+        min_states_sqrt = int(math.sqrt(_RANDOM_DFA_MIN_STATES))
+        max_states_sqrt = int(math.sqrt(_RANDOM_DFA_MAX_STATES))
 
         # Generate random Dfa and calculate its minimized form.
-        dfa_1 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
-        dfa_2 = generate_random_dfa(min_states_sqrt, max_states_sqrt, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
+        dfa_1 = generate_random_dfa(min_states_sqrt, max_states_sqrt, _RANDOM_DFA_MIN_SYMBOLS, _RANDOM_DFA_MAX_SYMBOLS)
+        dfa_2 = generate_random_dfa(min_states_sqrt, max_states_sqrt, _RANDOM_DFA_MIN_SYMBOLS, _RANDOM_DFA_MAX_SYMBOLS, alphabet=dfa_1.alphabet)
 
         abstract_dfa = dfa_1 & dfa_2
         explicit_dfa = abstract_dfa.explicit()
@@ -1085,15 +1085,15 @@ def test_dfa_intersection_random():
 
 @pytest.mark.slow
 def test_dfa_negation_random():
-    """ For RANDOM_TEST_NUM_ITERS iterations, generates a random DFA with
-    the number of states between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
-    and the number of symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS.
+    """ For _RANDOM_DFA_TEST_NUM_ITERS iterations, generates a random DFA with
+    the number of states between _RANDOM_DFA_MIN_STATES and _RANDOM_DFA_MAX_STATES
+    and the number of symbols between _RANDOM_DFA_MIN_SYMBOLS and _RANDOM_DFA_MAX_SYMBOLS.
     Then takes the logical and explicit negation of that DFA and ensure they are
     consistent on all strings of length less than or equal to the number of states.
     """
-    for _ in range(RANDOM_TEST_NUM_ITERS):
+    for _ in range(_RANDOM_DFA_TEST_NUM_ITERS):
         # Generate random Dfa and calculate its minimized form.
-        dfa = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
+        dfa = generate_random_dfa()
         abstract_dfa = ~dfa
         explicit_dfa = abstract_dfa.explicit()
 
@@ -1109,18 +1109,18 @@ def test_dfa_negation_random():
 
 @pytest.mark.slow
 def test_dfa_language_size_random():
-    """ For RANDOM_TEST_NUM_ITERS iterations, generates a random DFA with
-    the number of states between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES
-    and the number of symbols between RANDOM_DFA_MIN_SYMBOLS and RANDOM_DFA_MAX_SYMBOLS.
+    """ For _RANDOM_DFA_TEST_NUM_ITERS iterations, generates a random DFA with
+    the number of states between _RANDOM_DFA_MIN_STATES and _RANDOM_DFA_MAX_STATES
+    and the number of symbols between _RANDOM_DFA_MIN_SYMBOLS and _RANDOM_DFA_MAX_SYMBOLS.
     Then intersects this with a Dfa that accepts all words with length less than max_length,
-    a random number between RANDOM_DFA_MIN_STATES and RANDOM_DFA_MAX_STATES. Enumerates
+    a random number between _RANDOM_DFA_MIN_STATES and _RANDOM_DFA_MAX_STATES. Enumerates
     all words in the alphabet of length at most max_length ensures the count is correct.
     """
-    for _ in range(RANDOM_TEST_NUM_ITERS):
+    for _ in range(_RANDOM_DFA_TEST_NUM_ITERS):
         # Pick a length and create a random dfa that acceps words up to that length
-        max_length = random.randint(RANDOM_DFA_MIN_STATES,RANDOM_DFA_MAX_STATES)
+        max_length = random.randint(_RANDOM_DFA_MIN_STATES,_RANDOM_DFA_MAX_STATES)
 
-        base_dfa = generate_random_dfa(RANDOM_DFA_MIN_STATES, RANDOM_DFA_MAX_STATES, RANDOM_DFA_MIN_SYMBOLS, RANDOM_DFA_MAX_SYMBOLS)
+        base_dfa = generate_random_dfa()
         length_limit_dfa = Dfa.max_length_dfa(base_dfa.alphabet, max_length)
 
         dfa = base_dfa & length_limit_dfa
@@ -1140,7 +1140,9 @@ def test_dfa_language_size_random():
 # Helper Functions
 ###################################################################################################
 
-def generate_random_dfa(min_states, max_states, min_symbols, max_symbols, alphabet = None):
+def generate_random_dfa(min_states=_RANDOM_DFA_MIN_STATES, max_states=_RANDOM_DFA_MAX_STATES, \
+                        min_symbols=_RANDOM_DFA_MIN_SYMBOLS, max_symbols=_RANDOM_DFA_MAX_SYMBOLS, \
+                        alphabet = None):
     """ Generates a random Dfa object.
 
     :param min_states: The minimum number of states this Dfa can have.
