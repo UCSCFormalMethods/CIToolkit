@@ -391,7 +391,7 @@ def test_max_entropy_labelled_ci_infeasible():
 
 # Randomized tests default parameters
 _RANDOM_LCI_TEST_NUM_ITERS = 1000
-_RANDOM_LCI_TEST_NUM_SAMPLES = 25000
+_RANDOM_LCI_TEST_NUM_SAMPLES = 50000
 _MIN_WORD_LENGTH_BOUND = 0
 _MAX_WORD_LENGTH_BOUND = 10
 
