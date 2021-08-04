@@ -36,7 +36,8 @@ class StaticCostDfa(CostFunc):
 
         for cost in costs:
             if not isinstance(cost, Rational):
-                print("'" + str(cost) + "' is not a rational number, and therefore cannot be a cost.")
+                raise ValueError("'" + str(cost) + "' is not of the type Rational, and therefore cannot be a cost." +\
+                                 " Consider constructing one using the 'fractions' library.")
 
         # Initialize cache values to None
         self.decomp_cost_func = None

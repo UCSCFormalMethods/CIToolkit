@@ -340,8 +340,8 @@ def test_labelled_dfa_mixed_states():
     assert labelling_dfa.label(list("0000000002220202020202020022001")) == "1-2_Label"
 
 def test_labelled_dfa_no_labels():
-    """ Creates a simple complete LabellingDfa with only string States
-    and ensures this does not raise an error.
+    """ Creates a simple complete LabellingDfa with no labels
+    and ensures this does not rais an error.
     """
 
     # Create a DFA that accepts all strings with at least one "1"

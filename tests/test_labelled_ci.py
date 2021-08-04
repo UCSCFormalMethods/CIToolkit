@@ -549,7 +549,7 @@ def test_labelled_ci_improvise_random():
 
 @pytest.mark.slow
 def test_max_entropy_labelled_ci_improvise_random():
-    """ Tests generating a mis of fully random and random
+    """ Tests generating a mix of fully random and random
     but feasible Max Entropy Labelled CI improviser instances
     and ensuring that they either are infeasible or are
     feasible and improvise correctly. Also ensures that a

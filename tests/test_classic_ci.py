@@ -198,25 +198,39 @@ def test_classic_ci_improvise_random():
         soft_constraint = generate_random_dfa(max_states=8, alphabet=hard_constraint.alphabet)
 
         if random.random() < 0.5:
+            # Pick a random epsilon.
+            epsilon_feasible = False
+
             epsilon = random.uniform(0,1)
         else:
+            # Pick a guaranteed feasible epsilon.
+            epsilon_feasible = True
+
             a_prob = (hard_constraint & soft_constraint).language_size(*length_bounds)/hard_constraint.language_size(*length_bounds)
             epsilon = random.uniform(1-a_prob, 1)
 
         if random.random() < 0.5:
+            # Pick random min and max probability bounds.
+            prob_feasible = False
+
             min_prob = random.uniform(0,1)
             max_prob = random.uniform(min_prob, 1)
         else:
+            # Pick guaranteed feasible min and max probability bounds.
+            prob_feasible = True
+
             min_prob = random.uniform(0,1/hard_constraint.language_size(*length_bounds))
             max_prob = random.uniform(1/hard_constraint.language_size(*length_bounds), 1)
         prob_bounds = (min_prob, max_prob)
 
         # Attempt to create the improviser. If it is a feasible problem,
         # attempt to sample it and ensure that the output distribution
-        # is relatively correct.
+        # is relatively correct. Also ensure that the improviser fails only
+        # if the problem is not guaranteed feasible.
         try:
             improviser = ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds)
         except InfeasibleImproviserError:
+            assert not (epsilon_feasible and prob_feasible)
             continue
 
         # Sample the improviser and ensure that the sampled distribution
