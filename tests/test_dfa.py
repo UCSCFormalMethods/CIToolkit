@@ -7,7 +7,7 @@ import itertools
 import pytest
 
 from citoolkit.specifications.spec import AbstractSpec
-from citoolkit.specifications.dfa import Dfa, State, DfaCycleError
+from citoolkit.specifications.dfa import Dfa, State, DfaCycleError, DfaEmptyLanguageError
 
 ###################################################################################################
 # Basic Tests
@@ -518,6 +518,16 @@ def test_dfa_sample_param():
 
         assert word_prob > .24
         assert word_prob < .26
+
+def test_dfa_sample_empty():
+    """ Tests that attempting to sample from a DFA who's
+    language is empty raises a value exception.
+    """
+    # Creates a Dfa with an empty language.
+    dfa = Dfa.exact_length_dfa({"0","1"}, 1) & Dfa.exact_length_dfa({"0", "1"}, 2)
+
+    with pytest.raises(DfaEmptyLanguageError):
+        dfa.sample()
 
 def test_dfa_minimize_no_reduction():
     """ Creates a simple Dfa that is already minimal,

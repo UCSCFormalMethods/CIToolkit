@@ -157,6 +157,10 @@ class Dfa(Spec):
             except DfaCycleError as exception:
                 raise DfaCycleError("Cannot sample uniformly from a Dfa with an infinite language.") from exception
 
+            # Check that this Dfa's language is non empty.
+            if accepting_path_counts[self.start_state] == 0:
+                raise DfaEmptyLanguageError("Cannot sample from a Dfa with an empty language.")
+
             # Initialize sample variables
             current_state = self.start_state
             state_count = accepting_path_counts[current_state]
@@ -721,4 +725,9 @@ class State:
 class DfaCycleError(Exception):
     """ An error raised when trying to compute language size for or sample
     from a Dfa that contains a cycle.
+    """
+
+class DfaEmptyLanguageError(Exception):
+    """ An error raised when a Dfa's language is empty, which prevents an
+    operation from being completed, e.g. sampling.
     """

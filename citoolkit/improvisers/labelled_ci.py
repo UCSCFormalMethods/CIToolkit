@@ -4,9 +4,6 @@ for the Labelled CI problem.
 
 from __future__ import annotations
 
-import warnings
-warnings.filterwarnings("ignore", module="np")
-
 import random
 import itertools
 import cvxpy as cp
