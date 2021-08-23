@@ -86,7 +86,7 @@ class LabelledCI(Improviser):
             self.i_specs[label] = base_label_class - soft_constraint
             self.a_specs[label] = base_label_class & soft_constraint
 
-        # Pick the conditional probabilities i_prob and a_prob for each label class.
+        # Pick the conditional probabilities, i_prob and a_prob, for each label class.
         self.i_probs = {}
         self.a_probs = {}
 

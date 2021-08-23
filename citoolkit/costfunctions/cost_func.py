@@ -14,12 +14,12 @@ class CostFunc(ABC):
 
     :param alphabet: The alphabet this specification is defined over.
     """
-    def __init__(self, alphabet: set[str], costs: set[Rational]) -> None:
+    def __init__(self, alphabet: set[str], costs: set[float]) -> None:
         self.alphabet = frozenset(alphabet)
         self.costs = frozenset(costs)
 
     @abstractmethod
-    def cost(self, word: tuple[str, ...]) -> Optional[Rational]:
+    def cost(self, word: tuple[str, ...]) -> Optional[float]:
         """ Returns the appropriate cost for a word. If the word
         has no cost, returns None.
 

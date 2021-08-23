@@ -1,8 +1,8 @@
 """ Tests for the StaticCostDfa class"""
 
-import pytest
-
 from fractions import Fraction
+
+import pytest
 
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.costfunctions.static_cost_dfa import StaticCostDfa

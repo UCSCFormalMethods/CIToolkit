@@ -16,6 +16,8 @@ class LabellingDfa(LabellingFunc):
     :param dfa: A Dfa specification, which accepts words that have a label.
     :param label_map: A dictionary mapping each accepting state in dfa to
         a label.
+    :raises ValueError: Raised if an accepting state in dfa is missing an
+        associated label in label_map.
     """
     def __init__(self, dfa: Dfa, label_map: dict[State, str]):
         # Initialize super class and stores attributes.
@@ -63,8 +65,7 @@ class LabellingDfa(LabellingFunc):
         function for each label.
 
         :returns: A dictionary mapping each label to a Dfa Spec that
-        accepts if and only if a word has that label.
-
+            accepts if and only if a word has that label.
         """
         # Check if value is cached.
         if self.decomp_labelling_func is not None:
