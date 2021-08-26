@@ -14,7 +14,7 @@ class StaticCostDfa(CostFunc):
     mapped to a cost. A word has a cost if it is accepted by the
     Dfa and the cost associated with that word is the one that is
     associated with that accepting state.
-    Note: Costs must be represented by rational numbers.
+    Note: Costs must be positive rational numbers.
 
     :param dfa: A Dfa specification, which accepts words that have a cost.
     :param cost_map: A dictionary mapping each accepting state in dfa to
@@ -33,11 +33,6 @@ class StaticCostDfa(CostFunc):
             for target_state in cost_map.keys():
                 if target_state not in self.dfa.accepting_states:
                     raise ValueError("The accepting state '" + target_state + "' is missing an associated cost in cost_map")
-
-        for cost in costs:
-            if not isinstance(cost, Rational):
-                raise ValueError("'" + str(cost) + "' is not of the type Rational, and therefore cannot be a cost." +\
-                                 " Consider constructing one using the 'fractions' library.")
 
         # Initialize cache values to None
         self.decomp_cost_func = None

@@ -39,8 +39,8 @@ class QuantitativeCI(Improviser):
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")
 
-        if epsilon < 0 or epsilon > 1:
-            raise ValueError("The epsilon parameter should be between 0 and 1 inclusive.")
+        if epsilon < 1:
+            raise ValueError("The epsilon parameter greater than or equal to 1.")
 
         if (len(prob_bounds) != 2) or (prob_bounds[0] < 0) or (prob_bounds[0] > prob_bounds[1]) or (prob_bounds[1] > 1):
             raise ValueError("The prob_bounds parameter should contain two floats, with 0 <= prob_bounds[0] <= prob_bounds[1] <= 1.")
@@ -64,7 +64,10 @@ class QuantitativeCI(Improviser):
         i_size = sum([self.i_specs[cost].language_size(*length_bounds) for cost in cost_func.costs])
 
         # Compute the number of words that can be assigned max probability.
-        num_max_prob_words = (1 - prob_bounds[0]*i_size)/(prob_bounds[1] - prob_bounds[0])
+        if prob_bounds[0] == prob_bounds[1]:
+            num_max_prob_words = i_size
+        else:
+            num_max_prob_words = (1 - prob_bounds[0]*i_size)/(prob_bounds[1] - prob_bounds[0])
 
         # Assign probabilities to each cost class using greedy construction.
         # Sort costs in increasing order and assign default minimal probability to each cost class.
@@ -74,20 +77,20 @@ class QuantitativeCI(Improviser):
         self.cost_probs = {cost:prob_bounds[0]*self.i_specs[cost].language_size(*length_bounds) for cost in cost_func.costs}
 
         for cost in self.sorted_costs:
-            i_size = self.i_specs[cost].language_size(*length_bounds)
+            cost_class_size = self.i_specs[cost].language_size(*length_bounds)
 
             # Check if assigning maximum probability to this cost class would put us over budget.
             # If so, assign as much as possible and break.
-            if words_assigned + i_size >= num_max_prob_words:
-                self.cost_probs[cost] = prob_bounds[1]*(num_max_prob_words - words_assigned) + prob_bounds[0]*(words_assigned + i_size - num_max_prob_words)
+            if words_assigned + cost_class_size >= num_max_prob_words:
+                self.cost_probs[cost] = prob_bounds[1]*(num_max_prob_words - words_assigned) + prob_bounds[0]*(words_assigned + cost_class_size - num_max_prob_words)
                 break
 
             # Otherwise, assign max probability to this cost class and continue.
-            self.cost_probs[cost] = prob_bounds[1] * i_size
-            words_assigned += i_size
+            self.cost_probs[cost] = prob_bounds[1] * cost_class_size
+            words_assigned += cost_class_size
 
         # Place improviser values in form used by improvise function and computes expected cost
-        self.sorted_costs_weights = [self.cost_probs[cost] for cost in cost_func.costs]
+        self.sorted_costs_weights = [self.cost_probs[cost] for cost in sorted(cost_func.costs)]
 
         self.expected_cost = sum(cost*self.cost_probs[cost] for cost in cost_func.costs)
 
@@ -101,8 +104,15 @@ class QuantitativeCI(Improviser):
             raise InfeasibleImproviserError("Violation of condition 1/prob_bounds[1] <= i_size <= 1/prob_bounds[0]. Instead, " \
                                             + str(1/prob_bounds[1]) + " <= " + str(i_size)  + " <= " + str(inv_min_prob))
 
-        if self.expected_cost > min(cost_func.costs) * epsilon:
-            raise InfeasibleImproviserError("Greedy construction does not satisfy cost constraint, meaning no improviser can.")
+        self.min_cost = None
+
+        for cost in cost_func.costs:
+            if self.i_specs[cost].language_size(*length_bounds) > 0:
+                self.min_cost = cost
+                break
+
+        if self.expected_cost > self.min_cost * epsilon:
+            raise InfeasibleImproviserError("Greedy construction does not satisfy cost constraint, meaning no improviser can. Minimum cost achieved was " + str(self.expected_cost) + ".")
 
     def improvise(self) -> tuple[str,...]:
         """ Improvise a single word.

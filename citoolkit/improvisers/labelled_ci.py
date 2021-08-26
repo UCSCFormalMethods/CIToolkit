@@ -4,6 +4,7 @@ for the Labelled CI problem.
 
 from __future__ import annotations
 
+import warnings
 import random
 import itertools
 import cvxpy as cp
@@ -153,7 +154,7 @@ class LabelledCI(Improviser):
         soft_constraint_prob = sum([self.label_prob[label]*self.a_probs[label] for label in label_func.labels])
 
         if 1 - epsilon > soft_constraint_prob:
-            raise InfeasibleImproviserError("Greedy construction does not satisfy soft constraint, meaning no improviser can.")
+            raise InfeasibleImproviserError("Greedy construction does not satisfy soft constraint, meaning no improviser can. Maximum soft constraint probability was " + str(soft_constraint_prob) + ".")
 
     def improvise(self) -> tuple[str,...]:
         """ Improvise a single word.
@@ -280,7 +281,7 @@ class MaxEntropyLabelledCI(Improviser):
         result = prob.solve()
 
         # Check if problem is feasible. If not, raise an InfeasibleImproviserError.
-        if prob.status == "infeasible":
+        if "infeasible" in prob.status:
             raise InfeasibleImproviserError()
 
         if prob.status != "optimal":
@@ -290,6 +291,9 @@ class MaxEntropyLabelledCI(Improviser):
         self.sorted_label_class_specs = list(itertools.chain(*[[self.i_specs[label], self.a_specs[label]] for label in sorted_labels]))
         self.sorted_label_class_weights = list(x.value)
         self.entropy = -result
+        self.status = prob.status
+
+        print(sum([x[i] if i % 2 == 0 else 0 for i in range(omega)]))
 
     def improvise(self) -> tuple[str, ...]:
         """ Improvise a single word.

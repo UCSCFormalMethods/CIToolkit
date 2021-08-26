@@ -18,6 +18,13 @@ class CostFunc(ABC):
         self.alphabet = frozenset(alphabet)
         self.costs = frozenset(costs)
 
+        for cost in costs:
+            if not isinstance(cost, Rational):
+                raise ValueError("'" + str(cost) + "' is not of the type Rational, and therefore cannot be a cost." +\
+                                 " Consider constructing one using the 'fractions' library.")
+            if cost <= 0:
+                raise ValueError("'" + str(cost) + "' is not positive, and therefore cannot be a cost.")
+
     @abstractmethod
     def cost(self, word: tuple[str, ...]) -> Optional[float]:
         """ Returns the appropriate cost for a word. If the word

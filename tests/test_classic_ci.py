@@ -1,6 +1,7 @@
 """ Tests for the ClassicCI class"""
 
 import random
+from fractions import Fraction
 
 import pytest
 
@@ -206,8 +207,8 @@ def test_classic_ci_improvise_random():
             # Pick a guaranteed feasible epsilon.
             epsilon_feasible = True
 
-            a_prob = (hard_constraint & soft_constraint).language_size(*length_bounds)/hard_constraint.language_size(*length_bounds)
-            epsilon = random.uniform(1-a_prob, 1)
+            a_prob = Fraction((hard_constraint & soft_constraint).language_size(*length_bounds), hard_constraint.language_size(*length_bounds))
+            epsilon =  min(1, Fraction(1.1) * (1 - a_prob))
 
         if random.random() < 0.5:
             # Pick random min and max probability bounds.
@@ -219,8 +220,9 @@ def test_classic_ci_improvise_random():
             # Pick guaranteed feasible min and max probability bounds.
             prob_feasible = True
 
-            min_prob = random.uniform(0,1/hard_constraint.language_size(*length_bounds))
-            max_prob = random.uniform(1/hard_constraint.language_size(*length_bounds), 1)
+            min_prob = Fraction(1, hard_constraint.language_size(*length_bounds) * random.randint(1, 10))
+            max_prob = min(1, Fraction(random.randint(1, 10), hard_constraint.language_size(*length_bounds)))
+
         prob_bounds = (min_prob, max_prob)
 
         # Attempt to create the improviser. If it is a feasible problem,

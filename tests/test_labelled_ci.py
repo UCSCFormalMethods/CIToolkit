@@ -1,6 +1,7 @@
 """ Tests for the LabelledCI class"""
 
 import random
+from fractions import Fraction
 
 import pytest
 
@@ -391,24 +392,23 @@ def test_max_entropy_labelled_ci_infeasible():
 
 # Randomized tests default parameters
 _RANDOM_LCI_TEST_NUM_ITERS = 1000
-_RANDOM_LCI_TEST_NUM_SAMPLES = 50000
+_RANDOM_LCI_TEST_NUM_SAMPLES = 100000
 _MIN_WORD_LENGTH_BOUND = 0
 _MAX_WORD_LENGTH_BOUND = 10
 
 @pytest.mark.slow
 def test_labelled_ci_improvise_random():
-    """ Tests generating a mis of fully random and random
+    """ Tests generating a mix of fully random and random
     but feasible Labelled CI improviser instances and
     ensuring that they either are infeasible or are
     feasible and improvise correctly.
     """
     for _ in range(_RANDOM_LCI_TEST_NUM_ITERS):
+        print()
         # Generate random set of LabelledCI parameters. 50% chance to
-        # generate an instance that is guaranteed satisfiable.
+        # generate an instance where each parameter is individually feasible.
         if random.random() < 0.5:
             # Generate completely random LCI instance.
-            guaranteed_feasible = False
-
             min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
             max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
             length_bounds = (min_length, max_length)
@@ -438,8 +438,6 @@ def test_labelled_ci_improvise_random():
             word_prob_bounds = {label:(word_min_prob[label], word_max_prob[label]) for label in label_func.labels}
         else:
             # Generate a random LCI instance while making each of the parameters individually feasible.
-            guaranteed_feasible = True
-
             min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
             max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
             length_bounds = (min_length, max_length)
@@ -488,14 +486,20 @@ def test_labelled_ci_improvise_random():
             a_base_spec = hard_constraint & soft_constraint
             a_words_total = sum([(a_base_spec & label_spec).language_size(*length_bounds) for (label, label_spec) in label_func.decompose().items()])
 
-            epsilon = random.uniform(1-(a_words_total/words_total), 1)
+            print("I Sizes: " + str(label_class_sizes))
+            print("A Sizes: " + str({label:(a_base_spec & label_spec).language_size(*length_bounds) for (label, label_spec) in label_func.decompose().items()}))
+            print("Label Set: " + str(label_set))
+            print("Label Map: " + str(label_map))
+            print("Label Func Labels: " + str(label_func.labels))
 
-            label_min_prob = random.uniform(0,1/len(label_func.labels))
-            label_max_prob = random.uniform(1/len(label_func.labels), 1)
+            epsilon = min(1, Fraction(1.1) * (1 - Fraction(a_words_total, words_total)))
+
+            label_min_prob = Fraction(1, len(label_func.labels) * random.randint(1, 10))
+            label_max_prob = min(1, Fraction(random.randint(1, 10) , len(label_func.labels)))
             label_prob_bounds = (label_min_prob, label_max_prob)
 
-            word_min_prob = {label:random.uniform(0,1/label_class_sizes[label]) for label in label_func.labels}
-            word_max_prob = {label:random.uniform(1/label_class_sizes[label], 1) for label in label_func.labels}
+            word_min_prob = {label:Fraction(1, label_class_sizes[label] * random.randint(1, 10)) for label in label_func.labels}
+            word_max_prob = {label:min(1, Fraction(random.randint(1, 10) , label_class_sizes[label])) for label in label_func.labels}
             word_prob_bounds = {label:(word_min_prob[label], word_max_prob[label]) for label in label_func.labels}
 
         # Attempt to create the improviser. If it is a feasible problem,
@@ -504,7 +508,6 @@ def test_labelled_ci_improvise_random():
         try:
             improviser = LabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds, word_prob_bounds)
         except InfeasibleImproviserError:
-            assert not guaranteed_feasible
             continue
 
         # Sample the improviser and ensure that the sampled distribution
@@ -545,7 +548,7 @@ def test_labelled_ci_improvise_random():
 
             for word in label_words:
                 count = improvisation_count[word]
-                assert word_prob_bounds[label][0] - 0.05 <= count/label_count <= word_prob_bounds[label][1] + 0.05
+                assert word_prob_bounds[label][0] - 0.1 <= count/label_count <= word_prob_bounds[label][1] + 0.1
 
 @pytest.mark.slow
 def test_max_entropy_labelled_ci_improvise_random():
@@ -558,11 +561,9 @@ def test_max_entropy_labelled_ci_improvise_random():
     """
     for _ in range(_RANDOM_LCI_TEST_NUM_ITERS):
         # Generate random set of MaxEntropyLabelledCI parameters. 50% chance to
-        # generate an instance that is guaranteed satisfiable.
+        # generate an instance where each parameter is individually feasible.
         if random.random() < 0.5:
             # Generate completely random MELCI instance.
-            guaranteed_feasible = False
-
             min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
             max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
             length_bounds = (min_length, max_length)
@@ -589,8 +590,6 @@ def test_max_entropy_labelled_ci_improvise_random():
 
         else:
             # Generate a random LCI instance while making each of the parameters individually feasible.
-            guaranteed_feasible = True
-
             min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
             max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
             length_bounds = (min_length, max_length)
@@ -631,10 +630,10 @@ def test_max_entropy_labelled_ci_improvise_random():
             a_base_spec = hard_constraint & soft_constraint
             a_words_total = sum([(a_base_spec & label_spec).language_size(*length_bounds) for (label, label_spec) in label_func.decompose().items()])
 
-            epsilon = random.uniform(1-(a_words_total/words_total), 1)
+            epsilon = min(1, 1.1 * (1 - Fraction(a_words_total, words_total)))
 
-            label_min_prob = random.uniform(0,1/len(label_func.labels))
-            label_max_prob = random.uniform(1/len(label_func.labels), 1)
+            label_min_prob = Fraction(1, len(label_func.labels) * random.randint(1, 10))
+            label_max_prob = min(1, Fraction(random.randint(1, 10) , len(label_func.labels)))
             label_prob_bounds = (label_min_prob, label_max_prob)
 
         # Attempt to create the MELCI improviser. Then check that
@@ -644,7 +643,6 @@ def test_max_entropy_labelled_ci_improvise_random():
         try:
             improviser = MaxEntropyLabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds)
         except InfeasibleImproviserError:
-            assert not guaranteed_feasible
             melci_feasible = False
         else:
             melci_feasible = True
@@ -653,7 +651,6 @@ def test_max_entropy_labelled_ci_improvise_random():
             trivial_word_bounds = {label:(0,1) for label in label_func.labels}
             LabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds, trivial_word_bounds)
         except InfeasibleImproviserError:
-            assert not guaranteed_feasible
             lci_feasible = False
         else:
             lci_feasible = True
