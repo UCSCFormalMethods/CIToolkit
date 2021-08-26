@@ -171,7 +171,7 @@ class LabelledCI(Improviser):
             return self.a_specs[selected_label].sample(*self.length_bounds)
 
 class MaxEntropyLabelledCI(Improviser):
-    """ An improviser for the Labelled Control Improvisation problem.
+    """ An improviser for the Maximum Entropy Labelled Control Improvisation problem.
 
     :param hard_constraint: A specification that must accept all improvisations
     :param soft_constraint: A specification that must accept improvisations with
@@ -292,8 +292,6 @@ class MaxEntropyLabelledCI(Improviser):
         self.sorted_label_class_weights = list(x.value)
         self.entropy = -result
         self.status = prob.status
-
-        print(sum([x[i] if i % 2 == 0 else 0 for i in range(omega)]))
 
     def improvise(self) -> tuple[str, ...]:
         """ Improvise a single word.

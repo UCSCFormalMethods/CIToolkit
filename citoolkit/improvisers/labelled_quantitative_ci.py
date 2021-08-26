@@ -4,7 +4,10 @@ for the Labelled Quantitative CI problem.
 
 from __future__ import annotations
 
+import warnings
 import random
+import cvxpy as cp
+import numpy as np
 
 from citoolkit.improvisers.improviser import Improviser, InfeasibleImproviserError
 from citoolkit.specifications.spec import Spec
@@ -254,3 +257,132 @@ class LabelledQuantitativeCI(Improviser):
             selected_cost = random.choices(population=self.sorted_costs, weights=self.sorted_cost_weights, k=1)[0]
 
             return self.cost_class_specs[selected_cost].sample(*self.length_bounds)
+
+class MaxEntropyLabelledQuantitativeCI(Improviser):
+    """ An improviser for the Maximum Entropy Labelled Quantitative Control Improvisation problem.
+
+    :param hard_constraint: A specification that must accept all improvisations.
+    :param cost_func: A cost function that must associate a rational cost
+        with all improvisations.
+    :param label_func: A labelling function that must associate a label with all
+        improvisations.
+    :param length_bounds: A tuple containing lower and upper bounds on the length
+        of a generated word.
+    :param cost_bound: The maximum allowed expected cost for our improviser.
+    :param label_prob_bounds: A tuple containing lower and upper bounds on the
+        marginal probability with which we can generate a word with a particular label.
+    :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
+    """
+    def __init__(self, hard_constraint: Spec, cost_func: CostFunc, label_func: LabellingFunc, \
+                 length_bounds: tuple[int, int], cost_bound: float, \
+                 label_prob_bounds: tuple[float, float]) -> None:
+        # Checks that parameters are well formed
+        if not isinstance(hard_constraint, Spec):
+            raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
+
+        if not isinstance(cost_func, CostFunc):
+            raise ValueError("The cost_func parameter must be a member of the CostFunc class.")
+
+        if not isinstance(label_func, LabellingFunc):
+            raise ValueError("The label_func parameter must be a member of the LabellingFunc class.")
+
+        if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
+            raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")
+
+        if cost_bound < 0:
+            raise ValueError("The cost_bound parameter must be a number >= 0.")
+
+        if (len(label_prob_bounds) != 2) or (label_prob_bounds[0] < 0) or (label_prob_bounds[0] > label_prob_bounds[1]) or (label_prob_bounds[1] > 1):
+            raise ValueError("The label_prob_bounds parameter should contain two floats, with 0 <= label_prob_bounds[0] <= label_prob_bounds[1] <= 1.")
+
+        # Store all constructor parameters
+        self.hard_constraint = hard_constraint
+        self.cost_func = cost_func
+        self.label_func = label_func
+        self.length_bounds = length_bounds
+        self.cost_bound = cost_bound
+        self.label_prob_bounds = label_prob_bounds
+
+        # Compute cost class specs and their sizes.
+        label_specs = label_func.decompose()
+        cost_specs = cost_func.decompose()
+
+        cost_class_specs = {}
+        cost_class_sizes = {}
+
+        for label in label_func.labels:
+            label_class_spec = hard_constraint & label_specs[label]
+
+            for cost in cost_func.costs:
+                cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
+                cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
+
+        # Create optimization variables and constants. Assuming n labels and m costs, the variable at position
+        # x*m + y represents the probability allocated to words with label x and cost y.
+        x = cp.Variable(len(label_func.labels)*len(cost_func.costs), nonneg=True)
+
+        cost_class_sizes_vector = [max(1, cost_class_sizes[(label, cost)]) for label in sorted(label_func.labels) for cost in sorted(cost_func.costs)]
+
+        entropy_equation = - cp.sum(cp.entr(x) + cp.multiply(x, np.log(cost_class_sizes_vector)))
+
+        objective = cp.Minimize(entropy_equation)
+
+        # Create constraints list
+        constraints = []
+
+        # (C1) Satisfaction of the cost bound
+        expected_cost_equation = cp.sum(cp.multiply(x, sorted(cost_func.costs)*len(label_func.labels)))
+        constraints.append(expected_cost_equation <= cost_bound)
+
+        # (C2) - (C3) Randomness over Labels lower and upper bound
+        for label_iter, label in enumerate(sorted(label_func.labels)):
+            label_prob_equation = cp.sum(cp.multiply(x, np.concatenate([([1]*len(cost_func.costs) if i == label_iter else [0]*len(cost_func.costs)) for i in range(len(label_func.labels))])))
+
+            constraints.append(label_prob_equation >= self.label_prob_bounds[0])
+            constraints.append(label_prob_equation <= self.label_prob_bounds[1])
+
+        # (C4) Non negative probability
+        constraints.append(x >= 0)
+
+        # (C5) Probability distribution sums to 1
+        constraints.append(cp.sum(x) == 1)
+
+        # (C6) Empty Cost Classes have 0 probability
+        for label_iter, label in enumerate(sorted(label_func.labels)):
+            for cost_iter, cost in enumerate(sorted(cost_func.costs)):
+                if cost_class_sizes[(label, cost)] == 0:
+                    empty_cost_class_vector = [0]*(len(label_func.labels)*len(cost_func.costs))
+                    empty_cost_class_vector[label_iter*len(cost_func.costs) + cost_iter] = 1
+                    constraints.append(cp.multiply(x, empty_cost_class_vector) == 0)
+
+        # Create and solve problem
+        prob = cp.Problem(objective, constraints)
+        result = prob.solve()
+
+        # Check if problem is feasible. If not, raise an InfeasibleImproviserError.
+        if "infeasible" in prob.status:
+            raise InfeasibleImproviserError()
+
+        if prob.status != "optimal":
+            warnings.warn("Got unexpected value '" + prob.status + "' as optimizer output.")
+
+        # Store improvisation variables
+        self.sorted_cost_class_specs = [cost_class_specs[(label, cost)] for label in sorted(label_func.labels) for cost in sorted(cost_func.costs)]
+        self.sorted_cost_class_weights = list(x.value)
+        self.entropy = -1*result
+        self.status = prob.status
+
+        # Set all sorted_cost_class_weights that have empty cost classes to absolutely zero instead of very near 0.
+        for label_iter, label in enumerate(sorted(label_func.labels)):
+            for cost_iter, cost in enumerate(sorted(cost_func.costs)):
+                if cost_class_sizes[(label, cost)] == 0:
+                    self.sorted_cost_class_weights[label_iter*len(cost_func.costs) + cost_iter] = 0
+
+    def improvise(self) -> tuple[str,...]:
+        """ Improvise a single word.
+
+        :returns: A single improvised word.
+        """
+        selected_cost_class = random.choices(population=self.sorted_cost_class_specs, weights=self.sorted_cost_class_weights, k=1)[0]
+
+        return selected_cost_class.sample(*self.length_bounds)

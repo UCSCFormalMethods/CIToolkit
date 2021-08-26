@@ -11,7 +11,7 @@ class Improviser:
 
         :returns: A single improvised word.
         """
-        raise NotImplementedError(self.__class__.__name__ + " has not implemented 'generate'.")
+        raise NotImplementedError(self.__class__.__name__ + " has not implemented 'improvise'.")
 
     def generator(self) -> Iterator[tuple[str,...]]:
         """ Create a generator that continually improvises words.
