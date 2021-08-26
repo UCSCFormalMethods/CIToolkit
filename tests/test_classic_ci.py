@@ -57,13 +57,6 @@ def test_classic_ci_improvise():
 
         improvisation_count[word] += 1
 
-    # Check that improviser probability distributions sum to
-    # one and are bounded appropriately.
-    assert improviser.i_prob + improviser.a_prob == pytest.approx(1)
-    assert prob_bounds[0] <= improviser.i_prob/improviser.i_spec.language_size(*length_bounds) <= prob_bounds[1]
-    assert prob_bounds[0] <= improviser.a_prob/improviser.a_spec.language_size(*length_bounds) <= prob_bounds[1]
-    assert improviser.a_prob >= 1 - epsilon
-
     # Check counts for improvisations
     assert 0.74  < improvisation_count[tuple("01")]/100000 < 0.76
     assert 0.115 < improvisation_count[tuple("0101")]/100000 < 0.135

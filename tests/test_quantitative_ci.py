@@ -66,15 +66,14 @@ def test_quantitative_ci_improvise():
     # Layout remaining Quantitative CI parameters.
     length_bounds = (1,5)
     prob_bounds = [Fraction(1,50), Fraction(1,11)]
-    min_cost = 1
-    epsilon = 2
+    cost_bound = 2
 
     # Create Quantitative CI Improviser.
-    improviser = QuantitativeCI(hard_constraint, cost_function, length_bounds, epsilon, prob_bounds)
+    improviser = QuantitativeCI(hard_constraint, cost_function, length_bounds, cost_bound, prob_bounds)
 
     # Check that the calculated probabilities and expected cost of the improviser are valid.
     assert sum(improviser.sorted_costs_weights) == pytest.approx(1)
-    assert improviser.expected_cost <= min_cost * epsilon
+    assert improviser.expected_cost <= cost_bound
 
     # Sample the improviser and check that all improvisations are valid and that the probabilities and cost are reasonable.
     improvisations = {tuple("00"), tuple("000"), tuple("010"), tuple("0000"), tuple("0010"), tuple("0100"), tuple("0110"), \
@@ -96,7 +95,7 @@ def test_quantitative_ci_improvise():
     for word in improvisations:
         assert prob_bounds[0]-.01 <= improvisation_count[word]/100000 <= prob_bounds[1]+.01
 
-    assert accumulated_cost/100000 <= min_cost * epsilon
+    assert accumulated_cost/100000 <= cost_bound
 
 def test_quantitative_ci_infeasible():
     """ Test that different infeasible Quantitative CI
@@ -150,10 +149,10 @@ def test_quantitative_ci_infeasible():
     # Layout remaining Quantitative CI parameters.
     length_bounds = (1,5)
     prob_bounds = [Fraction(1,50), Fraction(1,11)]
-    epsilon = 2
+    cost_bound = 2
 
     # Ensure that the base QCI problem is feasible
-    QuantitativeCI(hard_constraint, cost_function, length_bounds, epsilon, prob_bounds)
+    QuantitativeCI(hard_constraint, cost_function, length_bounds, cost_bound, prob_bounds)
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
@@ -161,7 +160,7 @@ def test_quantitative_ci_infeasible():
         QuantitativeCI(hard_constraint, cost_function, length_bounds, 1, prob_bounds)
 
     with pytest.raises(InfeasibleImproviserError):
-        QuantitativeCI(hard_constraint, cost_function, length_bounds, epsilon, [Fraction(1,15), Fraction(1,15)])
+        QuantitativeCI(hard_constraint, cost_function, length_bounds, cost_bound, [Fraction(1,15), Fraction(1,15)])
 
 ###################################################################################################
 # Randomized Tests
@@ -204,7 +203,7 @@ def test_quantitative_ci_improvise_random():
 
             cost_func = StaticCostDfa(cf_dfa, cost_map)
 
-            epsilon = random.uniform(1,_MAX_COST)
+            cost_bound = random.uniform(1,_MAX_COST)
 
             min_prob = random.uniform(0,1)
             max_prob = random.uniform(min_prob, 1)
@@ -237,7 +236,7 @@ def test_quantitative_ci_improvise_random():
             total_cost = sum([cost * (hard_constraint & cost_specs[cost]).language_size(*length_bounds) for cost in cost_func.costs])
             total_words = sum([(hard_constraint & cost_specs[cost]).language_size(*length_bounds) for cost in cost_func.costs])
 
-            epsilon = Fraction(1.1) * Fraction(total_cost, total_words)/min(cost_func.costs)
+            cost_bound = Fraction(1.1) * Fraction(total_cost, total_words)
 
             min_prob = Fraction(1, total_words * random.randint(1, 10))
             max_prob = min(1, Fraction(random.randint(1, 10) , total_words))
@@ -248,7 +247,7 @@ def test_quantitative_ci_improvise_random():
         # attempt to sample it and ensure that the output distribution
         # is relatively correct.
         try:
-            improviser = QuantitativeCI(hard_constraint, cost_func, length_bounds, epsilon, prob_bounds)
+            improviser = QuantitativeCI(hard_constraint, cost_func, length_bounds, cost_bound, prob_bounds)
         except InfeasibleImproviserError:
             assert not guaranteed_feasible
             continue
@@ -273,4 +272,4 @@ def test_quantitative_ci_improvise_random():
 
             assert prob_bounds[0]-.01 <= improvisation_count[word]/_RANDOM_QCI_TEST_NUM_SAMPLES <= prob_bounds[1]+.01
 
-        assert accumulated_cost/_RANDOM_QCI_TEST_NUM_SAMPLES <= improviser.min_cost * epsilon
+        assert accumulated_cost/_RANDOM_QCI_TEST_NUM_SAMPLES <= cost_bound

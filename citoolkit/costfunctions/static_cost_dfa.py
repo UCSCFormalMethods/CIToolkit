@@ -14,7 +14,6 @@ class StaticCostDfa(CostFunc):
     mapped to a cost. A word has a cost if it is accepted by the
     Dfa and the cost associated with that word is the one that is
     associated with that accepting state.
-    Note: Costs must be positive rational numbers.
 
     :param dfa: A Dfa specification, which accepts words that have a cost.
     :param cost_map: A dictionary mapping each accepting state in dfa to

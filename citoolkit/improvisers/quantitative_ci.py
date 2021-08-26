@@ -18,17 +18,13 @@ class QuantitativeCI(Improviser):
         with all improvisations.
     :param length_bounds: A tuple containing lower and upper bounds on the length
         of a generated word.
-    :param epsilon: The allowed multiplicative tolerance, with respect to the lowest cost
-        word, for the expected cost of our output distribution. Specifically, the expected
-        cost of our output distribution can be no more than c * epsilon where c is the
-        lowest cost word that also satisfies the hard constraint.
+    :param cost_bound: The maximum allowed expected cost for our improviser.
     :param prob_bounds: A tuple containing lower and upper bounds on the
         probability with which we can generate a word.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-
     def __init__(self, hard_constraint: Spec, cost_func: CostFunc, length_bounds: tuple[int, int], \
-                 epsilon: float, prob_bounds: tuple[float, float]) -> None:
+                 cost_bound: float, prob_bounds: tuple[float, float]) -> None:
         # Checks that parameters are well formed
         if not isinstance(hard_constraint, Spec):
             raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
@@ -39,8 +35,8 @@ class QuantitativeCI(Improviser):
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")
 
-        if epsilon < 1:
-            raise ValueError("The epsilon parameter greater than or equal to 1.")
+        if cost_bound < 0:
+            raise ValueError("The cost_bound parameter must be a number >= 0.")
 
         if (len(prob_bounds) != 2) or (prob_bounds[0] < 0) or (prob_bounds[0] > prob_bounds[1]) or (prob_bounds[1] > 1):
             raise ValueError("The prob_bounds parameter should contain two floats, with 0 <= prob_bounds[0] <= prob_bounds[1] <= 1.")
@@ -49,7 +45,7 @@ class QuantitativeCI(Improviser):
         self.hard_constraint = hard_constraint
         self.cost_func = cost_func
         self.length_bounds = length_bounds
-        self.epsilon = epsilon
+        self.cost_bound = cost_bound
         self.prob_bounds = prob_bounds
 
         # Initialize cost class specs.
@@ -104,14 +100,7 @@ class QuantitativeCI(Improviser):
             raise InfeasibleImproviserError("Violation of condition 1/prob_bounds[1] <= i_size <= 1/prob_bounds[0]. Instead, " \
                                             + str(1/prob_bounds[1]) + " <= " + str(i_size)  + " <= " + str(inv_min_prob))
 
-        self.min_cost = None
-
-        for cost in cost_func.costs:
-            if self.i_specs[cost].language_size(*length_bounds) > 0:
-                self.min_cost = cost
-                break
-
-        if self.expected_cost > self.min_cost * epsilon:
+        if self.expected_cost > self.cost_bound:
             raise InfeasibleImproviserError("Greedy construction does not satisfy cost constraint, meaning no improviser can. Minimum cost achieved was " + str(self.expected_cost) + ".")
 
     def improvise(self) -> tuple[str,...]:

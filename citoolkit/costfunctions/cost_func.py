@@ -22,8 +22,8 @@ class CostFunc(ABC):
             if not isinstance(cost, Rational):
                 raise ValueError("'" + str(cost) + "' is not of the type Rational, and therefore cannot be a cost." +\
                                  " Consider constructing one using the 'fractions' library.")
-            if cost <= 0:
-                raise ValueError("'" + str(cost) + "' is not positive, and therefore cannot be a cost.")
+            if cost < 0:
+                raise ValueError("'" + str(cost) + "' is less than zero, and therefore cannot be a cost.")
 
     @abstractmethod
     def cost(self, word: tuple[str, ...]) -> Optional[float]:
