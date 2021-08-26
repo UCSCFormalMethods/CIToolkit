@@ -77,25 +77,6 @@ def test_labelled_ci_improvise():
     # Create Labelled CI Improviser
     improviser = LabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds, word_prob_bounds)
 
-    # Check that the calculated probabilities are valid
-    assert sum(improviser.sorted_labels_weights) == pytest.approx(1)
-
-    for label_weight in improviser.sorted_labels_weights:
-        assert label_prob_bounds[0] <= label_weight <= label_prob_bounds[1]
-
-    for label in label_func.labels:
-        if improviser.i_specs[label].language_size(*length_bounds) == 0:
-            assert improviser.i_probs[label] == 0
-        else:
-            assert word_prob_bounds[label][0] <= improviser.i_probs[label] / improviser.i_specs[label].language_size(*length_bounds) <= word_prob_bounds[label][1]
-
-        if improviser.a_specs[label].language_size(*length_bounds) == 0:
-            assert improviser.a_probs[label] == 0
-        else:
-            assert word_prob_bounds[label][0] <= improviser.a_probs[label] / improviser.a_specs[label].language_size(*length_bounds) <= word_prob_bounds[label][1]
-
-        assert improviser.i_probs[label] + improviser.a_probs[label] == pytest.approx(1)
-
     # Create sampling testing variables
     improvisations = {tuple("01"), tuple("001"), tuple("101"), tuple("0001"), tuple("0101"), tuple("1001"), tuple("1101")}
     improvisation_count = {improvisation:0 for improvisation in improvisations}
@@ -268,20 +249,6 @@ def test_max_entropy_labelled_ci_improvise():
     # Create Labelled CI Improviser
     improviser = MaxEntropyLabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds)
 
-    # Check that the calculated probabilities are valid
-    assert sum(improviser.sorted_label_class_weights) == pytest.approx(1)
-
-    for label_iter in range(len(improviser.label_func.labels)):
-        sum_label_class_prob = improviser.sorted_label_class_weights[2*label_iter] + improviser.sorted_label_class_weights[2*label_iter + 1]
-        assert label_prob_bounds[0] <= sum_label_class_prob <= label_prob_bounds[1]
-
-    sum_soft_constraint_prob = 0
-
-    for label_iter in range(len(improviser.label_func.labels)):
-        sum_soft_constraint_prob += improviser.sorted_label_class_weights[2*label_iter+1]
-
-    assert sum_soft_constraint_prob >= 1 - epsilon
-
     # Create sampling testing variables
     improvisations = {tuple("01"), tuple("001"), tuple("101"), tuple("0001"), tuple("0101"), tuple("1001"), tuple("1101")}
     improvisation_count = {improvisation:0 for improvisation in improvisations}
@@ -404,7 +371,6 @@ def test_labelled_ci_improvise_random():
     feasible and improvise correctly.
     """
     for _ in range(_RANDOM_LCI_TEST_NUM_ITERS):
-        print()
         # Generate random set of LabelledCI parameters. 50% chance to
         # generate an instance where each parameter is individually feasible.
         if random.random() < 0.5:
@@ -485,12 +451,6 @@ def test_labelled_ci_improvise_random():
 
             a_base_spec = hard_constraint & soft_constraint
             a_words_total = sum([(a_base_spec & label_spec).language_size(*length_bounds) for (label, label_spec) in label_func.decompose().items()])
-
-            print("I Sizes: " + str(label_class_sizes))
-            print("A Sizes: " + str({label:(a_base_spec & label_spec).language_size(*length_bounds) for (label, label_spec) in label_func.decompose().items()}))
-            print("Label Set: " + str(label_set))
-            print("Label Map: " + str(label_map))
-            print("Label Func Labels: " + str(label_func.labels))
 
             epsilon = min(1, Fraction(1.1) * (1 - Fraction(a_words_total, words_total)))
 

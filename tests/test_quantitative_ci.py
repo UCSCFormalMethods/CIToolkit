@@ -71,10 +71,6 @@ def test_quantitative_ci_improvise():
     # Create Quantitative CI Improviser.
     improviser = QuantitativeCI(hard_constraint, cost_function, length_bounds, cost_bound, prob_bounds)
 
-    # Check that the calculated probabilities and expected cost of the improviser are valid.
-    assert sum(improviser.sorted_costs_weights) == pytest.approx(1)
-    assert improviser.expected_cost <= cost_bound
-
     # Sample the improviser and check that all improvisations are valid and that the probabilities and cost are reasonable.
     improvisations = {tuple("00"), tuple("000"), tuple("010"), tuple("0000"), tuple("0010"), tuple("0100"), tuple("0110"), \
                       tuple("00000"), tuple("00010"), tuple("00100"), tuple("00110"), tuple("01000"), tuple("01010"), tuple("01100"), tuple("01110")}

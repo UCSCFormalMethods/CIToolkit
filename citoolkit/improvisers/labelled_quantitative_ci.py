@@ -11,7 +11,7 @@ from citoolkit.specifications.spec import Spec
 from citoolkit.costfunctions.cost_func import CostFunc
 from citoolkit.labellingfunctions.labelling_func import LabellingFunc
 
-class LabelledCI(Improviser):
+class LabelledQuantitativeCI(Improviser):
     """ An improviser for the Labelled Quantitative Control Improvisation problem.
 
     :param hard_constraint: A specification that must accept all improvisations.
@@ -138,7 +138,7 @@ class LabelledCI(Improviser):
                                                 "of condition 1/word_prob_bounds[" + label + "][1] <= label_class_size <= 1/word_prob_bounds[" + label + "][0]." +
                                                 " Instead, " + str(1/max_word_prob) + " <= " + str(label_class_size) + " <= " + str(inv_min_word_prob))
 
-        self.expected_cost = sum(self.sorted_label_weights[label]*self.label_improvisers[label].expected_cost for label in feasible_labels)
+        self.expected_cost = sum(label_class_probs[label]*self.label_improvisers[label].expected_cost for label in feasible_labels)
 
         if self.expected_cost > cost_bound:
             raise InfeasibleImproviserError("Greedy construction does not satisfy cost_bound, meaning no improviser can."\
@@ -192,7 +192,7 @@ class LabelledCI(Improviser):
 
             # Compute the size of each cost class and the size of the complete label class.
             cost_class_sizes = {cost:self.cost_class_specs[cost].language_size(*length_bounds) for cost in cost_func.costs}
-            self.label_class_size = sum(cost_class_sizes.items())
+            self.label_class_size = sum(cost_class_sizes.values())
 
             if self.label_class_size == 0 and prob_bounds[0] > 0:
                 raise InfeasibleImproviserError("No strings are labelled with label '" + base_label + "', but word_prob_bounds[" + base_label + "][0] > 0.")

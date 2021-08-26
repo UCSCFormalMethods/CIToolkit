@@ -406,8 +406,7 @@ def test_dfa_sample_abstract():
     """ Create a simple Dfa that when uniformly sampled
     should generate the following words with relatively
     uniform probabilities: [[], ["A"], ["A", "A"], ["B"]].
-    Then intersect it with a Dfa that accepts only words
-    of length 1. Then verify that the sampling is over the
+    Then verify that sampling is performed over the
     correct words and reasonably accurate.
     """
     # Create test Dfa
@@ -462,11 +461,11 @@ def test_dfa_sample_abstract():
 
 def test_dfa_sample_param():
     """ Create a simple Dfa that when uniformly sampled
-    should generate the following words with relatively
-    uniform probabilities: [[], ["A"], ["A", "A"], ["B"]].
-    Then intersect it with a Dfa that accepts only words
-    of length 1. Then verify that the sampling is over the
-    correct words and reasonably accurate.
+    with length parameters should generate the following
+    words with relatively uniform probabilities:
+    [[], ["A"], ["A", "A"], ["B"]]. Then verify that
+    sampling is performed over the correct words and is
+    reasonably accurate.
     """
     # Create test Dfa
     alphabet = {"A", "B"}

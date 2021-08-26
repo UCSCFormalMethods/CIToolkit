@@ -59,7 +59,7 @@ def test_static_cost_dfa_complete():
     # Creates a Static Cost DFA, which should not raise an exception.
     static_cost_dfa = StaticCostDfa(dfa, cost_map)
 
-    # Checks that the parsed labels are correct.
+    # Checks that the parsed costs are correct.
     assert len(static_cost_dfa.costs) == 4
     assert 1 in static_cost_dfa.costs
     assert 2 in static_cost_dfa.costs
@@ -391,8 +391,8 @@ def test_static_cost_dfa_mixed_states():
     assert static_cost_dfa.cost(list("0000000022020020202000222220000")) is None
     assert static_cost_dfa.cost(list("0000000002220202020202020022001")) == 1
 
-def test_static_cost_dfa_no_labels():
-    """ Creates a simple complete LabellingDfa with no labels
+def test_static_cost_dfa_no_costs():
+    """ Creates a simple complete StaticCostDfa with no costs
     and ensures this does not raise an error.
     """
 
@@ -428,10 +428,9 @@ def test_static_cost_dfa_no_labels():
     # Create the DFA, which should not raise an exception.
     dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
 
-    # Construct a Labelling DFA with no labels.
     cost_map = {}
 
-    # Creates a Labelling DFA, which should not raise an exception.
+    # Creates a StaticCostDFA, which should not raise an exception.
     static_cost_dfa = StaticCostDfa(dfa, cost_map)
 
     # Checks select strings against the Labelling DFA
