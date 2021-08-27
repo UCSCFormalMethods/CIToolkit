@@ -519,3 +519,340 @@ def test_max_entropy_labelled_quantitative_ci_infeasible():
 ###################################################################################################
 # Random Tests
 ###################################################################################################
+
+# Randomized tests default parameters
+_RANDOM_LQCI_TEST_NUM_ITERS = 200
+_RANDOM_LQCI_TEST_NUM_SAMPLES = 100000
+_RANDOM_MELQCI_TEST_NUM_SAMPLES = 100000
+_MIN_WORD_LENGTH_BOUND = 0
+_MAX_WORD_LENGTH_BOUND = 10
+_MAX_COST = 100
+
+@pytest.mark.slow
+def test_labelled_quantitative_ci_improvise_random():
+    """ Tests generating a mix of fully random and random
+    but likely feasible Labelled Quantitative CI improviser
+    instances and ensuring that they either are infeasible
+    or are feasible and improvise correctly.
+    """
+    for _ in range(_RANDOM_LQCI_TEST_NUM_ITERS):
+        # Generate random set of LabelledCI parameters. 50% chance to
+        # generate an instance where each parameter is individually feasible.
+        if random.random() < 0.5:
+            # Generate completely random LCI instance.
+            min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
+            max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
+            length_bounds = (min_length, max_length)
+
+            hard_constraint = generate_random_dfa(max_states=6)
+
+            lf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            label_set = ["Label" + str(label_iter) for label_iter in range(len(lf_dfa.accepting_states))]
+            label_map = {}
+
+            for accepting_state in lf_dfa.accepting_states:
+                label_map[accepting_state] = random.choice(label_set)
+
+            label_func = LabellingDfa(lf_dfa, label_map)
+
+            cf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            cost_set = [Fraction(random.randint(0, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
+            cost_map = {}
+
+            for accepting_state in cf_dfa.accepting_states:
+                cost_map[accepting_state] = random.choice(cost_set)
+
+            cost_func = StaticCostDfa(cf_dfa, cost_map)
+
+            cost_bound = random.uniform(0,_MAX_COST)
+
+            label_min_prob = random.uniform(0,1)
+            label_max_prob = random.uniform(label_min_prob, 1)
+            label_prob_bounds = (label_min_prob, label_max_prob)
+
+            word_min_prob = {label:random.uniform(0,1) for label in label_func.labels}
+            word_max_prob = {label:random.uniform(word_min_prob[label], 1) for label in label_func.labels}
+            word_prob_bounds = {label:(word_min_prob[label], word_max_prob[label]) for label in label_func.labels}
+        else:
+            # Generate a random LCI instance while making each of the parameters individually feasible.
+            min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
+            max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
+            length_bounds = (min_length, max_length)
+
+            hard_constraint = generate_random_dfa(max_states=6)
+            lf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            label_set = ["Label" + str(label_iter) for label_iter in range(len(lf_dfa.accepting_states))]
+            label_map = {}
+
+            for accepting_state in lf_dfa.accepting_states:
+                label_map[accepting_state] = random.choice(label_set)
+
+            label_func = LabellingDfa(lf_dfa, label_map)
+
+            cf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            while True:
+                empty_label_class = False
+
+                if (hard_constraint & lf_dfa & cf_dfa).language_size(*length_bounds) == 0:
+                    empty_label_class = True
+                else:
+                    for label, label_spec in label_func.decompose().items():
+                        if (hard_constraint & label_spec & cf_dfa).language_size(*length_bounds) == 0:
+                            empty_label_class = True
+                            break
+
+                if not empty_label_class:
+                    break
+
+                hard_constraint = generate_random_dfa(max_states=6)
+
+                lf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+                label_set = ["Label" + str(label_iter) for label_iter in range(len(lf_dfa.accepting_states))]
+                label_map = {}
+
+                for accepting_state in lf_dfa.accepting_states:
+                    label_map[accepting_state] = random.choice(label_set)
+
+                label_func = LabellingDfa(lf_dfa, label_map)
+
+                cf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            cost_set = [Fraction(random.randint(0, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
+            cost_map = {}
+
+            for accepting_state in cf_dfa.accepting_states:
+                cost_map[accepting_state] = random.choice(cost_set)
+
+            cost_func = StaticCostDfa(cf_dfa, cost_map)
+
+            cost_specs = cost_func.decompose()
+
+            total_cost = sum([cost * (hard_constraint & cost_specs[cost]).language_size(*length_bounds) for cost in cost_func.costs])
+            total_words = sum([(hard_constraint & cost_specs[cost]).language_size(*length_bounds) for cost in cost_func.costs])
+
+            cost_bound = Fraction(1.1) * Fraction(total_cost, total_words)
+
+            label_class_sizes = {label:(hard_constraint & label_spec).language_size(*length_bounds) for (label, label_spec) in label_func.decompose().items()}
+
+            label_min_prob = Fraction(1, len(label_func.labels) * random.randint(1, 10))
+            label_max_prob = min(1, Fraction(random.randint(1, 10) , len(label_func.labels)))
+            label_prob_bounds = (label_min_prob, label_max_prob)
+
+            word_min_prob = {label:Fraction(1, label_class_sizes[label] * random.randint(1, 10)) for label in label_func.labels}
+            word_max_prob = {label:min(1, Fraction(random.randint(1, 10) , label_class_sizes[label])) for label in label_func.labels}
+            word_prob_bounds = {label:(word_min_prob[label], word_max_prob[label]) for label in label_func.labels}
+
+        # Attempt to create the improviser. If it is a feasible problem,
+        # attempt to sample it and ensure that the output distribution
+        # is relatively correct.
+        try:
+            improviser = LabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds)
+        except InfeasibleImproviserError:
+            continue
+
+        improvisation_count = {}
+        accumulated_cost = 0
+
+        # Sample a collection of words from the improviser.
+        for _ in range(_RANDOM_LQCI_TEST_NUM_SAMPLES):
+            word = improviser.improvise()
+
+            if word not in improvisation_count.keys():
+                improvisation_count[word] = 1
+            else:
+                improvisation_count[word] += 1
+
+            accumulated_cost += cost_func.cost(word)
+
+        # Ensures the sampled distribution is relatively correct within a tolerance.
+        for word in improvisation_count:
+            assert hard_constraint.accepts(word)
+
+        for label in label_func.labels:
+            label_count = 0
+            label_spec = label_func.decompose()[label]
+            label_words = set()
+
+            for word, count in improvisation_count.items():
+                if label_spec.accepts(word):
+                    label_count += count
+                    label_words.add(word)
+
+            assert label_prob_bounds[0] - 0.02 <= label_count/_RANDOM_LQCI_TEST_NUM_SAMPLES <= label_prob_bounds[1] + 0.02
+
+            for word in label_words:
+                count = improvisation_count[word]
+                assert word_prob_bounds[label][0] - 0.1 <= count/label_count <= word_prob_bounds[label][1] + 0.1
+
+        assert accumulated_cost/_RANDOM_LQCI_TEST_NUM_SAMPLES <= (cost_bound + .05) * 1.05
+
+@pytest.mark.slow
+def test_max_entropy_labelled_quantitative_ci_improvise_random():
+    """ Tests generating a mix of fully random and random
+    but likely feasible Labelled Quantitative CI improviser
+    instances and ensuring that they either are infeasible
+    or are feasible and improvise correctly.
+    """
+    for _ in range(_RANDOM_LQCI_TEST_NUM_ITERS):
+        # Generate random set of LabelledCI parameters. 50% chance to
+        # generate an instance where each parameter is individually feasible.
+        if random.random() < 0.5:
+            # Generate completely random LCI instance.
+            min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
+            max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
+            length_bounds = (min_length, max_length)
+
+            hard_constraint = generate_random_dfa(max_states=6)
+
+            lf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            label_set = ["Label" + str(label_iter) for label_iter in range(len(lf_dfa.accepting_states))]
+            label_map = {}
+
+            for accepting_state in lf_dfa.accepting_states:
+                label_map[accepting_state] = random.choice(label_set)
+
+            label_func = LabellingDfa(lf_dfa, label_map)
+
+            cf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            cost_set = [Fraction(random.randint(0, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
+            cost_map = {}
+
+            for accepting_state in cf_dfa.accepting_states:
+                cost_map[accepting_state] = random.choice(cost_set)
+
+            cost_func = StaticCostDfa(cf_dfa, cost_map)
+
+            cost_bound = random.uniform(0,_MAX_COST)
+
+            label_min_prob = random.uniform(0,1)
+            label_max_prob = random.uniform(label_min_prob, 1)
+            label_prob_bounds = (label_min_prob, label_max_prob)
+
+        else:
+            # Generate a random LCI instance while making each of the parameters individually feasible.
+            min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
+            max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
+            length_bounds = (min_length, max_length)
+
+            hard_constraint = generate_random_dfa(max_states=6)
+            lf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            label_set = ["Label" + str(label_iter) for label_iter in range(len(lf_dfa.accepting_states))]
+            label_map = {}
+
+            for accepting_state in lf_dfa.accepting_states:
+                label_map[accepting_state] = random.choice(label_set)
+
+            label_func = LabellingDfa(lf_dfa, label_map)
+
+            cf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            while True:
+                empty_label_class = False
+
+                if (hard_constraint & lf_dfa & cf_dfa).language_size(*length_bounds) == 0:
+                    empty_label_class = True
+                else:
+                    for label, label_spec in label_func.decompose().items():
+                        if (hard_constraint & label_spec & cf_dfa).language_size(*length_bounds) == 0:
+                            empty_label_class = True
+                            break
+
+                if not empty_label_class:
+                    break
+
+                hard_constraint = generate_random_dfa(max_states=6)
+
+                lf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+                label_set = ["Label" + str(label_iter) for label_iter in range(len(lf_dfa.accepting_states))]
+                label_map = {}
+
+                for accepting_state in lf_dfa.accepting_states:
+                    label_map[accepting_state] = random.choice(label_set)
+
+                label_func = LabellingDfa(lf_dfa, label_map)
+
+                cf_dfa = generate_random_dfa(max_states=6, alphabet=hard_constraint.alphabet)
+
+            cost_set = [Fraction(random.randint(0, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
+            cost_map = {}
+
+            for accepting_state in cf_dfa.accepting_states:
+                cost_map[accepting_state] = random.choice(cost_set)
+
+            cost_func = StaticCostDfa(cf_dfa, cost_map)
+
+            cost_specs = cost_func.decompose()
+
+            total_cost = sum([cost * (hard_constraint & cost_specs[cost]).language_size(*length_bounds) for cost in cost_func.costs])
+            total_words = sum([(hard_constraint & cost_specs[cost]).language_size(*length_bounds) for cost in cost_func.costs])
+
+            cost_bound = Fraction(1.1) * Fraction(total_cost, total_words)
+
+            label_min_prob = Fraction(1, len(label_func.labels) * random.randint(1, 10))
+            label_max_prob = min(1, Fraction(random.randint(1, 10) , len(label_func.labels)))
+            label_prob_bounds = (label_min_prob, label_max_prob)
+
+        # Attempt to create the MELCI improviser. Then check that
+        # the associated LCI instance is also feasible/infeasible.
+        # If it is a feasible problem, attempt to sample it and
+        # ensure that the output distribution is relatively correct.
+        try:
+            improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds)
+        except InfeasibleImproviserError:
+            melqci_feasible = False
+        else:
+            melqci_feasible = True
+
+        try:
+            trivial_word_bounds = {label:(0,1) for label in label_func.labels}
+            LabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, trivial_word_bounds)
+        except InfeasibleImproviserError:
+            qlci_feasible = False
+        else:
+            qlci_feasible = True
+
+        assert melqci_feasible == qlci_feasible
+
+        if not melqci_feasible:
+            continue
+
+        improvisation_count = {}
+        accumulated_cost = 0
+
+        # Sample a collection of words from the improviser.
+        for _ in range(_RANDOM_MELQCI_TEST_NUM_SAMPLES):
+            word = improviser.improvise()
+
+            if word not in improvisation_count.keys():
+                improvisation_count[word] = 1
+            else:
+                improvisation_count[word] += 1
+
+            accumulated_cost += cost_func.cost(word)
+
+        # Ensures the sampled distribution is relatively correct within a tolerance.
+        for word in improvisation_count:
+            assert hard_constraint.accepts(word)
+
+        for label in label_func.labels:
+            label_count = 0
+            label_spec = label_func.decompose()[label]
+            label_words = set()
+
+            for word, count in improvisation_count.items():
+                if label_spec.accepts(word):
+                    label_count += count
+                    label_words.add(word)
+
+            assert label_prob_bounds[0] - 0.02 <= label_count/_RANDOM_MELQCI_TEST_NUM_SAMPLES <= label_prob_bounds[1] + 0.02
+
+        assert accumulated_cost/_RANDOM_MELQCI_TEST_NUM_SAMPLES <= (cost_bound + .05) * 1.05

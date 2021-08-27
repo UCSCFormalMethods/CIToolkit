@@ -253,4 +253,4 @@ def test_classic_ci_improvise_random():
         assert a_count/_RANDOM_CI_TEST_NUM_SAMPLES >= .99 - epsilon
 
         for word, count in improvisation_count.items():
-            assert min_prob - 0.01 <= count/_RANDOM_CI_TEST_NUM_SAMPLES <= max_prob + 0.01
+            assert min_prob - 0.02 <= count/_RANDOM_CI_TEST_NUM_SAMPLES <= max_prob + 0.02

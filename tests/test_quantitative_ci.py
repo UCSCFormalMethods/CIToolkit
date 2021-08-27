@@ -191,7 +191,7 @@ def test_quantitative_ci_improvise_random():
 
             cf_dfa = generate_random_dfa(max_states=8, alphabet=hard_constraint.alphabet)
 
-            cost_set = [Fraction(random.randint(1, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
+            cost_set = [Fraction(random.randint(0, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
             cost_map = {}
 
             for accepting_state in cf_dfa.accepting_states:
@@ -199,7 +199,7 @@ def test_quantitative_ci_improvise_random():
 
             cost_func = StaticCostDfa(cf_dfa, cost_map)
 
-            cost_bound = random.uniform(1,_MAX_COST)
+            cost_bound = random.uniform(0,_MAX_COST)
 
             min_prob = random.uniform(0,1)
             max_prob = random.uniform(min_prob, 1)
@@ -219,7 +219,7 @@ def test_quantitative_ci_improvise_random():
                 hard_constraint = generate_random_dfa()
                 cf_dfa = generate_random_dfa(max_states=8, alphabet=hard_constraint.alphabet)
 
-            cost_set = [Fraction(random.randint(1, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
+            cost_set = [Fraction(random.randint(0, _MAX_COST), random.randint(1, _MAX_COST)) for cost_iter in range(len(cf_dfa.accepting_states))]
             cost_map = {}
 
             for accepting_state in cf_dfa.accepting_states:
@@ -266,6 +266,6 @@ def test_quantitative_ci_improvise_random():
         for word in improvisation_count:
             assert hard_constraint.accepts(word)
 
-            assert prob_bounds[0]-.01 <= improvisation_count[word]/_RANDOM_QCI_TEST_NUM_SAMPLES <= prob_bounds[1]+.01
+            assert prob_bounds[0] - .02 <= improvisation_count[word]/_RANDOM_QCI_TEST_NUM_SAMPLES <= prob_bounds[1] + .02
 
         assert accumulated_cost/_RANDOM_QCI_TEST_NUM_SAMPLES <= cost_bound

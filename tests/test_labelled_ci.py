@@ -360,13 +360,14 @@ def test_max_entropy_labelled_ci_infeasible():
 # Randomized tests default parameters
 _RANDOM_LCI_TEST_NUM_ITERS = 1000
 _RANDOM_LCI_TEST_NUM_SAMPLES = 100000
+_RANDOM_MELCI_TEST_NUM_SAMPLES = 25000
 _MIN_WORD_LENGTH_BOUND = 0
 _MAX_WORD_LENGTH_BOUND = 10
 
 @pytest.mark.slow
 def test_labelled_ci_improvise_random():
     """ Tests generating a mix of fully random and random
-    but feasible Labelled CI improviser instances and
+    but likely feasible Labelled CI improviser instances and
     ensuring that they either are infeasible or are
     feasible and improvise correctly.
     """
@@ -504,7 +505,7 @@ def test_labelled_ci_improvise_random():
                     label_count += count
                     label_words.add(word)
 
-            assert label_prob_bounds[0] - 0.01 <= label_count/_RANDOM_LCI_TEST_NUM_SAMPLES <= label_prob_bounds[1] + 0.01
+            assert label_prob_bounds[0] - 0.02 <= label_count/_RANDOM_LCI_TEST_NUM_SAMPLES <= label_prob_bounds[1] + 0.02
 
             for word in label_words:
                 count = improvisation_count[word]
@@ -513,7 +514,7 @@ def test_labelled_ci_improvise_random():
 @pytest.mark.slow
 def test_max_entropy_labelled_ci_improvise_random():
     """ Tests generating a mix of fully random and random
-    but feasible Max Entropy Labelled CI improviser instances
+    but likely feasible Max Entropy Labelled CI improviser instances
     and ensuring that they either are infeasible or are
     feasible and improvise correctly. Also ensures that a
     MELCI instance is feasible iff the associated LCI instance
@@ -624,7 +625,7 @@ def test_max_entropy_labelled_ci_improvise_random():
         # is correct.
         improvisation_count = {}
 
-        for _ in range(_RANDOM_LCI_TEST_NUM_SAMPLES):
+        for _ in range(_RANDOM_MELCI_TEST_NUM_SAMPLES):
             word = improviser.improvise()
 
             if word not in improvisation_count.keys():
@@ -642,7 +643,7 @@ def test_max_entropy_labelled_ci_improvise_random():
             if soft_constraint.accepts(word):
                 a_count += count
 
-        assert a_count/_RANDOM_LCI_TEST_NUM_SAMPLES >= .99 - epsilon
+        assert a_count/_RANDOM_MELCI_TEST_NUM_SAMPLES >= .99 - epsilon
 
         for label in label_func.labels:
             label_count = 0
@@ -654,4 +655,4 @@ def test_max_entropy_labelled_ci_improvise_random():
                     label_count += count
                     label_words.add(word)
 
-            assert label_prob_bounds[0] - 0.01 <= label_count/_RANDOM_LCI_TEST_NUM_SAMPLES <= label_prob_bounds[1] + 0.01
+            assert label_prob_bounds[0] - 0.02 <= label_count/_RANDOM_MELCI_TEST_NUM_SAMPLES <= label_prob_bounds[1] + 0.02

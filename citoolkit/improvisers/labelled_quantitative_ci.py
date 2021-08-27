@@ -295,6 +295,12 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
         if (len(label_prob_bounds) != 2) or (label_prob_bounds[0] < 0) or (label_prob_bounds[0] > label_prob_bounds[1]) or (label_prob_bounds[1] > 1):
             raise ValueError("The label_prob_bounds parameter should contain two floats, with 0 <= label_prob_bounds[0] <= label_prob_bounds[1] <= 1.")
 
+        if len(label_func.labels) == 0:
+            raise InfeasibleImproviserError("This problem has no labels and therefore is infeasible. MELQCI problems must have at least one label.")
+
+        if len(cost_func.costs) == 0:
+            raise InfeasibleImproviserError("This problem has no costs and therefore is infeasible. MELQCI problems must have at least one cost.")
+
         # Store all constructor parameters
         self.hard_constraint = hard_constraint
         self.cost_func = cost_func
