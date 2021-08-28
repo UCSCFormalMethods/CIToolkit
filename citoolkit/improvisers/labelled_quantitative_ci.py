@@ -4,6 +4,8 @@ for the Labelled Quantitative CI problem.
 
 from __future__ import annotations
 
+import multiprocessing
+
 import warnings
 import random
 import cvxpy as cp
@@ -316,11 +318,28 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
         cost_class_specs = {}
         cost_class_sizes = {}
 
+        print("Labels: ", label_func.labels)
+        print("Costs: ", cost_func.costs)
+
+        # for label in label_func.labels:
+        #     label_class_spec = hard_constraint & label_specs[label]
+
+        #     for cost in cost_func.costs:
+        #         cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
+        #         cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
+
         for label in label_func.labels:
             label_class_spec = hard_constraint & label_specs[label]
 
             for cost in cost_func.costs:
                 cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
+
+        with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
+            func_input = [(spec, length_bounds) for spec in cost_class_specs.values()]
+            min_specs = p.map(get_language_size, func_input, chunksize = 1)
+
+        for label in label_func.labels:
+            for cost in cost_func.costs:
                 cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
 
         # Create optimization variables and constants. Assuming n labels and m costs, the variable at position
@@ -392,3 +411,9 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
         selected_cost_class = random.choices(population=self.sorted_cost_class_specs, weights=self.sorted_cost_class_weights, k=1)[0]
 
         return selected_cost_class.sample(*self.length_bounds)
+
+
+def get_language_size(param):
+    spec, length_bounds = param
+    spec.language_size(*length_bounds)
+

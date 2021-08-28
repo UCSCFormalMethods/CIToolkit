@@ -85,6 +85,6 @@ class LabellingDfa(LabellingFunc):
         for label in self.labels:
             indicator_dfa = Dfa(self.dfa.alphabet, self.dfa.states, label_states_mapping[label], \
                                 self.dfa.start_state, self.dfa.transitions)
-            self.decomp_labelling_func[label] = indicator_dfa
+            self.decomp_labelling_func[label] = indicator_dfa.minimize()
 
         return self.decomp_labelling_func

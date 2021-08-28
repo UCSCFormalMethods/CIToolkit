@@ -5,6 +5,7 @@ from typing import Optional
 
 from numbers import Rational
 from collections import Counter
+import multiprocessing
 
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.costfunctions.cost_func import CostFunc
@@ -41,6 +42,9 @@ class AccumulatedCostDfa(CostFunc):
 
         super().__init__(self.dfa.alphabet, costs)
 
+        # Initialize cache values to None
+        self.decomp_cost_func = None
+
     def cost(self, word) -> Optional[Rational]:
         if self.dfa.accepts(word):
             state_path = self.dfa.get_state_path(word)
@@ -52,6 +56,9 @@ class AccumulatedCostDfa(CostFunc):
             return None
 
     def decompose(self) -> dict[Rational, Dfa]:
+        if self.decomp_cost_func is not None:
+            return self.decomp_cost_func
+
         if len(self.costs) == 0:
             return dict()
 
@@ -96,11 +103,26 @@ class AccumulatedCostDfa(CostFunc):
         for symbol in self.dfa.alphabet:
             new_transitions[("Sink", symbol)] = "Sink"
 
-        for cost in self.costs:
-            new_dfa = Dfa(self.dfa.alphabet, new_states, cost_accepting_map[cost], new_start_state, new_transitions)
-            decomp_cost_func[cost] = new_dfa.minimize()
+        print("Costs: ", self.costs)
+
+        sorted_costs = sorted(self.costs)
+
+        func_input = [(cost, self.dfa.alphabet, new_states, cost_accepting_map[cost], new_start_state, new_transitions) for cost in sorted_costs]
+
+        with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
+            min_specs = p.map(self.make_min_spec, func_input, chunksize = 1)
+
+        for cost_iter, cost in enumerate(sorted_costs):
+            decomp_cost_func[cost] = min_specs[cost_iter]
+
+        self.decomp_cost_func = decomp_cost_func
 
         return decomp_cost_func
+
+    @staticmethod
+    def make_min_spec(params):
+        cost, alphabet, states, accepting_states, start_state, transitions = params
+        return Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
 
     @staticmethod
     def _compute_cost_table(dfa, cost_map, max_word_length):
@@ -130,14 +152,15 @@ class AccumulatedCostDfa(CostFunc):
 
         # Augment table for each word length up to max_word_length.
         for current_length in range(1, max_word_length + 1):
+            print("Current length: ", current_length)
             for target_state in dfa.states:
                 target_counter = Counter()
 
                 # For each parent state, add to the target state's counter every possible
                 # cost that reaches the parent state plus the cost to reach the target state.
                 for parent_state in parents[target_state]:
-                    for cost in cost_table[(parent_state, current_length-1)].elements():
-                        target_counter[cost + cost_map[target_state]] += 1
+                    for cost, count in cost_table[(parent_state, current_length-1)].items():
+                        target_counter[cost + cost_map[target_state]] += count
 
                 cost_table[(target_state, current_length)] = target_counter
 
