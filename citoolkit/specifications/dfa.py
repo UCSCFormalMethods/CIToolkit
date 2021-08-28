@@ -55,7 +55,6 @@ class Dfa(Spec):
         self._topological_ordering = None
         self._accepting_path_counts = None
         self._bounded_dfas = {}
-        self._language_size = None
 
     ####################################################################################################
     # Spec Functions
@@ -84,9 +83,6 @@ class Dfa(Spec):
             by this Dfa, considering only words of length between min_length
             and max_length inclusive if defined.
         """
-        if self._language_size is not None:
-            return self._language_size
-
         # Check if we need to recurse to a length bounded DFA or if we can
         # simply use this DFA
         if min_length == 0:
@@ -106,7 +102,7 @@ class Dfa(Spec):
                 self._bounded_dfas[(min_length, max_length)] = bounded_dfa.explicit()
 
             # Get the language_size of the appropriate bounded Dfa.
-            self._language_size = self._bounded_dfas[(min_length, max_length)].language_size()
+            return self._bounded_dfas[(min_length, max_length)].language_size()
 
         else:
             # No length requirement, so simply compute accepting paths
@@ -116,9 +112,7 @@ class Dfa(Spec):
             except DfaCycleError as exception:
                 raise DfaCycleError("Cannot compute language size for a Dfa with an infinite language.") from exception
 
-            self._language_size = accepting_path_counts[self.start_state]
-
-        return self._language_size
+            return accepting_path_counts[self.start_state]
 
     def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
         """ Samples a word uniformly at random from the language of
