@@ -5,6 +5,7 @@ for the Labelled Quantitative CI problem.
 from __future__ import annotations
 
 import multiprocessing
+import gc
 
 import warnings
 import random
@@ -429,5 +430,6 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
 def get_language_size(param):
     label, cost, spec, length_bounds = param
     spec = spec.explicit()
+    gc.collect()
     spec.language_size(*length_bounds)
     return ((label, cost), spec)
