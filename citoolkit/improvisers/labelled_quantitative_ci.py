@@ -342,6 +342,8 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
             for cost in cost_func.costs:
                 cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
 
+        print("Making optimization problem...")
+
         # Create optimization variables and constants. Assuming n labels and m costs, the variable at position
         # x*m + y represents the probability allocated to words with label x and cost y.
         x = cp.Variable(len(label_func.labels)*len(cost_func.costs), nonneg=True)
@@ -380,9 +382,13 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
                     empty_cost_class_vector[label_iter*len(cost_func.costs) + cost_iter] = 1
                     constraints.append(cp.multiply(x, empty_cost_class_vector) == 0)
 
+        print("Solving optimization problem...")
+
         # Create and solve problem
         prob = cp.Problem(objective, constraints)
         result = prob.solve()
+
+        print("Done solving....")
 
         # Check if problem is feasible. If not, raise an InfeasibleImproviserError.
         if "infeasible" in prob.status:
