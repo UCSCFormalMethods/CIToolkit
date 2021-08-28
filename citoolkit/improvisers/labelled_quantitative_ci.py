@@ -335,8 +335,10 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
                 cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
 
         with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
-            func_input = [(spec, length_bounds) for spec in cost_class_specs.values()]
-            min_specs = p.map(get_language_size, func_input, chunksize = 1)
+            func_input = [(label, cost, spec, length_bounds) for ((label, cost),spec) in cost_class_specs.items()]
+            spec_items = p.map(get_language_size, func_input, chunksize = 1)
+
+            cost_class_specs = {key:spec for (key,spec) in spec_items}
 
         for label in label_func.labels:
             for cost in cost_func.costs:
@@ -420,6 +422,6 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
 
 
 def get_language_size(param):
-    spec, length_bounds = param
+    label, cost, spec, length_bounds = param
     spec.language_size(*length_bounds)
-
+    return ((label, cost), spec)
