@@ -215,19 +215,24 @@ class Dfa(Spec):
         :returns: The terminal state reached in the Dfa after all symbols
             have been consumed.
         """
+        return self.get_state_path(word)[-1]
+
+    def get_state_path(self, word: tuple[str,...]) -> bool:
         # Checks that word is composed only of symbols in the alphabet.
         for symbol in word:
             if symbol not in self.alphabet:
                 raise ValueError("'" + str(word) + "' contains the symbol '" + \
                                  str(symbol) + "' which is not in the Dfa's alphabet.")
 
-        # Consumes all symbols in word and returns the final state reached.
+        # Consumes all symbols in word and returns the a list of the states encountered.
         current_state = self.start_state
+        state_path = [current_state]
 
         for symbol in word:
             current_state = self.transitions[(current_state, symbol)]
+            state_path.append(current_state)
 
-        return current_state
+        return state_path
 
     def compute_accepting_path_counts(self) -> dict[State, int]:
         """ Computes the number of accepting paths from a state

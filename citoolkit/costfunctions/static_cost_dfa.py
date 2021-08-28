@@ -28,16 +28,15 @@ class StaticCostDfa(CostFunc):
         super().__init__(self.dfa.alphabet, costs)
 
         # Perform checks to ensure a well formed Static Cost Dfa.
-        if not set(self.cost_map.keys()) == self.dfa.accepting_states:
-            for target_state in cost_map.keys():
-                if target_state not in self.dfa.accepting_states:
-                    raise ValueError("The accepting state '" + target_state + "' is missing an associated cost in cost_map")
+        for target_state in self.dfa.accepting_states:
+            if target_state not in self.cost_map.keys():
+                raise ValueError("The accepting state '" + str(target_state) + "' is missing an associated cost in cost_map")
 
         # Initialize cache values to None
         self.decomp_cost_func = None
 
     ####################################################################################################
-    # StaticCostDfa Functions
+    # CostFunc Functions
     ####################################################################################################
 
     def cost(self, word) -> Optional[Rational]:
