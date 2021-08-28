@@ -338,6 +338,11 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
             func_input = [(label, cost, spec, length_bounds) for ((label, cost),spec) in cost_class_specs.items()]
             spec_items = p.map(get_language_size, func_input, chunksize = 1)
 
+            p.close()
+            p.join()
+
+            print("Done computing language sizes")
+
             cost_class_specs = {key:spec for (key,spec) in spec_items}
 
         for label in label_func.labels:
