@@ -336,7 +336,7 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
 
         with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
             func_input = [(label, cost, spec, length_bounds) for ((label, cost),spec) in cost_class_specs.items()]
-            spec_items = p.map(get_language_size, func_input, chunksize = 1)
+            spec_items = p.map(get_language_size, func_input)
 
             p.close()
             p.join()
