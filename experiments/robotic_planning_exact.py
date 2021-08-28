@@ -51,7 +51,7 @@ GRIDWORLD_COSTS =   [
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (0,10)
+length_bounds = (0,40)
 epsilon = 1
 prob_bounds = (0, 1)
 

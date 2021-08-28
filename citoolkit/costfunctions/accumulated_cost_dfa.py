@@ -98,7 +98,7 @@ class AccumulatedCostDfa(CostFunc):
                     else:
                         new_dest_state = state_rename_map[(dest_state, new_cost)]
 
-                    new_transitions[(new_origin_state, symbol)] = new_dest_state 
+                    new_transitions[(new_origin_state, symbol)] = new_dest_state
 
         for symbol in self.dfa.alphabet:
             new_transitions[("Sink", symbol)] = "Sink"
@@ -111,6 +111,9 @@ class AccumulatedCostDfa(CostFunc):
 
         with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
             min_specs = p.map(self.make_min_spec, func_input, chunksize = 1)
+
+            p.close()
+            p.join()
 
         for cost_iter, cost in enumerate(sorted_costs):
             decomp_cost_func[cost] = min_specs[cost_iter]
