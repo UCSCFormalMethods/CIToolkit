@@ -428,6 +428,6 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
 
 def get_language_size(param):
     label, cost, spec, length_bounds = param
-    expl_spec = spec.explicit()
-    expl_spec.language_size(*length_bounds)
-    return ((label, cost), expl_spec)
+    spec = spec.explicit()
+    spec.language_size(*length_bounds)
+    return ((label, cost), spec)
