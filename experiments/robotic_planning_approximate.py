@@ -91,11 +91,11 @@ def create_hard_constraint():
     hc = expr(False)
 
     for length in range(length_bounds[0], length_bounds[1]):
-        hc = hc | create_exact_length_hard_constraint(length)
+        hc = hc | create_exact_length_hard_constraint(length, length_bounds[1])
 
     return hc
 
-def create_exact_length_hard_constraint(length):
+def create_exact_length_hard_constraint(length, max_length):
     # Make constraint accept any accepting path.
     start_loc = np.where(np.array(GRIDWORLD) == 2)
     end_loc = np.where(np.array(GRIDWORLD) == 3)
