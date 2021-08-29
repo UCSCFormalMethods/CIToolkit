@@ -187,7 +187,6 @@ def get_feasible_transitions_formula(var_1, var_2):
                     # Into impassable area
                     continue
                 else:
-
                     destination_cell_id = cell_id_map[(dest_x, dest_y)]
 
                 transitions.add((origin_cell_id, destination_cell_id))
@@ -236,14 +235,14 @@ def draw_improvisation(improvisation):
     start_loc = np.where(np.array(GRIDWORLD) == 2)
 
     point_a = None
-    point_b = (improvisation[0][0] + 0.5, improvisation[0][1] + 0.5)
+    point_b = (improvisation[0][0] + 0.5,  len(GRIDWORLD) - 1 - improvisation[0][1] + 0.5)
 
     lines = []
 
     for coords in improvisation[1:]:
         point_a = point_b
 
-        point_b = (coords[0] + 0.5, coords[1] + 0.5)
+        point_b = (coords[0] + 0.5,  len(GRIDWORLD) - 1 - coords[1] + 0.5)
 
         lines.append([point_a, point_b])
 
