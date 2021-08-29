@@ -380,9 +380,9 @@ def draw_improvisation(improvisation):
     plt.show()
 
 if __name__ == '__main__':
-    #run()
+    run()
 
-    hc = create_hard_constraint()
+    # hc = create_hard_constraint()
 
-    while True:
-        draw_improvisation(hc.sample(*length_bounds))
+    # while True:
+    #     draw_improvisation(hc.sample(*length_bounds))

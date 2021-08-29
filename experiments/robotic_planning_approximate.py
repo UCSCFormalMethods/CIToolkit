@@ -80,11 +80,9 @@ def run():
             for pos in range(num_cell_vars):
                 cell_id.append(assignment[exprvar(var, pos)])
 
-            print(var + " : " + str(cell_id))
-
             coords.append(id_cell_map[tuple(cell_id)])
 
-    print(coords)
+    draw_improvisation(coords)
 
     #print({v:val for v, val in cnf_hc.satisfy_one().items() if v.name != 'aux'})
     #print([v for v, val in cnf_hc.satisfy_one().items() if v.name != 'aux' and v.indices[0] == 1])
