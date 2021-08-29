@@ -16,6 +16,7 @@ sphinx-rtd-theme = {version = "^0.5.2", optional = true}
 cvxpy = "^1.1.14"
 pytest-repeat = "^0.9.1"
 matplotlib = "^3.4.3"
+pyeda = "^0.28.0"
 
 [tool.poetry.extras]
 dev = [

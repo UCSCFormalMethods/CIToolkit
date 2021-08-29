@@ -51,9 +51,7 @@ GRIDWORLD_COSTS =   [
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (0,40)
-epsilon = 1
-prob_bounds = (0, 1)
+length_bounds = (0,30)
 
 
 def run():
@@ -382,5 +380,9 @@ def draw_improvisation(improvisation):
     plt.show()
 
 if __name__ == '__main__':
-    run()
-    #draw_improvisation(["North", "East", "North", "West", "North"])
+    #run()
+
+    hc = create_hard_constraint()
+
+    while True:
+        draw_improvisation(hc.sample(*length_bounds))
