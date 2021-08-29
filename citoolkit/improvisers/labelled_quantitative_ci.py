@@ -431,5 +431,5 @@ def get_language_size(param):
     label, cost, spec, length_bounds = param
     spec = spec.explicit()
     gc.collect()
-    spec.language_size(*length_bounds)
+    print("Label: " + str(label) + ", Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
     return ((label, cost), spec)

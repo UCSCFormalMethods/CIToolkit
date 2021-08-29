@@ -180,6 +180,12 @@ def get_feasible_transitions_formula(var_1, var_2):
                 if dest_x < 0 or dest_x > max_x or dest_y < 0 or dest_y > max_y:
                     # Off the edge of the map, no valid transition
                     continue
+                elif GRIDWORLD[y][x] == 1:
+                    # In impassable area
+                    continue
+                elif GRIDWORLD[dest_y][dest_x] == 1:
+                    # Into impassable area
+                    continue
                 else:
 
                     destination_cell_id = cell_id_map[(dest_x, dest_y)]
