@@ -65,7 +65,7 @@ def run():
         hard_constraint = create_hard_constraint()
         pickle.dump(hard_constraint, open("hard_constraint.pickle", "wb"))
 
-    print(len(hard_constraint.states))
+    print("Hard Constraint States:", len(hard_constraint.states))
 
     if os.path.isfile("label_function.pickle"):
         print("Loading label function from pickle...\n")
@@ -76,7 +76,7 @@ def run():
         label_function.decompose()
         pickle.dump(label_function, open("label_function.pickle", "wb"))
 
-    print(len(label_function.dfa.states))
+    print("Label Function States:", len(label_function.dfa.states))
 
     if os.path.isfile("cost_function.pickle"):
         print("Loading cost function from pickle...\n")
@@ -87,9 +87,7 @@ def run():
         cost_function.decompose()
         pickle.dump(cost_function, open("cost_function.pickle", "wb"))
 
-    print(len(cost_function.dfa.states))
-
-    assert False
+    print("Cost Function States:", len(cost_function.dfa.states))
 
     if os.path.isfile("me_improviser.pickle"):
         print("Loading Max Entropy improviser from pickle...\n")
