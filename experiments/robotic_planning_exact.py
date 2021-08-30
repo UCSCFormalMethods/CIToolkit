@@ -28,30 +28,28 @@ from citoolkit.costfunctions.accumulated_cost_dfa import AccumulatedCostDfa
 # 7 denotes hard objective 3. All hard objectives must be visited
 # 8 denotes hard objective 4. All hard objectives must be visited
 GRIDWORLD =         (
-                    (0, 0, 0, 0, 3, 0, 0, 0),
-                    (0, 0, 0, 4, 0, 0, 6, 0),
-                    (0, 0, 0, 0, 0, 0, 0, 0),
-                    (1, 1, 0, 1, 0, 1, 1, 0),
-                    (8, 4, 0, 0, 0, 0, 4, 0),
-                    (0, 0, 0, 0, 0, 5, 0, 0),
-                    (0, 0, 0, 0, 0, 0, 0, 0),
-                    (7, 0, 0, 0, 2, 0, 0, 0)
+                    (0, 4, 0, 3, 0, 0),
+                    (0, 0, 0, 0, 0, 6),
+                    (0, 1, 1, 0, 1, 0),
+                    (8, 0, 0, 0, 0, 0),
+                    (0, 0, 4, 0, 5, 0),
+                    (7, 0, 0, 2, 0, 4)
                     )
 
 GRIDWORLD_COSTS =   [
-                    [2, 2, 2, 2, 0, 2, 2, 2],
-                    [2, 3, 2, 0, 1, 2, 2, 2],
-                    [2, 2, 2, 2, 1, 2, 2, 2],
-                    [0, 0, 4, 0, 1, 0, 0, 4],
-                    [2, 0, 2, 3, 1, 3, 3, 0],
-                    [2, 2, 2, 2, 1, 0, 3, 2],
-                    [2, 2, 2, 2, 1, 3, 3, 2],
-                    [0, 2, 2, 2, 0, 2, 2, 2]
+                    [2, 2, 2, 0, 2, 2],
+                    [2, 2, 2, 1, 2, 0],
+                    [4, 0, 0, 1, 0, 4],
+                    [2, 2, 3, 1, 3, 0],
+                    [2, 2, 0, 1, 0, 3],
+                    [0, 2, 2, 0, 3, 0]
                     ]
+
+SHOW_COSTS = False
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (0,30)
+length_bounds = (0,25)
 
 
 def run():
@@ -67,6 +65,8 @@ def run():
         hard_constraint = create_hard_constraint()
         pickle.dump(hard_constraint, open("hard_constraint.pickle", "wb"))
 
+    print(len(hard_constraint.states))
+
     if os.path.isfile("label_function.pickle"):
         print("Loading label function from pickle...\n")
         label_function = pickle.load(open("label_function.pickle", 'rb'))
@@ -76,6 +76,8 @@ def run():
         label_function.decompose()
         pickle.dump(label_function, open("label_function.pickle", "wb"))
 
+    print(len(label_function.dfa.states))
+
     if os.path.isfile("cost_function.pickle"):
         print("Loading cost function from pickle...\n")
         cost_function = pickle.load(open("cost_function.pickle", 'rb'))
@@ -84,6 +86,10 @@ def run():
         cost_function = create_cost_function()
         cost_function.decompose()
         pickle.dump(cost_function, open("cost_function.pickle", "wb"))
+
+    print(len(cost_function.dfa.states))
+
+    assert False
 
     if os.path.isfile("me_improviser.pickle"):
         print("Loading Max Entropy improviser from pickle...\n")
@@ -343,11 +349,14 @@ def draw_improvisation(improvisation):
         ax.axhline(x, lw=2, color='k', zorder=5)
         ax.axvline(x, lw=2, color='k', zorder=5)
 
-    cmap = colors.ListedColormap(['white', '#000000','grey', 'grey', 'orange', 'darkblue'])
-    boundaries = [0, 1, 2, 3, 4, 5, 9]
-    norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
+    if SHOW_COSTS:
+        ax.imshow(GRIDWORLD_COSTS, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0)
+    else:
+        cmap = colors.ListedColormap(['white', '#000000','grey', 'grey', 'orange', 'darkblue'])
+        boundaries = [0, 1, 2, 3, 4, 5, 9]
+        norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
 
-    ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
+        ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
 
     #ax.axis('off')
 

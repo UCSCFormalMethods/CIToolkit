@@ -1,6 +1,8 @@
 import math
 import itertools
-from pyeda.boolalg.expr import expr, exprvar, expr2dimacscnf
+from pyeda.boolalg.expr import expr, exprvar, expr2dimacscnf, ITE
+import pyeda.boolalg.bfarray as bfarray
+from pyeda.logic.addition import ripple_carry_add, kogge_stone_add, brent_kung_add
 import numpy as np
 
 import matplotlib
@@ -42,15 +44,22 @@ GRIDWORLD_COSTS =   [
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (1,25)
+length_bounds = (1,30)
 
-# Create a mapping from a cell in gridworld to a variable assignment. 
-num_cell_vars = math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]),2))
+# Create a mapping from a cell in gridworld to a variable assignment.
+num_cell_vars = math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
 
 cell_id_map = {}
 id_cell_map = {}
 
 var_assignments = itertools.product([0,1], repeat=num_cell_vars)
+
+null_cell_id = next(var_assignments)
+
+assert list(null_cell_id) == [0]*num_cell_vars
+
+cell_id_map[None] = null_cell_id
+id_cell_map[null_cell_id] = None
 
 for y in range(len(GRIDWORLD)):
     for x in range(len(GRIDWORLD[0])):
@@ -58,8 +67,13 @@ for y in range(len(GRIDWORLD)):
         cell_id_map[(x, y)] = assignment
         id_cell_map[assignment] = (x,y)
 
+num_cost_vars = 8
 
 def run():
+    cf = create_cost_function()
+
+    assert False
+
     hc = create_hard_constraint().simplify()
 
     cnf_hc = hc.tseitin()
@@ -87,6 +101,9 @@ def run():
     #print({v:val for v, val in cnf_hc.satisfy_one().items() if v.name != 'aux'})
     #print([v for v, val in cnf_hc.satisfy_one().items() if v.name != 'aux' and v.indices[0] == 1])
 
+###################################################################################################
+# Hard Constraint Funcs
+###################################################################################################
 def create_hard_constraint():
     hc = expr(False)
 
@@ -109,10 +126,12 @@ def create_exact_length_hard_constraint(length, max_length):
     start_cell_valid = get_var_equal_cell_formula(start_var, cell_id_map[(start_loc)])
     end_cell_valid = get_var_equal_cell_formula(end_var, cell_id_map[(end_loc)])
 
+    # Start cell is valid
     hc = start_cell_valid
 
     last_var = start_var
 
+    # Path is valid
     for var_iter in range(2, length+1):
         next_var = "Cell_" + str(var_iter)
 
@@ -120,7 +139,14 @@ def create_exact_length_hard_constraint(length, max_length):
 
         last_var = next_var
 
+    # End cell is valid
     hc = hc & end_cell_valid
+
+    # All other cells are set to null cell id
+    for var_iter in range(length+1, max_length+1):
+        ignored_var = "Cell_" + str(var_iter)
+
+        hc = hc & get_var_equal_cell_formula(ignored_var, cell_id_map[None])
 
     # Make constraint visit all hard objectives.
     hc_1_loc = np.where(np.array(GRIDWORLD) == 5)
@@ -205,6 +231,74 @@ def get_feasible_transitions_formula(var_1, var_2):
 
     return transition_formula
 
+###################################################################################################
+# CostFunction Funcs
+###################################################################################################
+def create_cost_function():
+    cf = True
+
+    # Create a function that fixes the cost of each cell_cost_var to
+    # the cost of that cell. If cell is NONE, then cost is 0.
+    for var_iter in range(1, length_bounds[1]):
+        target_var = "Cell_" + str(var_iter)
+
+        cf = cf & get_var_cost_function(target_var)
+
+    # Create a function that fixes the variable COST to be the sum of
+    # all cost variables
+    cost_sum = bfarray.exprzeros(num_cost_vars)
+    for var_iter in range(1, length_bounds[1]):
+        target_var = "Cell_" + str(var_iter)
+
+        var_array = bfarray.farray([exprvar(target_var + "_Cost", pos) for pos in range(num_cost_vars)])
+
+        output = ripple_carry_add(var_array, cost_sum)
+
+        cost_sum = output[0]
+
+        print(var_iter)
+        print(cost_sum)
+
+    for pos in range(num_cost_vars):
+        print("Starting bit #", pos)
+        cost_bit_formula = ITE(cost_sum[pos], ~exprvar("CostSum", pos), exprvar("CostSum", pos))
+        print(cost_bit_formula)
+
+        cf = (cf & cost_bit_formula)
+
+    return cf
+
+def get_var_cost_function(var):
+    # Sets cell_cost_var to the id associated with the cost in
+    # GRIDWORLD_COSTS
+    cell_cost_var = var + str("_Cost")
+
+    # Create formula which is a disjunction of clauses
+    # that each contain a conjunction of a cell assignment
+    # along with an assignment of the appropriate cost to
+    # the corresponding cell_cost variable.
+    var_cf = False
+
+    # Fixes each cell_cost_variable
+    for y in range(len(GRIDWORLD)):
+        for x in range(len(GRIDWORLD[0])):
+            cell_cost = GRIDWORLD_COSTS[y][x]
+            cell_cost_id = cost_to_id(cell_cost)
+
+            cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[(x,y)])
+            cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, cell_cost_id)
+
+            cell_and_cost_formula = cell_valid_formula & cost_valid_formula
+
+            var_cf = var_cf & cell_and_cost_formula
+
+    return var_cf
+
+
+###################################################################################################
+# Utility Funcs
+###################################################################################################
+
 def get_var_equal_cell_formula(var, cell):
     # Returns a formula that is true if var is set to cell
     cell_valid = expr(True)
@@ -216,6 +310,22 @@ def get_var_equal_cell_formula(var, cell):
             cell_valid = cell_valid & ~exprvar(var, pos)
 
     return cell_valid
+
+def cost_to_id(cost):
+    return tuple(map(int, "{0:b}".format(cost).rjust(num_cost_vars, "0")))
+
+def get_var_equal_cost_formula(var, cost):
+    # Returns a formula that is true if var is set to cell
+    cost_valid = expr(True)
+
+    for pos in range(num_cost_vars):
+        if cost[pos] == 1:
+            cost_valid = cost_valid & exprvar(var, pos)
+        else:
+            cost_valid = cost_valid & ~exprvar(var, pos)
+
+    return cost_valid
+
 
 def draw_improvisation(improvisation):
     fig, ax = plt.subplots(1, 1, tight_layout=True)
@@ -230,8 +340,6 @@ def draw_improvisation(improvisation):
 
     ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
 
-    #ax.axis('off')
-
     start_loc = np.where(np.array(GRIDWORLD) == 2)
 
     point_a = None
@@ -239,8 +347,13 @@ def draw_improvisation(improvisation):
 
     lines = []
 
+    print(improvisation)
+
     for coords in improvisation[1:]:
         point_a = point_b
+
+        if coords is None:
+            break
 
         point_b = (coords[0] + 0.5,  len(GRIDWORLD) - 1 - coords[1] + 0.5)
 
