@@ -16,20 +16,22 @@ from matplotlib import collections  as mc
 # 1 denotes impassable terrain
 # 2 denotes the start point
 # 3 denotes the end point
-# 4 denotes label objectives. One label objective must be visited
-# 5 denotes hard objective 1. All hard objectives must be visited
-# 6 denotes hard objective 2. All hard objectives must be visited
-# 7 denotes hard objective 3. All hard objectives must be visited
-# 8 denotes hard objective 4. All hard objectives must be visited
+# 4 denotes hard objective 1. All hard objectives must be visited
+# 5 denotes hard objective 2. All hard objectives must be visited
+# 6 denotes hard objective 3. All hard objectives must be visited
+# 7 denotes hard objective 4. All hard objectives must be visited
+# 8 denotes label objective 1. The selected label objective must be visited first.
+# 9 denotes label objective 2. The selected label objective must be visited first.
+# 10 denotes label objective 3. The selected label objective must be visited first.
 GRIDWORLD =         (
-                    (0, 0, 0, 0, 3, 0, 0, 0),
-                    (0, 0, 0, 4, 0, 0, 6, 0),
-                    (0, 0, 0, 0, 0, 0, 0, 0),
-                    (1, 1, 0, 1, 0, 1, 1, 0),
-                    (8, 4, 0, 0, 0, 0, 4, 0),
-                    (0, 0, 0, 0, 0, 5, 0, 0),
-                    (0, 0, 0, 0, 0, 0, 0, 0),
-                    (7, 0, 0, 0, 2, 0, 0, 0)
+                    (0, 0, 0, 0, 3, 0, 0,  0),
+                    (0, 0, 0, 9, 0, 0, 5,  0),
+                    (0, 0, 0, 0, 0, 0, 0,  0),
+                    (1, 1, 0, 1, 0, 1, 1,  0),
+                    (7, 8, 0, 0, 0, 0, 10, 0),
+                    (0, 0, 0, 0, 0, 4, 0,  0),
+                    (0, 0, 0, 0, 0, 0, 0,  0),
+                    (6, 0, 0, 0, 2, 0, 0,  0)
                     )
 
 GRIDWORLD_COSTS =   [
@@ -70,12 +72,29 @@ for y in range(len(GRIDWORLD)):
 
 num_cost_vars = 8
 
+lc_1_loc = np.where(np.array(GRIDWORLD) == 8)
+lc_1_loc = (lc_1_loc[1][0], lc_1_loc[0][0])
+
+lc_2_loc = np.where(np.array(GRIDWORLD) == 9)
+lc_2_loc = (lc_2_loc[1][0], lc_2_loc[0][0])
+
+lc_3_loc = np.where(np.array(GRIDWORLD) == 10)
+lc_3_loc = (lc_3_loc[1][0], lc_3_loc[0][0])
+
+lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
+
+num_label_vars = 2
+
 def run():
+    target_label = 3
+
     hc = create_hard_constraint()
 
     cf = create_cost_function()
 
-    ac = And(hc, cf)
+    lf = And(create_label_function(), BitVec("LabelChoice", num_label_vars) == BitVecVal(target_label, num_label_vars))
+
+    ac = And(hc, cf, lf)
 
     print("Solving...")
 
@@ -86,6 +105,8 @@ def run():
     print(solution)
 
     str_solutions = {var.name(): solution[var] for var in solution.decls()}
+
+    print("CostSum: ", str_solutions["CostSum"])
 
     print("Parsing...")
 
@@ -106,7 +127,15 @@ def run():
 
         coords.append(id_cell_map[tuple(cell_id)])
 
+    print("Coordinates:")
+    print(len(coords))
     print(coords)
+    print()
+
+    print("Costs:")
+    print([GRIDWORLD_COSTS[y][x] for x,y in coords])
+    print(sum([GRIDWORLD_COSTS[y][x] for x,y in coords]))
+    print()
 
     print("Rendering...")
 
@@ -160,16 +189,16 @@ def create_exact_length_hard_constraint(length, max_length):
         hc = And(hc, get_var_equal_cell_formula(ignored_var, cell_id_map[None]))
 
     # Make constraint visit all hard objectives.
-    hc_1_loc = np.where(np.array(GRIDWORLD) == 5)
+    hc_1_loc = np.where(np.array(GRIDWORLD) == 4)
     hc_1_loc = (hc_1_loc[1][0], hc_1_loc[0][0])
 
-    hc_2_loc = np.where(np.array(GRIDWORLD) == 6)
+    hc_2_loc = np.where(np.array(GRIDWORLD) == 5)
     hc_2_loc = (hc_2_loc[1][0], hc_2_loc[0][0])
 
-    hc_3_loc = np.where(np.array(GRIDWORLD) == 7)
+    hc_3_loc = np.where(np.array(GRIDWORLD) == 6)
     hc_3_loc = (hc_3_loc[1][0], hc_3_loc[0][0])
 
-    hc_4_loc = np.where(np.array(GRIDWORLD) == 8)
+    hc_4_loc = np.where(np.array(GRIDWORLD) == 7)
     hc_4_loc = (hc_4_loc[1][0], hc_4_loc[0][0])
 
     ho_locs = [hc_1_loc, hc_2_loc, hc_3_loc, hc_4_loc]
@@ -297,7 +326,7 @@ def get_var_cost_function(var):
     cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[None])
     cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, 0)
 
-    cell_and_cost_formula = And(cell_valid_formula, cost_valid_formula)
+    cell_and_cost_formula = Implies(cell_valid_formula, cost_valid_formula)
 
     var_cf = cell_and_cost_formula
 
@@ -314,6 +343,44 @@ def get_var_cost_function(var):
             var_cf = And(var_cf, cell_and_cost_formula)
 
     return var_cf
+
+###################################################################################################
+# LabelFunction Funcs
+###################################################################################################
+
+def create_label_function():
+    lf = True
+
+    for lo_iter, lo_loc in enumerate(lo_locs):
+        lo_id = cell_id_map[lo_loc]
+
+        lo_indicator = create_label_indicator(lo_id, length_bounds[1] + 1)
+
+        lo_implication = Implies(BitVec("LabelChoice", num_label_vars) == BitVecVal(lo_iter, num_label_vars), lo_indicator)
+
+        lf = And(lf, lo_implication)
+
+    return lf
+
+def create_label_indicator(lo_id, length):
+    # Creates a func that is true if and only if lo_id has aready been the first label cell encountered
+    # or no other lo_id has been encountered and the current cell is lo_id
+    if length == 1:
+        return get_var_equal_cell_formula("Cell_1", lo_id)    
+    else:
+        return Or(create_label_indicator(lo_id, length-1), And(create_no_prev_lo_function(length-1), get_var_equal_cell_formula("Cell_" + str(length), lo_id)))
+
+def create_no_prev_lo_function(length):
+    if length == 1:
+        func = True
+    else:
+        func = create_no_prev_lo_function(length-1)
+
+    for lo_loc in lo_locs:
+        lo_id = cell_id_map[lo_loc]
+        func = And(func, Not(get_var_equal_cell_formula("Cell_" + str(length), lo_id)))
+
+    return func
 
 
 ###################################################################################################
@@ -356,7 +423,7 @@ def draw_improvisation(improvisation):
         ax.axvline(x, lw=2, color='k', zorder=5)
 
     cmap = colors.ListedColormap(['white', '#000000','grey', 'grey', 'orange', 'darkblue'])
-    boundaries = [0, 1, 2, 3, 4, 5, 9]
+    boundaries = [0, 1, 2, 3, 5, 8]
     norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
 
     ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
