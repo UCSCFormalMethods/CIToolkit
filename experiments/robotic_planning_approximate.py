@@ -73,16 +73,17 @@ num_cost_vars = 8
 def run():
     hc = create_hard_constraint()
 
-    #cf = create_cost_function().simplify()
+    cf = create_cost_function()
 
-    ac = hc #& cf
+    ac = And(hc, cf)
 
     print("Solving...")
 
     s = Solver()
     s.add(ac)
-    s.check()
+    print(s.check())
     solution = s.model()
+    print(solution)
 
     str_solutions = {var.name(): solution[var] for var in solution.decls()}
 
@@ -117,8 +118,8 @@ def run():
 def create_hard_constraint():
     hc = False
 
-    for length in range(length_bounds[0], length_bounds[1]):
-        hc = Or(hc, create_exact_length_hard_constraint(length, length_bounds[1]))
+    for length in range(length_bounds[0], length_bounds[1]+1):
+        hc = Or(hc, create_exact_length_hard_constraint(length, length_bounds[1]+1))
 
     return hc
 
@@ -249,31 +250,35 @@ def create_cost_function():
 
     # Create a function that fixes the cost of each cell_cost_var to
     # the cost of that cell. If cell is NONE, then cost is 0.
-    # for var_iter in range(1, length_bounds[1]):
-    #     target_var = "Cell_" + str(var_iter)
-
-    #     cf = cf & get_var_cost_function(target_var)
-
-    # Create a function that fixes the variable COST to be the sum of
-    # all cost variables
-    cost_sum = bfarray.exprzeros(num_cost_vars)
-    for var_iter in range(1, length_bounds[1]):
-        print("Var_iter:", var_iter)
+    for var_iter in range(1, length_bounds[1]+1):
         target_var = "Cell_" + str(var_iter)
 
-        var_array = bfarray.farray([exprvar(target_var + "_Cost", pos) for pos in range(num_cost_vars)])
+        cf = And(cf, get_var_cost_function(target_var))
 
-        output = ripple_carry_add(var_array, cost_sum)
+    # Create a function that fixes the variable "CostSum" to be the sum of
+    # all cost variables
+    # cost_sum = bfarray.exprzeros(num_cost_vars)
+    # for var_iter in range(1, length_bounds[1]):
+    #     print("Var_iter:", var_iter)
+    #     target_var = "Cell_" + str(var_iter)
 
-        cost_sum =  bfarray.farray([expr.simplify() for expr in output[0]])
+    #     var_array = bfarray.farray([exprvar(target_var + "_Cost", pos) for pos in range(num_cost_vars)])
 
-    cost_sum =  bfarray.farray([expr.simplify() for expr in output[0]])
+    #     output = ripple_carry_add(var_array, cost_sum)
 
-    for pos in range(num_cost_vars):
-        print("Starting bit #", pos)
-        cost_bit_formula = (cost_sum[pos] & exprvar("CostSum", pos)) | (~cost_sum[pos] & ~exprvar("CostSum", pos)) # ITE(cost_sum[pos], ~exprvar("CostSum", pos), exprvar("CostSum", pos))
+    #     cost_sum =  bfarray.farray([expr.simplify() for expr in output[0]])
 
-        cf = (cf & cost_bit_formula).simplify()
+    # cost_sum =  bfarray.farray([expr.simplify() for expr in output[0]])
+
+    # for pos in range(num_cost_vars):
+    #     print("Starting bit #", pos)
+    #     cost_bit_formula = (cost_sum[pos] & exprvar("CostSum", pos)) | (~cost_sum[pos] & ~exprvar("CostSum", pos)) # ITE(cost_sum[pos], ~exprvar("CostSum", pos), exprvar("CostSum", pos))
+
+    #     cf = (cf & cost_bit_formula).simplify()
+
+    cost_sum = BitVec("CostSum", num_cost_vars) == sum([BitVec("Cell_" + str(var_iter) + "_Cost", num_cost_vars) for var_iter in range(1, length_bounds[1])])
+
+    cf = And(cf, cost_sum)
 
     return cf
 
@@ -286,20 +291,27 @@ def get_var_cost_function(var):
     # that each contain a conjunction of a cell assignment
     # along with an assignment of the appropriate cost to
     # the corresponding cell_cost variable.
-    var_cf = False
+
+    # Fixes the null cost to zero
+
+    cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[None])
+    cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, 0)
+
+    cell_and_cost_formula = And(cell_valid_formula, cost_valid_formula)
+
+    var_cf = cell_and_cost_formula
 
     # Fixes each cell_cost_variable
     for y in range(len(GRIDWORLD)):
         for x in range(len(GRIDWORLD[0])):
             cell_cost = GRIDWORLD_COSTS[y][x]
-            cell_cost_id = cost_to_id(cell_cost)
 
             cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[(x,y)])
-            cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, cell_cost_id)
+            cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, cell_cost)
 
-            cell_and_cost_formula = cell_valid_formula & cost_valid_formula
+            cell_and_cost_formula = Implies(cell_valid_formula, cost_valid_formula)
 
-            var_cf = var_cf & cell_and_cost_formula
+            var_cf = And(var_cf, cell_and_cost_formula)
 
     return var_cf
 
@@ -325,15 +337,15 @@ def cost_to_id(cost):
 
 def get_var_equal_cost_formula(var, cost):
     # Returns a formula that is true if var is set to cell
-    cost_valid = expr(True)
+    # cost_valid = expr(True)
 
-    for pos in range(num_cost_vars):
-        if cost[pos] == 1:
-            cost_valid = cost_valid & exprvar(var, pos)
-        else:
-            cost_valid = cost_valid & ~exprvar(var, pos)
+    # for pos in range(num_cost_vars):
+    #     if cost[pos] == 1:
+    #         cost_valid = cost_valid & exprvar(var, pos)
+    #     else:
+    #         cost_valid = cost_valid & ~exprvar(var, pos)
 
-    return cost_valid
+    return BitVec(var, num_cost_vars) == BitVecVal(cost, num_cost_vars)
 
 
 def draw_improvisation(improvisation):
