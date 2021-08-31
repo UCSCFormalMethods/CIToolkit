@@ -17,6 +17,8 @@ cvxpy = "^1.1.14"
 pytest-repeat = "^0.9.1"
 matplotlib = "^3.4.3"
 pyeda = "^0.28.0"
+z3-solver = "^4.8.12"
+boolexpr = "^2.4"
 
 [tool.poetry.extras]
 dev = [

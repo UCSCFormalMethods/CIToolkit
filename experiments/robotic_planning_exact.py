@@ -49,7 +49,7 @@ SHOW_COSTS = False
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (0,20)
+length_bounds = (0,30)
 
 
 def run():

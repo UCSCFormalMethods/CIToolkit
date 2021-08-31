@@ -1,9 +1,10 @@
 import math
 import itertools
-from pyeda.boolalg.expr import expr, exprvar, expr2dimacscnf, ITE
-import pyeda.boolalg.bfarray as bfarray
-from pyeda.logic.addition import ripple_carry_add, kogge_stone_add, brent_kung_add
+# from pyeda.boolalg.expr import expr, exprvar, expr2dimacscnf, ITE
+# import pyeda.boolalg.bfarray as bfarray
+# from pyeda.logic.addition import ripple_carry_add, kogge_stone_add, brent_kung_add
 import numpy as np
+from z3 import *
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -70,37 +71,43 @@ for y in range(len(GRIDWORLD)):
 num_cost_vars = 8
 
 def run():
-    hc = create_hard_constraint().simplify()
+    hc = create_hard_constraint()
 
-    cf = create_cost_function().simplify()
+    #cf = create_cost_function().simplify()
 
-    print(cf)
+    ac = hc #& cf
 
-    ac = hc & cf
+    print("Solving...")
 
-    cnf_ac = ac.to_cnf()
+    s = Solver()
+    s.add(ac)
+    s.check()
+    solution = s.model()
 
-    print(cnf_ac)
+    str_solutions = {var.name(): solution[var] for var in solution.decls()}
 
-    assert False
-
-    print("Starting Sat solver...")
-
-    assignment = {v:val for v, val in cnf_ac.satisfy_one().items() if v.name != 'aux'}
+    print("Parsing...")
 
     coords = []
 
     for var_iter in range(length_bounds[0], length_bounds[1]+1):
         var = "Cell_" + str(var_iter)
-        if var not in {name.names[0] for name in assignment.keys()}:
-            break
-        else:
-            cell_id = []
+        cell_id = []
 
-            for pos in range(num_cell_vars):
-                cell_id.append(assignment[exprvar(var, pos)])
+        for pos in range(num_cell_vars):
+            var_pos = var + "[" + str(pos) + "]"
 
-            coords.append(id_cell_map[tuple(cell_id)])
+            if solution.evaluate(Bool(var_pos)):
+                cell_id.append(1)
+            else:
+                cell_id.append(0)
+
+
+        coords.append(id_cell_map[tuple(cell_id)])
+
+    print(coords)
+
+    print("Rendering...")
 
     draw_improvisation(coords)
 
@@ -108,10 +115,10 @@ def run():
 # Hard Constraint Funcs
 ###################################################################################################
 def create_hard_constraint():
-    hc = expr(False)
+    hc = False
 
     for length in range(length_bounds[0], length_bounds[1]):
-        hc = hc | create_exact_length_hard_constraint(length, length_bounds[1])
+        hc = Or(hc, create_exact_length_hard_constraint(length, length_bounds[1]))
 
     return hc
 
@@ -138,18 +145,18 @@ def create_exact_length_hard_constraint(length, max_length):
     for var_iter in range(2, length+1):
         next_var = "Cell_" + str(var_iter)
 
-        hc = hc & get_feasible_transitions_formula(last_var, next_var)
+        hc = And(hc, get_feasible_transitions_formula(last_var, next_var))
 
         last_var = next_var
 
     # End cell is valid
-    hc = hc & end_cell_valid
+    hc =And(hc, end_cell_valid)
 
     # All other cells are set to null cell id
     for var_iter in range(length+1, max_length+1):
         ignored_var = "Cell_" + str(var_iter)
 
-        hc = hc & get_var_equal_cell_formula(ignored_var, cell_id_map[None])
+        hc = And(hc, get_var_equal_cell_formula(ignored_var, cell_id_map[None]))
 
     # Make constraint visit all hard objectives.
     hc_1_loc = np.where(np.array(GRIDWORLD) == 5)
@@ -168,14 +175,14 @@ def create_exact_length_hard_constraint(length, max_length):
 
     for ho_loc in ho_locs:
         ho_cell = cell_id_map[ho_loc]
-        ho_formula = expr(False)
+        ho_formula = False
 
         for var_iter in range(1, length+1):
             target_var = "Cell_" + str(var_iter)
 
-            ho_formula = ho_formula | get_var_equal_cell_formula(target_var, ho_cell)
+            ho_formula = Or(ho_formula, get_var_equal_cell_formula(target_var, ho_cell))
 
-        hc = hc & ho_formula
+        hc = And(hc, ho_formula)
 
     return hc
 
@@ -221,7 +228,7 @@ def get_feasible_transitions_formula(var_1, var_2):
                 transitions.add((origin_cell_id, destination_cell_id))
 
     # Create a boolean formula that accepts only if var_1 to var_2 is a valid transition.
-    transition_formula = expr(False)
+    transition_formula = False
 
     for transition in transitions:
         orig_cell, dest_cell = transition
@@ -230,7 +237,7 @@ def get_feasible_transitions_formula(var_1, var_2):
 
         dest_cell_valid = get_var_equal_cell_formula(var_2, dest_cell)
 
-        transition_formula = transition_formula | (orig_cell_valid & dest_cell_valid)
+        transition_formula = Or(transition_formula, And(orig_cell_valid, dest_cell_valid))
 
     return transition_formula
 
@@ -242,15 +249,16 @@ def create_cost_function():
 
     # Create a function that fixes the cost of each cell_cost_var to
     # the cost of that cell. If cell is NONE, then cost is 0.
-    for var_iter in range(1, length_bounds[1]):
-        target_var = "Cell_" + str(var_iter)
+    # for var_iter in range(1, length_bounds[1]):
+    #     target_var = "Cell_" + str(var_iter)
 
-        cf = cf & get_var_cost_function(target_var)
+    #     cf = cf & get_var_cost_function(target_var)
 
     # Create a function that fixes the variable COST to be the sum of
     # all cost variables
     cost_sum = bfarray.exprzeros(num_cost_vars)
     for var_iter in range(1, length_bounds[1]):
+        print("Var_iter:", var_iter)
         target_var = "Cell_" + str(var_iter)
 
         var_array = bfarray.farray([exprvar(target_var + "_Cost", pos) for pos in range(num_cost_vars)])
@@ -259,18 +267,13 @@ def create_cost_function():
 
         cost_sum =  bfarray.farray([expr.simplify() for expr in output[0]])
 
-    print(cost_sum[0])
+    cost_sum =  bfarray.farray([expr.simplify() for expr in output[0]])
 
     for pos in range(num_cost_vars):
         print("Starting bit #", pos)
-        cost_bit_formula = ITE(cost_sum[pos], ~exprvar("CostSum", pos), exprvar("CostSum", pos))
-
-        print(cost_bit_formula)
-
-        assert False
+        cost_bit_formula = (cost_sum[pos] & exprvar("CostSum", pos)) | (~cost_sum[pos] & ~exprvar("CostSum", pos)) # ITE(cost_sum[pos], ~exprvar("CostSum", pos), exprvar("CostSum", pos))
 
         cf = (cf & cost_bit_formula).simplify()
-        print(cf)
 
     return cf
 
@@ -307,13 +310,13 @@ def get_var_cost_function(var):
 
 def get_var_equal_cell_formula(var, cell):
     # Returns a formula that is true if var is set to cell
-    cell_valid = expr(True)
+    cell_valid = True
 
     for pos in range(num_cell_vars):
         if cell[pos] == 1:
-            cell_valid = cell_valid & exprvar(var, pos)
+            cell_valid = And(cell_valid, Bool(var + "[" + str(pos) + "]"))
         else:
-            cell_valid = cell_valid & ~exprvar(var, pos)
+            cell_valid = And(cell_valid, Not(Bool(var + "[" + str(pos) + "]")))
 
     return cell_valid
 
