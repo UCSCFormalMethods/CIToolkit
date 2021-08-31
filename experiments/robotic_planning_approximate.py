@@ -70,17 +70,23 @@ for y in range(len(GRIDWORLD)):
 num_cost_vars = 8
 
 def run():
-    cf = create_cost_function()
+    hc = create_hard_constraint().simplify()
+
+    cf = create_cost_function().simplify()
+
+    print(cf)
+
+    ac = hc & cf
+
+    cnf_ac = ac.to_cnf()
+
+    print(cnf_ac)
 
     assert False
 
-    hc = create_hard_constraint().simplify()
-
-    cnf_hc = hc.tseitin()
-
     print("Starting Sat solver...")
 
-    assignment = {v:val for v, val in cnf_hc.satisfy_one().items() if v.name != 'aux'}
+    assignment = {v:val for v, val in cnf_ac.satisfy_one().items() if v.name != 'aux'}
 
     coords = []
 
@@ -97,9 +103,6 @@ def run():
             coords.append(id_cell_map[tuple(cell_id)])
 
     draw_improvisation(coords)
-
-    #print({v:val for v, val in cnf_hc.satisfy_one().items() if v.name != 'aux'})
-    #print([v for v, val in cnf_hc.satisfy_one().items() if v.name != 'aux' and v.indices[0] == 1])
 
 ###################################################################################################
 # Hard Constraint Funcs
@@ -254,17 +257,20 @@ def create_cost_function():
 
         output = ripple_carry_add(var_array, cost_sum)
 
-        cost_sum = output[0]
+        cost_sum =  bfarray.farray([expr.simplify() for expr in output[0]])
 
-        print(var_iter)
-        print(cost_sum)
+    print(cost_sum[0])
 
     for pos in range(num_cost_vars):
         print("Starting bit #", pos)
         cost_bit_formula = ITE(cost_sum[pos], ~exprvar("CostSum", pos), exprvar("CostSum", pos))
+
         print(cost_bit_formula)
 
-        cf = (cf & cost_bit_formula)
+        assert False
+
+        cf = (cf & cost_bit_formula).simplify()
+        print(cf)
 
     return cf
 
