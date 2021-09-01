@@ -17,6 +17,8 @@ from fractions import Fraction
 from citoolkit.labellingfunctions.labelling_dfa import LabellingDfa
 from citoolkit.costfunctions.accumulated_cost_dfa import AccumulatedCostDfa
 
+BASE_DIRECTORY = "exact_data/"
+
 # Top left corner is (0,0)
 # 0 denotes normal passable terrain
 # 1 denotes impassable terrain
@@ -57,45 +59,45 @@ def run():
     print()
     start = time.time()
 
-    if os.path.isfile("hard_constraint.pickle"):
+    if os.path.isfile(BASE_DIRECTORY + "hard_constraint.pickle"):
         print("Loading hard constraint from pickle...\n")
-        hard_constraint = pickle.load(open("hard_constraint.pickle", 'rb'))
+        hard_constraint = pickle.load(open(BASE_DIRECTORY + "hard_constraint.pickle", 'rb'))
     else:
         print("Creating hard constraint...\n")
         hard_constraint = create_hard_constraint()
-        pickle.dump(hard_constraint, open("hard_constraint.pickle", "wb"))
+        pickle.dump(hard_constraint, open(BASE_DIRECTORY + "hard_constraint.pickle", "wb"))
 
     print("Hard Constraint States:", len(hard_constraint.states))
 
-    if os.path.isfile("label_function.pickle"):
+    if os.path.isfile(BASE_DIRECTORY + "label_function.pickle"):
         print("Loading label function from pickle...\n")
-        label_function = pickle.load(open("label_function.pickle", 'rb'))
+        label_function = pickle.load(open(BASE_DIRECTORY + "label_function.pickle", 'rb'))
     else:
         print("Creating label function...\n")
         label_function = create_label_function()
         label_function.decompose()
-        pickle.dump(label_function, open("label_function.pickle", "wb"))
+        pickle.dump(label_function, open(BASE_DIRECTORY + "label_function.pickle", "wb"))
 
     print("Label Function States:", len(label_function.dfa.states))
 
-    if os.path.isfile("cost_function.pickle"):
+    if os.path.isfile(BASE_DIRECTORY + "cost_function.pickle"):
         print("Loading cost function from pickle...\n")
-        cost_function = pickle.load(open("cost_function.pickle", 'rb'))
+        cost_function = pickle.load(open(BASE_DIRECTORY + "cost_function.pickle", 'rb'))
     else:
         print("Creating cost function...\n")
         cost_function = create_cost_function()
         cost_function.decompose()
-        pickle.dump(cost_function, open("cost_function.pickle", "wb"))
+        pickle.dump(cost_function, open(BASE_DIRECTORY + "cost_function.pickle", "wb"))
 
     print("Cost Function States:", len(cost_function.dfa.states))
 
-    if os.path.isfile("me_improviser.pickle"):
+    if os.path.isfile(BASE_DIRECTORY + "me_improviser.pickle"):
         print("Loading Max Entropy improviser from pickle...\n")
-        me_improviser = pickle.load(open("me_improviser.pickle", 'rb'))
+        me_improviser = pickle.load(open(BASE_DIRECTORY + "me_improviser.pickle", 'rb'))
     else:
         print("Creating Max Entropy improviser...\n")
         me_improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, 60, (Fraction(1,6), Fraction(1,2)))
-        pickle.dump(cost_function, open("me_improviser.pickle", "wb"))
+        pickle.dump(cost_function, open(BASE_DIRECTORY + "me_improviser.pickle", "wb"))
 
     print("Done. Total time: " + str(time.time() - start))
 
