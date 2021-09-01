@@ -329,22 +329,30 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
         #         cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
         #         cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
 
-        for label in label_func.labels:
-            label_class_spec = (hard_constraint & label_specs[label])
+        import os
+        import pickle
 
-            for cost in cost_func.costs:
-                cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
+        if os.path.isfile("exact_data/cost_classes.pickle"):
+            cost_class_specs = pickle.load(open("exact_data/cost_classes.pickle", 'rb'))
+        else:
+            for label in label_func.labels:
+                label_class_spec = (hard_constraint & label_specs[label])
 
-        with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 32)) as p:
-            func_input = [(label, cost, spec, length_bounds) for ((label, cost),spec) in cost_class_specs.items()]
-            spec_items = p.map(get_language_size, func_input, chunksize=1)
+                for cost in cost_func.costs:
+                    cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
 
-            p.close()
-            p.join()
+            with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 32)) as p:
+                func_input = [(label, cost, spec, length_bounds) for ((label, cost),spec) in cost_class_specs.items()]
+                spec_items = p.map(get_language_size, func_input, chunksize=1)
 
-            print("Done computing language sizes")
+                p.close()
+                p.join()
 
-            cost_class_specs = {key:spec for (key,spec) in spec_items}
+                print("Done computing language sizes")
+
+                cost_class_specs = {key:spec for (key,spec) in spec_items}
+
+            pickle.dump(cost_class_specs, open("exact_data/cost_classes.pickle", "wb"))
 
         for label in label_func.labels:
             for cost in cost_func.costs:

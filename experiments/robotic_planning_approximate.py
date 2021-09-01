@@ -19,7 +19,7 @@ from matplotlib import collections  as mc
 
 BASE_DIRECTORY = "approx_data/"
 
-R = 1.1
+R = 1.5
 EPSILON = 0.8
 DELTA = 0.2
 
@@ -213,7 +213,7 @@ def compute_class_sizes():
 
     formula_files = glob.glob(BASE_DIRECTORY + "formulas/*.cnf")
 
-    formula_path = get_formula_data_list()
+    formula_data = get_formula_data_list()
 
     with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
         formula_count_data = p.map(count_dimacs_wrapper, formula_data, chunksize=1)
@@ -250,6 +250,10 @@ def compute_dimacs_formulas():
         p.join()
 
     var_maps = {key: val for key, val in var_map_list}
+
+    pickle.dump(var_maps, open(BASE_DIRECTORY + "/var_maps.pickle", "wb"))
+
+    return var_maps
 
 def convert_dimacs_wrapper(x):
     label_num, curr_r, left_cost, right_cost = x
