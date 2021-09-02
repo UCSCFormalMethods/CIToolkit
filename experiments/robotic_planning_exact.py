@@ -97,7 +97,7 @@ def run():
     else:
         print("Creating Max Entropy improviser...\n")
         me_improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, 60, (Fraction(1,6), Fraction(1,2)))
-        pickle.dump(cost_function, open(BASE_DIRECTORY + "me_improviser.pickle", "wb"))
+        pickle.dump(me_improviser, open(BASE_DIRECTORY + "me_improviser.pickle", "wb"))
 
     print("Done. Total time: " + str(time.time() - start))
 

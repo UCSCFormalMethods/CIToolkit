@@ -402,7 +402,7 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
 
         # Create and solve problem
         prob = cp.Problem(objective, constraints)
-        result = prob.solve()
+        result = prob.solve(verbose=True)
 
         print("Done solving....")
 

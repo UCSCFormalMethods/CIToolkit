@@ -7,6 +7,7 @@ from z3 import *
 import subprocess
 import multiprocessing
 import glob
+import random
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -18,10 +19,6 @@ from matplotlib import collections  as mc
 ###################################################################################################
 
 BASE_DIRECTORY = "approx_data/"
-
-R = 1.5
-EPSILON = 0.8
-DELTA = 0.2
 
 # Top left corner is (0,0)
 # 0 denotes normal passable terrain
@@ -97,6 +94,19 @@ lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
 
 num_label_vars = 2
 
+R = 1.5
+
+max_cost = 2**num_cost_vars
+max_r = math.ceil(math.log(max_cost, R))-1
+
+GAMMA = 0.8
+DELTA = 0.2
+COST_BOUND = 200
+ALPHA_LIST = [0,0,0]
+BETA_LIST = [1e-6,1e-6,1e-6]
+LAMBDA = .3
+RHO = .4
+
 ###################################################################################################
 # Main Experiment
 ###################################################################################################
@@ -105,7 +115,7 @@ def run():
     start = time.time()
     print("Assembling DIMACS Fomulas...")
 
-    compute_dimacs_formulas()
+    formula_var_map = compute_dimacs_formulas()
 
     print("Assembled DIMACS Formulas in " + str(time.time() - start))
 
@@ -116,36 +126,202 @@ def run():
     class_size_map = compute_class_sizes()
 
     print("Counting solutions for DIMACS Formulas in " + str(time.time() - start))
+    print()
 
-    assert False
+    print("Counts:", class_size_map)
+    print()
 
-    arguments = ["cryptominisat5", "--verb", "0", out_file_path]
+    for label_iter in range(len(lo_locs)):
+        label_count = 0
+        label_total_lo_cost = 0
 
-    process = subprocess.run(args=arguments, capture_output=True)
+        curr_lo_cost = 1
 
-    output = process.stdout.decode("utf-8")
-    solution = {}
+        for cost_iter in range(max_r):
+            label_count += class_size_map[(label_iter, cost_iter)]
+            label_total_lo_cost += class_size_map[(label_iter, cost_iter)]*curr_lo_cost
 
-    for line in output.split("\n"):
-        if len(line) == 0:
-            break
-        elif line[0] == "s":
-            assert "SATISFIABLE" in line
-        elif line[0] == "v":
-            trimmed_line = line[1:]
+            curr_lo_cost = math.ceil(curr_lo_cost * R)
 
-            var_nums = map(int, [item.strip() for item in trimmed_line.split()])
+        print("Label#" + str(label_iter) + "  Size: " + str(label_count))
+        print("Label#" + str(label_iter) + "  Mean Lo Cost: " + str(label_total_lo_cost/label_count))
 
-            for num in var_nums:
+    # Initialize alpha probabilities
+    conditional_weights = {(label_iter, cost_iter):class_size_map[(label_iter, cost_iter)]*(ALPHA_LIST[label_iter]/(1+GAMMA)) for label_iter, cost_iter, _, _ in get_formula_data_list()}
 
-                var = abs(num)
+    label_sum_prob = {label_iter:sum([prob for ((l, c), prob) in conditional_weights.items() if l == label_iter]) for label_iter in range(len(lo_locs))}
 
-                if num == 0:
-                    break
-                elif num > 0:
-                    solution[num_var_map[abs(num)]] = True
+    # Check if we've already broken probability bounds.
+    for label_iter in range(len(lo_locs)):
+        assert label_sum_prob[label_iter] <= 1
+
+    # Add beta probabilities
+    for label_iter in range(len(lo_locs)):
+        for cost_iter in range(max_r):
+            new_cost = min((1 + GAMMA) * BETA_LIST[label_iter] * class_size_map[(label_iter, cost_iter)], 1 - label_sum_prob[label_iter])
+
+            conditional_weights[(label_iter, cost_iter)] = new_cost
+
+            label_sum_prob[label_iter] = sum([prob for ((l, c), prob) in conditional_weights.items() if l == label_iter])
+
+    # Check if we've now broken probability bounds
+    for label_iter in range(len(lo_locs)):
+        assert label_sum_prob[label_iter] <= 1
+
+    # Calculate conditional exptected costs
+    conditional_costs = {label_iter:sum([conditional_weights[(l,c)]*Lo for l, c, Lo, _ in get_formula_data_list() if l == label_iter]) for label_iter in range(len(lo_locs))}
+
+    print("Conditional Weights:", conditional_weights)
+    print("Conditional Costs", conditional_costs)
+
+    # Now calculate marginal costs.
+    marginal_weights = []
+
+    u = math.floor((1 - len(lo_locs)*LAMBDA)/(RHO - LAMBDA))
+
+    for label_iter in sorted(range(len(lo_locs)), key=lambda x: conditional_costs[label_iter]):
+        if label_iter < u:
+            marginal_weights.append(RHO)
+        elif label_iter == u:
+            marginal_weights.append(1 - RHO*u - LAMBDA*(len(lo_locs) - u - 1))
+        else:
+            marginal_weights.append(LAMBDA)
+
+    expected_cost = sum([marginal_weights[label_iter] * conditional_costs[label_iter] for label_iter in range(len(lo_locs))])
+
+    print("Marginal Weights:", marginal_weights)
+    print("Expected Cost:", expected_cost)
+    print()
+
+    sorted_label_weights = marginal_weights
+    sorted_labels = range(len(lo_locs))
+
+    sorted_cost_weights = {label_iter:[conditional_weights[(label_iter, cost_iter)] for cost_iter in range(max_r)] for label_iter in range(len(lo_locs))}
+    sorted_costs = range(max_r)
+
+    print("Sorted Label Weights:", sorted_label_weights)
+    print("Sorted Cost Weights:", sorted_cost_weights)
+
+    # Sample on repeat
+    while True:
+        print()
+        label_choice = 1 #random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
+        cost_choice = 7 #random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
+
+        target_formula = "approx_data/formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
+
+        print(target_formula)
+
+        start = time.time()
+
+        var_nums = sample_dimacs_formula(target_formula)
+
+        print("Sampled in " + str(time.time() - start))
+
+        solution = {}
+        var_num_map = formula_var_map[(label_choice, cost_choice)]
+        num_var_map = {num:var for (var, num) in var_num_map.items()}
+
+        print({var:num for var, num in var_num_map.items() if "Cell_" in var})
+
+        for num in var_nums:
+
+            var = abs(num)
+
+            if num == 0:
+                break
+            elif num > 0:
+                solution[num_var_map[abs(num)]] = True
+            else:
+                solution[num_var_map[abs(num)]] = False
+
+        coords = []
+
+        for var_iter in range(length_bounds[0], length_bounds[1]+1):
+            var = "Cell_" + str(var_iter)
+            cell_id = []
+
+            for pos in range(num_cell_vars):
+                var_pos = var + "[" + str(pos) + "]"
+
+                if solution[var_pos]:
+                    cell_id.append(1)
                 else:
-                    solution[num_var_map[abs(num)]] = False
+                    cell_id.append(0)
+
+            coords.append(id_cell_map[tuple(cell_id)])
+
+        print("Coordinates:")
+        print(len(list(filter(lambda x: x is None, coords))))
+        print(coords)
+        print()
+
+        print("Costs:")
+        cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
+        print(cost_list)
+        print(sum(cost_list))
+        print()
+
+        print("Rendering...")
+
+        draw_improvisation(coords)
+
+    # ac = get_symbolic_problem_instance(min_cost=27, max_cost=41, target_label=2)
+    # s = Solver()
+    # s.add(ac)
+    # print(s.check())
+    # solution = s.model()
+    # print(solution)
+
+    # str_solutions = {var.name(): solution[var] for var in solution.decls()}
+
+    # print("CostSum: ", str_solutions["CostSum"])
+
+    # print("Parsing...")
+
+    # coords = []
+
+    # for var_iter in range(length_bounds[0], length_bounds[1]+1):
+    #     var = "Cell_" + str(var_iter)
+    #     cell_id = []
+
+    #     for pos in range(num_cell_vars):
+    #         var_pos = var + "[" + str(pos) + "]"
+
+    #         if solution[Bool(var_pos)]:
+    #             cell_id.append(1)
+    #         else:
+    #             cell_id.append(0)
+
+    #     coords.append(id_cell_map[tuple(cell_id)])
+
+    # arguments = ["cryptominisat5", "--verb", "0", "experiments/approx_data/formulas/RP_Label_0_Cost_7.cnf"]
+
+    # process = subprocess.run(args=arguments, capture_output=True)
+
+    # output = process.stdout.decode("utf-8")
+    # solution = {}
+
+    # for line in output.split("\n"):
+    #     if len(line) == 0:
+    #         break
+    #     elif line[0] == "s":
+    #         assert "SATISFIABLE" in line
+    #     elif line[0] == "v":
+    #         trimmed_line = line[1:]
+
+    #         var_nums = map(int, [item.strip() for item in trimmed_line.split()])
+
+    #         for num in var_nums:
+
+    #             var = abs(num)
+
+    #             if num == 0:
+    #                 break
+    #             elif num > 0:
+    #                 solution[num_var_map[abs(num)]] = True
+    #             else:
+    #                 solution[num_var_map[abs(num)]] = False
 
     # target_label = 1
     # min_cost = 0
@@ -180,7 +356,7 @@ def run():
     #     for pos in range(num_cell_vars):
     #         var_pos = var + "[" + str(pos) + "]"
 
-    #         if solution[Bool(var_pos)]:
+    #         if solution[var_pos]:
     #             cell_id.append(1)
     #         else:
     #             cell_id.append(0)
@@ -265,15 +441,12 @@ def get_formula_data_list():
     # Create name and parameter tuples.
     formula_data = []
 
-    max_cost = 2**num_cost_vars
-    max_r = math.ceil(math.log(max_cost, R))
-
     label_nums = range(len(lo_locs))
 
     for label_num in label_nums:
         left_cost = 1
 
-        for curr_r in range(1, max_r):
+        for curr_r in range(max_r):
             right_cost = math.ceil(left_cost * R)
 
             formula_data.append((label_num, curr_r, left_cost, right_cost))
@@ -323,7 +496,7 @@ def convert_dimacs_problem_instance(problem, out_file_path):
     for cell_iter in range(1, length_bounds[1]+1):
         for pos in range(num_cell_vars):
             path_variables.append(dimac_var_map["Cell_" + str(cell_iter) + "[" + str(pos) + "]"])
-    
+
     it = iter(path_variables)
     while True:
         nextBatch = itertools.islice(it, 10)
@@ -368,17 +541,21 @@ def add_dimacs_variable(var, context):
         return (next_var, mapping)
 
 def get_symbolic_problem_instance(min_cost = None, max_cost = None, target_label = None):
+    # NOTE: MAX COST IS NOT INCLUSIVE
     BASE_HARD_CONSTRAINT = create_hard_constraint()
     BASE_COST_FUNCTION = create_cost_function()
     BASE_LABEL_FUNCTION = create_label_function()
 
     problem = And(BASE_HARD_CONSTRAINT, BASE_COST_FUNCTION, BASE_LABEL_FUNCTION)
 
+    max_cost = min(max_cost, 2**num_cost_vars - 1)
+    min_cost = max(min_cost, 0)
+
     if min_cost is not None:
         problem = And(problem,  BitVec("CostSum", num_cost_vars) >= min_cost)
 
     if max_cost is not None:
-        problem = And(problem,  BitVec("CostSum", num_cost_vars) <= max_cost)
+        problem = And(problem,  BitVec("CostSum", num_cost_vars) < max_cost)
 
     if target_label is not None:
         assert target_label <= len(lo_locs) - 1
@@ -387,7 +564,7 @@ def get_symbolic_problem_instance(min_cost = None, max_cost = None, target_label
     return problem
 
 def count_dimacs_formula(file_path):
-    arguments = ["approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
+    arguments = ["approxmc", "--verb", "0", "--epsilon", str(GAMMA), "--delta", str(DELTA), file_path]
 
     process = subprocess.run(args=arguments, capture_output=True, check=True)
 
@@ -399,6 +576,21 @@ def count_dimacs_formula(file_path):
             break
 
     return count
+
+def sample_dimacs_formula(file_path):
+    arguments = ["unigen", "--verb", "0", "--multisample", "0", "--samples", "1", "--epsilon", str(GAMMA), file_path]
+
+    process = subprocess.run(args=arguments, capture_output=True)
+
+    output = process.stdout.decode("utf-8")
+
+    print(output)
+
+    line = output.split("\n")[0]
+
+    var_nums = map(int, [item.strip() for item in line.split()])
+
+    return var_nums
 
 ###################################################################################################
 # Hard Constraint Funcs
