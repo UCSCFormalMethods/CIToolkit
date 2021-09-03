@@ -17,6 +17,8 @@ from citoolkit.specifications.spec import Spec
 from citoolkit.costfunctions.cost_func import CostFunc
 from citoolkit.labellingfunctions.labelling_func import LabellingFunc
 
+import time
+
 class LabelledQuantitativeCI(Improviser):
     """ An improviser for the Labelled Quantitative Control Improvisation problem.
 
@@ -349,8 +351,9 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
                 p.join()
 
                 print("Done computing language sizes")
+                print("Total CPU Time:", sum([x[2] for x in spec_items]))
 
-                cost_class_specs = {key:spec for (key,spec) in spec_items}
+                cost_class_specs = {key:spec for (key,spec, _) in spec_items}
 
             pickle.dump(cost_class_specs, open("exact_data/cost_classes.pickle", "wb"))
 
@@ -402,7 +405,7 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
 
         # Create and solve problem
         prob = cp.Problem(objective, constraints)
-        result = prob.solve(max_iters=10000, verbose=True)
+        result = prob.solve(verbose=True)
 
         print("Done solving....")
 
@@ -436,8 +439,9 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
 
 
 def get_language_size(param):
+    start_time = time.process_time()
     label, cost, spec, length_bounds = param
     spec = spec.explicit()
     gc.collect()
     print("Label: " + str(label) + ", Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
-    return ((label, cost), spec)
+    return ((label, cost), spec, time.process_time() - start_time)

@@ -11,6 +11,7 @@ from matplotlib import collections  as mc
 from citoolkit.specifications.dfa import Dfa
 
 from citoolkit.improvisers.labelled_quantitative_ci import MaxEntropyLabelledQuantitativeCI
+from citoolkit.improvisers.quantitative_ci import QuantitativeCI
 
 from fractions import Fraction
 
@@ -24,39 +25,55 @@ BASE_DIRECTORY = "exact_data/"
 # 1 denotes impassable terrain
 # 2 denotes the start point
 # 3 denotes the end point
-# 4 denotes label objectives. One label objective must be visited
-# 5 denotes hard objective 1. All hard objectives must be visited
-# 6 denotes hard objective 2. All hard objectives must be visited
-# 7 denotes hard objective 3. All hard objectives must be visited
-# 8 denotes hard objective 4. All hard objectives must be visited
+# 4 denotes hard objective 1. All hard objectives must be visited
+# 5 denotes hard objective 2. All hard objectives must be visited
+# 6 denotes hard objective 3. All hard objectives must be visited
+# 7 denotes hard objective 4. All hard objectives must be visited
+# 8 denotes label objective 0. The selected label objective must be visited first.
+# 9 denotes label objective 1. The selected label objective must be visited first.
+# 10 denotes label objective 2. The selected label objective must be visited first.
 GRIDWORLD =         (
-                    (0, 4, 0, 3, 0, 0),
-                    (0, 0, 0, 0, 0, 6),
-                    (0, 1, 1, 0, 1, 0),
-                    (8, 0, 0, 0, 0, 0),
-                    (0, 0, 4, 0, 5, 0),
-                    (7, 0, 0, 2, 0, 4)
+                    (8, 0, 3, 0, 5,  0),
+                    (0, 0, 0, 0, 0,  0),
+                    (0, 1, 0, 1, 0,  1),
+                    (7, 0, 0, 0, 0, 10),
+                    (0, 9, 0, 4, 0,  0),
+                    (6, 0, 2, 0, 0,  0)
                     )
 
-GRIDWORLD_COSTS =   [
-                    [2, 2, 2, 0, 2, 2],
-                    [2, 2, 2, 1, 2, 0],
-                    [4, 0, 0, 1, 0, 4],
-                    [2, 2, 3, 1, 3, 0],
-                    [2, 2, 0, 1, 0, 3],
-                    [0, 2, 2, 0, 3, 0]
-                    ]
+GRIDWORLD_COSTS =   (
+                    (4, 3, 0, 3, 2, 3),
+                    (3, 2, 1, 2, 2, 2),
+                    (4, 0, 1, 0, 4, 0),
+                    (2, 2, 1, 3, 3, 2),
+                    (3, 1, 1, 2, 3, 3),
+                    (2, 2, 0, 2, 2, 2)
+                    )
 
 SHOW_COSTS = False
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (0,30)
+length_bounds = (1,3)
 
+NUM_SAMPLES = 1000000
+
+word_prob_bounds = (0, 1/1e6)
+cost_bound = 40
+label_prob_bounds = (Fraction(1,6), Fraction(1,2))
 
 def run():
     print("Starting Exact LQCI Robotic Planning Experiment...")
     print()
+
+    if not os.path.exists(BASE_DIRECTORY):
+        os.makedirs(BASE_DIRECTORY)
+
+    print("Trace Length Bounds:", length_bounds)
+    print("Word Prob Bounds:", word_prob_bounds)
+    print("Label Prob Bounds:", label_prob_bounds)
+    print("Cost Bound", cost_bound)
+
     start = time.time()
 
     if os.path.isfile(BASE_DIRECTORY + "hard_constraint.pickle"):
@@ -66,8 +83,12 @@ def run():
         print("Creating hard constraint...\n")
         hard_constraint = create_hard_constraint()
         pickle.dump(hard_constraint, open(BASE_DIRECTORY + "hard_constraint.pickle", "wb"))
+        print("Done creating Hard Constraint. Total time taken: " + str(time.time() - start))
 
     print("Hard Constraint States:", len(hard_constraint.states))
+
+
+    start = time.time()
 
     if os.path.isfile(BASE_DIRECTORY + "label_function.pickle"):
         print("Loading label function from pickle...\n")
@@ -77,8 +98,12 @@ def run():
         label_function = create_label_function()
         label_function.decompose()
         pickle.dump(label_function, open(BASE_DIRECTORY + "label_function.pickle", "wb"))
+        print("Done creating Label Function. Total time taken: " + str(time.time() - start))
 
     print("Label Function States:", len(label_function.dfa.states))
+
+
+    start = time.time()
 
     if os.path.isfile(BASE_DIRECTORY + "cost_function.pickle"):
         print("Loading cost function from pickle...\n")
@@ -88,18 +113,97 @@ def run():
         cost_function = create_cost_function()
         cost_function.decompose()
         pickle.dump(cost_function, open(BASE_DIRECTORY + "cost_function.pickle", "wb"))
+        print("Done creating Cost Function. Total time taken: " + str(time.time() - start))
 
     print("Cost Function States:", len(cost_function.dfa.states))
 
-    if os.path.isfile(BASE_DIRECTORY + "me_improviser.pickle"):
-        print("Loading Max Entropy improviser from pickle...\n")
-        me_improviser = pickle.load(open(BASE_DIRECTORY + "me_improviser.pickle", 'rb'))
-    else:
-        print("Creating Max Entropy improviser...\n")
-        me_improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, 60, (Fraction(1,6), Fraction(1,2)))
-        pickle.dump(me_improviser, open(BASE_DIRECTORY + "me_improviser.pickle", "wb"))
 
-    print("Done. Total time: " + str(time.time() - start))
+    start = time.time()
+
+    if os.path.isfile(BASE_DIRECTORY + "qci_improviser.pickle"):
+        print("Loading Quantitative CI improviser from pickle...\n")
+        qci_improviser = pickle.load(open(BASE_DIRECTORY + "qci_improviser.pickle", 'rb'))
+    else:
+        print("Creating Quantitative CI improviser...\n")
+        qci_improviser = QuantitativeCI(hard_constraint, cost_function, length_bounds, cost_bound, word_prob_bounds)
+        pickle.dump(qci_improviser, open(BASE_DIRECTORY + "qci_improviser.pickle", "wb"))
+        print("Done creating Quantitative CI Improviser. Total time taken: " + str(time.time() - start))
+
+
+    start = time.time()
+
+    if os.path.isfile(BASE_DIRECTORY + "melqci_improviser.pickle"):
+        print("Loading Max Entropy LQCI improviser from pickle...\n")
+        melqci_improviser = pickle.load(open(BASE_DIRECTORY + "melqci_improviser.pickle", 'rb'))
+    else:
+        print("Creating Max Entropy LQCI improviser...\n")
+        melqci_improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, cost_bound, label_prob_bounds)
+        pickle.dump(melqci_improviser, open(BASE_DIRECTORY + "melqci_improviser.pickle", "wb"))
+        print("Done creating ME LQCI Improviser. Total time taken: " + str(time.time() - start))
+
+    print("Num Samples:", NUM_SAMPLES)
+
+    start = time.time()
+
+    if os.path.isfile(BASE_DIRECTORY + "qci_samples.pickle"):
+        print("Loading " + str(NUM_SAMPLES) + " samples for Quantitative CI Improviser for pickle...\n")
+        qci_samples = pickle.load(open(BASE_DIRECTORY + "qci_samples.pickle", 'rb'))
+    else:
+        print("Sampling " + str(NUM_SAMPLES) + " from Quantitative CI Improviser...\n")
+        qci_samples = [qci_improviser.improvise() for _ in range(NUM_SAMPLES)]
+        pickle.dump(qci_samples, open(BASE_DIRECTORY + "qci_samples.pickle", "wb"))
+        print("Done sampling Quantitative CI Improviser. Total time taken: " + str(time.time() - start))
+
+    start = time.time()
+
+    if os.path.isfile(BASE_DIRECTORY + "melqci_samples.pickle"):
+        print("Loading " + str(NUM_SAMPLES) + " samples for Max Entropy LQCI Improviser for pickle...\n")
+        melqci_samples = pickle.load(open(BASE_DIRECTORY + "melqci_samples.pickle", 'rb'))
+    else:
+        print("Sampling " + str(NUM_SAMPLES) + " from Max Entropy LQCI Improviser...\n")
+        melqci_samples = [melqci_improviser.improvise() for _ in range(NUM_SAMPLES)]
+        pickle.dump(melqci_samples, open(BASE_DIRECTORY + "melqci_samples.pickle", "wb"))
+        print("Done sampling Max Entropy LQCI Improviser. Total time taken: " + str(time.time() - start))
+
+    qci_label_counts = [0,0,0]
+    qci_sum_cost = 0
+
+    for sample in qci_samples:
+        qci_sum_cost += cost_function.cost(sample)
+
+        sample_label = label_function.label(sample)
+
+        if sample_label == "Label0":
+            qci_label_counts[0] += 1
+        elif sample_label == "Label1":
+            qci_label_counts[1] += 1
+        elif sample_label == "Label2":
+            qci_label_counts[2] += 1
+        else:
+            assert False
+
+    print("Quantitative CI Samples Average Cost:", qci_sum_cost/NUM_SAMPLES)
+    print("Quantitative CI Label Probabilities:", [count/NUM_SAMPLES for count in qci_label_counts])
+
+    melqci_label_counts = [0,0,0]
+    melqci_sum_cost = 0
+
+    for sample in melqci_samples:
+        melqci_sum_cost += cost_function.cost(sample)
+
+        sample_label = label_function.label(sample)
+
+        if sample_label == "Label0":
+            melqci_label_counts[0] += 1
+        elif sample_label == "Label1":
+            melqci_label_counts[1] += 1
+        elif sample_label == "Label2":
+            melqci_label_counts[2] += 1
+        else:
+            assert False
+
+    print("Max Entropy LQCI Samples Average Cost:", melqci_sum_cost/NUM_SAMPLES)
+    print("Max Entropy LQCI Label Probabilities:", [count/NUM_SAMPLES for count in melqci_label_counts])
 
 def create_hard_constraint():
     max_y = len(GRIDWORLD) - 1
@@ -133,16 +237,16 @@ def create_hard_constraint():
     for symbol in alphabet:
         transitions[("Sink", symbol)] = "Sink"
 
-    hc_1_loc = np.where(np.array(GRIDWORLD) == 5)
+    hc_1_loc = np.where(np.array(GRIDWORLD) == 4)
     hc_1_loc = (hc_1_loc[1][0], hc_1_loc[0][0])
 
-    hc_2_loc = np.where(np.array(GRIDWORLD) == 6)
+    hc_2_loc = np.where(np.array(GRIDWORLD) == 5)
     hc_2_loc = (hc_2_loc[1][0], hc_2_loc[0][0])
 
-    hc_3_loc = np.where(np.array(GRIDWORLD) == 7)
+    hc_3_loc = np.where(np.array(GRIDWORLD) == 6)
     hc_3_loc = (hc_3_loc[1][0], hc_3_loc[0][0])
 
-    hc_4_loc = np.where(np.array(GRIDWORLD) == 8)
+    hc_4_loc = np.where(np.array(GRIDWORLD) == 7)
     hc_4_loc = (hc_4_loc[1][0], hc_4_loc[0][0])
 
     for y in range(len(GRIDWORLD)):
@@ -216,11 +320,16 @@ def create_label_function():
     start_loc = np.where(np.array(GRIDWORLD) == 2)
     start_loc = (start_loc[1][0], start_loc[0][0])
 
-    lo_loc = np.where(np.array(GRIDWORLD) == 4)
-    lo_locs = []
+    lc_1_loc = np.where(np.array(GRIDWORLD) == 8)
+    lc_1_loc = (lc_1_loc[1][0], lc_1_loc[0][0])
 
-    for i in range(len(lo_loc[0])):
-        lo_locs.append((lo_loc[1][i], lo_loc[0][i]))
+    lc_2_loc = np.where(np.array(GRIDWORLD) == 9)
+    lc_2_loc = (lc_2_loc[1][0], lc_2_loc[0][0])
+
+    lc_3_loc = np.where(np.array(GRIDWORLD) == 10)
+    lc_3_loc = (lc_3_loc[1][0], lc_3_loc[0][0])
+
+    lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
 
     accepting_states = {state_map[coords[0], coords[1]] for coords in lo_locs}
     start_state = state_map[(start_loc[0], start_loc[1])]
@@ -350,34 +459,30 @@ def draw_improvisation(improvisation):
         ax.axvline(x, lw=2, color='k', zorder=5)
 
     if SHOW_COSTS:
-        ax.imshow(GRIDWORLD_COSTS, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0)
+        ax.imshow(GRIDWORLD_COSTS, cmap="binary", interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0)
     else:
-        cmap = colors.ListedColormap(['white', '#000000','grey', 'grey', 'orange', 'darkblue'])
-        boundaries = [0, 1, 2, 3, 4, 5, 9]
+        cmap = colors.ListedColormap(['white', '#000000','grey', 'darkblue', 'orange'])
+        boundaries = [0, 1, 2, 4, 8, 12]
         norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
 
         ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
 
-    #ax.axis('off')
-
     start_loc = np.where(np.array(GRIDWORLD) == 2)
 
     point_a = None
-    point_b = (start_loc[1][0] + 0.5, len(GRIDWORLD) - 1 - start_loc[0][0] + 0.5)
+    point_b = (improvisation[0][0] + 0.5,  len(GRIDWORLD) - 1 - improvisation[0][1] + 0.5)
 
     lines = []
 
-    for symbol in improvisation:
+    print(improvisation)
+
+    for coords in improvisation[1:]:
         point_a = point_b
 
-        if symbol == "North":
-            point_b = (point_a[0], point_a[1] + 1)
-        elif symbol == "East":
-            point_b = (point_a[0] + 1, point_a[1])
-        elif symbol == "South":
-            point_b = (point_a[0], point_a[1] - 1)
-        elif symbol == "West":
-            point_b = (point_a[0] - 1, point_a[1])
+        if coords is None:
+            break
+
+        point_b = (coords[0] + 0.5,  len(GRIDWORLD) - 1 - coords[1] + 0.5)
 
         lines.append([point_a, point_b])
 
@@ -387,7 +492,6 @@ def draw_improvisation(improvisation):
     plt.axis('off')
 
     plt.show()
-
 if __name__ == '__main__':
     run()
 

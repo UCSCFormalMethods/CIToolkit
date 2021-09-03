@@ -19,6 +19,13 @@ from matplotlib import collections  as mc
 ###################################################################################################
 
 BASE_DIRECTORY = "approx_data/"
+SHOW_COSTS = True
+LARGE_MAP = False
+
+if LARGE_MAP:
+    BASE_DIRECTORY += "large_map/"
+else:
+    BASE_DIRECTORY += "small_map/"
 
 # Top left corner is (0,0)
 # 0 denotes normal passable terrain
@@ -32,31 +39,58 @@ BASE_DIRECTORY = "approx_data/"
 # 8 denotes label objective 0. The selected label objective must be visited first.
 # 9 denotes label objective 1. The selected label objective must be visited first.
 # 10 denotes label objective 2. The selected label objective must be visited first.
-GRIDWORLD =         (
-                    (0, 0, 0, 0, 3, 0, 0,  0),
-                    (0, 0, 0, 9, 0, 0, 5,  0),
-                    (0, 0, 0, 0, 0, 0, 0,  0),
-                    (1, 1, 0, 1, 0, 1, 1,  0),
-                    (7, 8, 0, 0, 0, 0, 10, 0),
-                    (0, 0, 0, 0, 0, 4, 0,  0),
-                    (0, 0, 0, 0, 0, 0, 0,  0),
-                    (6, 0, 0, 0, 2, 0, 0,  0)
-                    )
+if LARGE_MAP:
+    GRIDWORLD =         (
+                        (8, 0, 0, 0, 3, 0, 0, 0,  0),
+                        (0, 0, 0, 0, 0, 0, 5, 0,  0),
+                        (0, 0, 0, 0, 0, 0, 0, 0,  0),
+                        (0, 0, 0, 0, 0, 0, 0, 0,  0),
+                        (1, 1, 0, 1, 0, 1, 1, 0,  1),
+                        (7, 0, 0, 0, 0, 0, 0, 0, 10),
+                        (0, 0, 0, 9, 0, 4, 0, 0,  0),
+                        (0, 0, 0, 0, 0, 0, 0, 0,  0),
+                        (6, 0, 0, 0, 2, 0, 0, 0,  0)
+                        )
 
-GRIDWORLD_COSTS =   [
-                    [2, 2, 2, 2, 0, 2, 2, 2],
-                    [2, 3, 2, 0, 1, 2, 2, 2],
-                    [2, 2, 2, 2, 1, 2, 2, 2],
-                    [0, 0, 4, 0, 1, 0, 0, 4],
-                    [2, 0, 2, 3, 1, 3, 3, 0],
-                    [2, 2, 2, 2, 1, 0, 3, 2],
-                    [2, 2, 2, 2, 1, 3, 3, 2],
-                    [0, 2, 2, 2, 0, 2, 2, 2]
-                    ]
+    GRIDWORLD_COSTS =   (
+                        ( 9,  6,  3,  2,  0,  4,  4,  4,  2),
+                        ( 6,  3,  2,  2,  1,  4,  2,  4,  2),
+                        ( 3,  2,  2,  2,  1,  2,  2,  2,  2),
+                        ( 2,  2,  2,  2,  1,  2,  2,  2,  2),
+                        ( 0,  0, 10,  0,  1,  0,  0, 10,  0),
+                        ( 2,  2,  2,  2,  1,  4,  4,  2,  2),
+                        ( 2,  4,  4,  1,  1,  4,  4,  4,  2),
+                        ( 2,  4,  4,  2,  1,  2,  4,  4,  2),
+                        ( 2,  2,  2,  2,  0,  2,  2,  2,  2)
+                        )
+
+    length_bounds = (1,50)
+    COST_BOUND = 60
+else:
+    GRIDWORLD =         (
+                        (8, 0, 3, 0, 5,  0),
+                        (0, 0, 0, 0, 0,  0),
+                        (0, 1, 0, 1, 0,  1),
+                        (7, 0, 0, 0, 0, 10),
+                        (0, 9, 0, 4, 0,  0),
+                        (6, 0, 2, 0, 0,  0)
+                        )
+
+    GRIDWORLD_COSTS =   (
+                        (4, 3, 0, 3, 2, 3),
+                        (3, 2, 1, 2, 2, 2),
+                        (4, 0, 1, 0, 4, 0),
+                        (2, 2, 1, 3, 3, 2),
+                        (3, 1, 1, 2, 3, 3),
+                        (2, 2, 0, 2, 2, 2)
+                        )
+
+    length_bounds = (1,30)
+    COST_BOUND = 40
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (1,30)
+
 
 # Create a mapping from a cell in gridworld to a variable assignment.
 num_cell_vars = math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
@@ -79,7 +113,7 @@ for y in range(len(GRIDWORLD)):
         cell_id_map[(x, y)] = assignment
         id_cell_map[assignment] = (x,y)
 
-num_cost_vars = 8
+num_cost_vars = 10
 
 lc_1_loc = np.where(np.array(GRIDWORLD) == 8)
 lc_1_loc = (lc_1_loc[1][0], lc_1_loc[0][0])
@@ -94,14 +128,17 @@ lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
 
 num_label_vars = 2
 
-R = 1.5
+R = 2 # 1.2
 
 max_cost = 2**num_cost_vars
 max_r = math.ceil(math.log(max_cost, R))-1
 
-GAMMA = 0.8
-DELTA = 0.2
-COST_BOUND = 200
+num_buckets = len(lo_locs) * max_r
+
+OUT_DELTA = 0.05
+OUT_GAMMA = 0.2
+DELTA = 0.2 #1 - math.pow((1- OUT_DELTA), 1/num_buckets)
+EPSILON = 0.8 #math.pow(1 + OUT_GAMMA, 1/3) - 1
 ALPHA_LIST = [0,0,0]
 BETA_LIST = [1e-6,1e-6,1e-6]
 LAMBDA = .3
@@ -110,8 +147,10 @@ RHO = .4
 ###################################################################################################
 # Main Experiment
 ###################################################################################################
-
 def run():
+    print("Counting/Sampling Delta:", DELTA)
+    print("Counting/Sampling Epsilon:", EPSILON)
+
     start = time.time()
     print("Assembling DIMACS Fomulas...")
 
@@ -123,12 +162,14 @@ def run():
     start = time.time()
     print("Counting solutions for DIMACS Fomulas...")
 
-    class_size_map = compute_class_sizes()
+    class_count_map = compute_class_counts()
 
     print("Counting solutions for DIMACS Formulas in " + str(time.time() - start))
     print()
 
-    print("Counts:", class_size_map)
+    class_size_map = {key:val[0] for key,val in class_count_map.items()}
+
+    print("Sizes:", class_size_map)
     print()
 
     for label_iter in range(len(lo_locs)):
@@ -147,7 +188,7 @@ def run():
         print("Label#" + str(label_iter) + "  Mean Lo Cost: " + str(label_total_lo_cost/label_count))
 
     # Initialize alpha probabilities
-    conditional_weights = {(label_iter, cost_iter):class_size_map[(label_iter, cost_iter)]*(ALPHA_LIST[label_iter]/(1+GAMMA)) for label_iter, cost_iter, _, _ in get_formula_data_list()}
+    conditional_weights = {(label_iter, cost_iter):class_size_map[(label_iter, cost_iter)]*(ALPHA_LIST[label_iter]/(1+EPSILON)) for label_iter, cost_iter, _, _ in get_formula_data_list()}
 
     label_sum_prob = {label_iter:sum([prob for ((l, c), prob) in conditional_weights.items() if l == label_iter]) for label_iter in range(len(lo_locs))}
 
@@ -158,7 +199,7 @@ def run():
     # Add beta probabilities
     for label_iter in range(len(lo_locs)):
         for cost_iter in range(max_r):
-            new_cost = min((1 + GAMMA) * BETA_LIST[label_iter] * class_size_map[(label_iter, cost_iter)], 1 - label_sum_prob[label_iter])
+            new_cost = min((1 + EPSILON) * BETA_LIST[label_iter] * class_size_map[(label_iter, cost_iter)], 1 - label_sum_prob[label_iter])
 
             conditional_weights[(label_iter, cost_iter)] = new_cost
 
@@ -204,55 +245,14 @@ def run():
 
     # Sample on repeat
     while True:
-        print()
-        label_choice = 1 #random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
-        cost_choice = 7 #random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
+        print("\n")
+        label_choice = random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
+        cost_choice = random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
 
-        target_formula = "approx_data/formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
-
-        print(target_formula)
-
-        start = time.time()
-
-        var_nums = sample_dimacs_formula(target_formula)
-
-        print("Sampled in " + str(time.time() - start))
-
-        solution = {}
-        var_num_map = formula_var_map[(label_choice, cost_choice)]
-        num_var_map = {num:var for (var, num) in var_num_map.items()}
-
-        print({var:num for var, num in var_num_map.items() if "Cell_" in var})
-
-        for num in var_nums:
-
-            var = abs(num)
-
-            if num == 0:
-                break
-            elif num > 0:
-                solution[num_var_map[abs(num)]] = True
-            else:
-                solution[num_var_map[abs(num)]] = False
-
-        coords = []
-
-        for var_iter in range(length_bounds[0], length_bounds[1]+1):
-            var = "Cell_" + str(var_iter)
-            cell_id = []
-
-            for pos in range(num_cell_vars):
-                var_pos = var + "[" + str(pos) + "]"
-
-                if solution[var_pos]:
-                    cell_id.append(1)
-                else:
-                    cell_id.append(0)
-
-            coords.append(id_cell_map[tuple(cell_id)])
+        coords = sample_improviser(label_choice, cost_choice, formula_var_map)
 
         print("Coordinates:")
-        print(len(list(filter(lambda x: x is None, coords))))
+        print("Path Length:", len(list(filter(lambda x: x is None, coords))))
         print(coords)
         print()
 
@@ -378,14 +378,58 @@ def run():
 
     # draw_improvisation(coords)
 
+def sample_improviser(label_choice, cost_choice, formula_var_map):
+    target_formula = "approx_data/formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
+
+    print(target_formula)
+
+    start = time.time()
+
+    var_nums = sample_dimacs_formula(target_formula)
+
+    print("Sampled in " + str(time.time() - start))
+
+    solution = {}
+    var_num_map = formula_var_map[(label_choice, cost_choice)]
+    num_var_map = {num:var for (var, num) in var_num_map.items()}
+
+    for num in var_nums:
+
+        var = abs(num)
+
+        if num == 0:
+            break
+        elif num > 0:
+            solution[num_var_map[abs(num)]] = True
+        else:
+            solution[num_var_map[abs(num)]] = False
+
+    coords = []
+
+    for var_iter in range(length_bounds[0], length_bounds[1]+1):
+        var = "Cell_" + str(var_iter)
+        cell_id = []
+
+        for pos in range(num_cell_vars):
+            var_pos = var + "[" + str(pos) + "]"
+
+            if solution[var_pos]:
+                cell_id.append(1)
+            else:
+                cell_id.append(0)
+
+        coords.append(id_cell_map[tuple(cell_id)])
+
+    return coords
+
 ###################################################################################################
 # Experiment Funcs
 ###################################################################################################
-def compute_class_sizes():
-    if os.path.exists(BASE_DIRECTORY + "/class_sizes.pickle"):
+def compute_class_counts():
+    if os.path.exists(BASE_DIRECTORY + "/class_counts.pickle"):
         print("Loading class sizes dictionary from pickle...\n")
-        class_sizes = pickle.load(open(BASE_DIRECTORY + "/class_sizes.pickle", 'rb'))
-        return class_sizes
+        class_counts = pickle.load(open(BASE_DIRECTORY + "/class_counts.pickle", 'rb'))
+        return class_counts
 
     formula_files = glob.glob(BASE_DIRECTORY + "formulas/*.cnf")
 
@@ -399,7 +443,7 @@ def compute_class_sizes():
 
     formula_count_map = {formula_name:count for formula_name, count in formula_count_data}
 
-    pickle.dump(formula_count_map, open(BASE_DIRECTORY + "/class_sizes.pickle", "wb"))
+    pickle.dump(formula_count_map, open(BASE_DIRECTORY + "/class_counts.pickle", "wb"))
 
     return formula_count_map
 
@@ -459,9 +503,15 @@ def convert_dimacs_problem_instance(problem, out_file_path):
     # Convert z3 expression to CNF form.
     tactic = Then('simplify', 'bit-blast', 'tseitin-cnf')
     goal = tactic(problem)
+
     assert len(goal) == 1
 
     clauses = goal[0]
+
+    s = Solver()
+    s.add(clauses)
+    if s.check() != sat:
+        clauses = [Bool("Infeasible"), Not(Bool("Infeasible"))]
 
     context = (1, {})
 
@@ -564,27 +614,30 @@ def get_symbolic_problem_instance(min_cost = None, max_cost = None, target_label
     return problem
 
 def count_dimacs_formula(file_path):
-    arguments = ["approxmc", "--verb", "0", "--epsilon", str(GAMMA), "--delta", str(DELTA), file_path]
+    # Returns (total_count, cell_count, hash_count)
+    arguments = ["approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
 
     process = subprocess.run(args=arguments, capture_output=True, check=True)
 
     output = process.stdout.decode("utf-8")
 
     for line in output.split("\n"):
-        if line[0] == "s":
-            count  = int(line[5:].strip())
+        if line[:34] == 'c [appmc] Number of solutions is: ':
+            stripped_line = line[34:]
+            split_line = stripped_line.split("*")
+            cell_count = int(split_line[0])
+            hash_count = int(split_line[3])
+            count = cell_count * (2**hash_count)
             break
 
-    return count
+    return (count, cell_count, hash_count)
 
 def sample_dimacs_formula(file_path):
-    arguments = ["unigen", "--verb", "0", "--multisample", "0", "--samples", "1", "--epsilon", str(GAMMA), file_path]
+    arguments = ["unigen", "--verb", "0", "--multisample", "0", "--seed", str(random.randint(1,1000000000)) , "--samples", "1", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
 
     process = subprocess.run(args=arguments, capture_output=True)
 
     output = process.stdout.decode("utf-8")
-
-    print(output)
 
     line = output.split("\n")[0]
 
@@ -873,11 +926,14 @@ def draw_improvisation(improvisation):
         ax.axhline(x, lw=2, color='k', zorder=5)
         ax.axvline(x, lw=2, color='k', zorder=5)
 
-    cmap = colors.ListedColormap(['white', '#000000','grey', 'darkblue', 'orange'])
-    boundaries = [0, 1, 2, 4, 8, 12]
-    norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
+    if SHOW_COSTS:
+        ax.imshow(GRIDWORLD_COSTS, cmap="binary", interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0)
+    else:
+        cmap = colors.ListedColormap(['white', '#000000','grey', 'darkblue', 'orange'])
+        boundaries = [0, 1, 2, 4, 8, 12]
+        norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
 
-    ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
+        ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
 
     start_loc = np.where(np.array(GRIDWORLD) == 2)
 

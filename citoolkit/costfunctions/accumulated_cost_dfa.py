@@ -10,6 +10,8 @@ import multiprocessing
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.costfunctions.cost_func import CostFunc
 
+import time
+
 class AccumulatedCostDfa(CostFunc):
     """ Class encoding an Accumulated Cost Deterministic Finite Automata.
     This is represented with a Dfa that has each state mapped to a cost.
@@ -115,8 +117,10 @@ class AccumulatedCostDfa(CostFunc):
             p.close()
             p.join()
 
+        print("Total CPU Time:", sum([x[1] for x in min_specs]))
+
         for cost_iter, cost in enumerate(sorted_costs):
-            decomp_cost_func[cost] = min_specs[cost_iter]
+            decomp_cost_func[cost] = min_specs[cost_iter][0]
 
         self.decomp_cost_func = decomp_cost_func
 
@@ -124,8 +128,9 @@ class AccumulatedCostDfa(CostFunc):
 
     @staticmethod
     def make_min_spec(params):
+        start_time = time.process_time()
         cost, alphabet, states, accepting_states, start_state, transitions = params
-        return Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
+        return (Dfa(alphabet, states, accepting_states, start_state, transitions).minimize(), time.process_time() - start_time)
 
     @staticmethod
     def _compute_cost_table(dfa, cost_map, max_word_length):
