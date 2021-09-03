@@ -621,8 +621,6 @@ def count_dimacs_formula(file_path):
 
     output = process.stdout.decode("utf-8")
 
-    print(output)
-
     for line in output.split("\n"):
         if line[:34] == 'c [appmc] Number of solutions is: ':
             stripped_line = line[34:]
@@ -631,10 +629,6 @@ def count_dimacs_formula(file_path):
             hash_count = int(split_line[3])
             count = cell_count * (2**hash_count)
             break
-        elif len(line) == 0:
-            cell_count = 0
-            hash_count = 0
-            count = 0
 
     return (count, cell_count, hash_count)
 

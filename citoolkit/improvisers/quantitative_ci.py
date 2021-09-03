@@ -10,6 +10,11 @@ from citoolkit.improvisers.improviser import Improviser, InfeasibleImproviserErr
 from citoolkit.specifications.spec import Spec
 from citoolkit.costfunctions.cost_func import CostFunc
 
+import multiprocessing
+import gc
+import time
+
+
 class QuantitativeCI(Improviser):
     """ An improviser for the Quantitative Control Improvisation problem.
 
@@ -55,6 +60,18 @@ class QuantitativeCI(Improviser):
 
         for cost in cost_func.costs:
             self.i_specs[cost] = hard_constraint & cost_specs[cost]
+
+        with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 32)) as p:
+            func_input = [(cost, spec, length_bounds) for (cost ,spec) in self.i_specs.items()]
+            spec_items = p.map(get_language_size, func_input, chunksize=1)
+
+            p.close()
+            p.join()
+
+            print("Done computing language sizes")
+            print("Total CPU Time:", sum([x[2] for x in spec_items]))
+
+            self.i_specs = {key:spec for (key,spec, _) in spec_items}
 
         # Compute the size of I.
         i_size = sum([self.i_specs[cost].language_size(*length_bounds) for cost in cost_func.costs])
@@ -111,3 +128,11 @@ class QuantitativeCI(Improviser):
         selected_cost = random.choices(population=self.sorted_costs, weights=self.sorted_costs_weights, k=1)[0]
 
         return self.i_specs[selected_cost].sample(*self.length_bounds)
+
+def get_language_size(param):
+    start_time = time.process_time()
+    cost, spec, length_bounds = param
+    spec = spec.explicit()
+    gc.collect()
+    print("Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
+    return (cost, spec, time.process_time() - start_time)
