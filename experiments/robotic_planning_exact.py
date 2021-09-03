@@ -125,7 +125,7 @@ def run():
         qci_improviser = pickle.load(open(BASE_DIRECTORY + "qci_improviser.pickle", 'rb'))
     else:
         print("Creating Quantitative CI improviser...\n")
-        qci_improviser = QuantitativeCI((hard_constraint & label_function.dfa), cost_function, length_bounds, cost_bound, word_prob_bounds)
+        qci_improviser = QuantitativeCI((hard_constraint & label_function.dfa).explicit().minimize(), cost_function, length_bounds, cost_bound, word_prob_bounds)
         pickle.dump(qci_improviser, open(BASE_DIRECTORY + "qci_improviser.pickle", "wb"))
         print("Done creating Quantitative CI Improviser. Total time taken: " + str(time.time() - start))
 
