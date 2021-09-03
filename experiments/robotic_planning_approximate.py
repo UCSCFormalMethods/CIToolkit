@@ -617,9 +617,11 @@ def count_dimacs_formula(file_path):
     # Returns (total_count, cell_count, hash_count)
     arguments = ["approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
 
-    process = subprocess.run(args=arguments, capture_output=True, check=True)
+    process = subprocess.run(args=arguments, capture_output=True)
 
     output = process.stdout.decode("utf-8")
+
+    print(output)
 
     for line in output.split("\n"):
         if line[:34] == 'c [appmc] Number of solutions is: ':
@@ -629,6 +631,10 @@ def count_dimacs_formula(file_path):
             hash_count = int(split_line[3])
             count = cell_count * (2**hash_count)
             break
+        elif len(line) == 0:
+            cell_count = 0
+            hash_count = 0
+            count = 0
 
     return (count, cell_count, hash_count)
 

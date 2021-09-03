@@ -112,7 +112,7 @@ class AccumulatedCostDfa(CostFunc):
         func_input = [(cost, self.dfa.alphabet, new_states, cost_accepting_map[cost], new_start_state, new_transitions) for cost in sorted_costs]
 
         with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
-            min_specs = p.map(self.make_min_spec, func_input)
+            min_specs = p.map(self.make_min_spec, func_input, chunksize=1)
 
             p.close()
             p.join()
