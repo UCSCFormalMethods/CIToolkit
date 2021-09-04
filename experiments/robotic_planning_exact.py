@@ -54,7 +54,7 @@ SHOW_COSTS = False
 
 alphabet = {"North", "East", "South", "West"}
 
-length_bounds = (1,30)
+length_bounds = (1,25)
 
 NUM_SAMPLES = 1000000
 
