@@ -128,7 +128,7 @@ lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
 
 num_label_vars = 2
 
-R = 2 # 1.2
+R = 1.5
 
 max_cost = 2**num_cost_vars
 max_r = math.ceil(math.log(max_cost, R))-1
