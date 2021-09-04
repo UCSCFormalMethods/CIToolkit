@@ -62,7 +62,7 @@ class QuantitativeCI(Improviser):
             self.i_specs[cost] = hard_constraint & cost_specs[cost]
 
         with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 32)) as p:
-            func_input = [(cost, spec, length_bounds) for (cost ,spec) in self.i_specs.items()]
+            func_input = [(cost, spec, length_bounds) for (cost, spec) in self.i_specs.items()]
             spec_items = p.map(get_language_size, func_input, chunksize=1)
 
             p.close()
@@ -130,6 +130,7 @@ class QuantitativeCI(Improviser):
         return self.i_specs[selected_cost].sample(*self.length_bounds)
 
 def get_language_size(param):
+    print("Starting thread...")
     start_time = time.process_time()
     cost, spec, length_bounds = param
     print("Computing Spec for Cost:", cost)
