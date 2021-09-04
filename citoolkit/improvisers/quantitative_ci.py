@@ -53,8 +53,6 @@ class QuantitativeCI(Improviser):
         self.cost_bound = cost_bound
         self.prob_bounds = prob_bounds
 
-        print("Decomposing...")
-
         # Initialize cost class specs.
         cost_specs = cost_func.decompose()
 
@@ -62,8 +60,6 @@ class QuantitativeCI(Improviser):
 
         for cost in cost_func.costs:
             self.i_specs[cost] = hard_constraint & cost_specs[cost]
-
-        print("Starting threading....")
 
         with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 32)) as p:
             func_input = [(cost, spec, length_bounds) for (cost, spec) in self.i_specs.items()]
@@ -136,9 +132,7 @@ class QuantitativeCI(Improviser):
 def get_language_size(param):
     start_time = time.process_time()
     cost, spec, length_bounds = param
-    print("Computing Spec for Cost:", cost)
     spec = spec.explicit()
-    print("Counting Spec for Cost:", cost)
     gc.collect()
     print("Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
     return (cost, spec, time.process_time() - start_time)
