@@ -132,9 +132,7 @@ class QuantitativeCI(Improviser):
 def get_language_size(param):
     start_time = time.process_time()
     cost, spec, length_bounds = param
-    print("Computing Spec for Cost:", cost)
     spec = spec.explicit()
-    print("Counting Spec for Cost:", cost)
     gc.collect()
     print("Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
     return (cost, spec, time.process_time() - start_time)
