@@ -53,6 +53,8 @@ class QuantitativeCI(Improviser):
         self.cost_bound = cost_bound
         self.prob_bounds = prob_bounds
 
+        print("Decomposing...")
+
         # Initialize cost class specs.
         cost_specs = cost_func.decompose()
 
@@ -60,6 +62,8 @@ class QuantitativeCI(Improviser):
 
         for cost in cost_func.costs:
             self.i_specs[cost] = hard_constraint & cost_specs[cost]
+
+        print("Starting threading....")
 
         with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 32)) as p:
             func_input = [(cost, spec, length_bounds) for (cost, spec) in self.i_specs.items()]
