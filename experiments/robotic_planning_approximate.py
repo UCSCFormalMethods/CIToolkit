@@ -85,7 +85,7 @@ else:
                         (2, 2, 0, 2, 2, 2)
                         )
 
-    length_bounds = (1,30)
+    length_bounds = (1,25)
     COST_BOUND = 40
 
 alphabet = {"North", "East", "South", "West"}
