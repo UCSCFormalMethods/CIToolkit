@@ -130,7 +130,6 @@ class QuantitativeCI(Improviser):
         return self.i_specs[selected_cost].sample(*self.length_bounds)
 
 def get_language_size(param):
-    print("Starting thread...")
     start_time = time.process_time()
     cost, spec, length_bounds = param
     print("Computing Spec for Cost:", cost)

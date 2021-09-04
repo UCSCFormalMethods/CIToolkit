@@ -124,6 +124,9 @@ class AccumulatedCostDfa(CostFunc):
 
         self.decomp_cost_func = decomp_cost_func
 
+        print("Decomposed Cost Func State Count:")
+        print([(cost, len(spec.states))for cost:spec in self.decomp_cost_func.items()])
+
         return decomp_cost_func
 
     @staticmethod
