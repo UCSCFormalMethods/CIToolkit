@@ -19,7 +19,7 @@ from matplotlib import collections  as mc
 ###################################################################################################
 
 BASE_DIRECTORY = "approx_data/"
-SHOW_COSTS = True
+SHOW_COSTS = False
 LARGE_MAP = False
 
 if LARGE_MAP:
@@ -66,6 +66,9 @@ if LARGE_MAP:
 
     length_bounds = (1,50)
     COST_BOUND = 60
+    ALPHA_LIST = [0,0,0]
+    BETA_LIST = [1e-6,1e-6,1e-6]
+
 else:
     GRIDWORLD =         (
                         (8, 0, 3, 0, 5,  0),
@@ -87,6 +90,9 @@ else:
 
     length_bounds = (1,25)
     COST_BOUND = 40
+    ALPHA_LIST = [0,0,0]
+    BETA_LIST = [1e-5,1e-5,1e-5]
+
 
 alphabet = {"North", "East", "South", "West"}
 
@@ -139,8 +145,6 @@ OUT_DELTA = 0.05
 OUT_GAMMA = 0.2
 DELTA = 0.2 #1 - math.pow((1- OUT_DELTA), 1/num_buckets)
 EPSILON = 0.8 #math.pow(1 + OUT_GAMMA, 1/3) - 1
-ALPHA_LIST = [0,0,0]
-BETA_LIST = [1e-6,1e-6,1e-6]
 LAMBDA = .3
 RHO = .4
 
@@ -207,7 +211,7 @@ def run():
 
     # Check if we've now broken probability bounds
     for label_iter in range(len(lo_locs)):
-        assert label_sum_prob[label_iter] <= 1
+        assert label_sum_prob[label_iter] == 1
 
     # Calculate conditional exptected costs
     conditional_costs = {label_iter:sum([conditional_weights[(l,c)]*Lo for l, c, Lo, _ in get_formula_data_list() if l == label_iter]) for label_iter in range(len(lo_locs))}
@@ -227,6 +231,8 @@ def run():
             marginal_weights.append(1 - RHO*u - LAMBDA*(len(lo_locs) - u - 1))
         else:
             marginal_weights.append(LAMBDA)
+
+    assert sum(marginal_weights) == 1
 
     expected_cost = sum([marginal_weights[label_iter] * conditional_costs[label_iter] for label_iter in range(len(lo_locs))])
 
@@ -379,7 +385,7 @@ def run():
     # draw_improvisation(coords)
 
 def sample_improviser(label_choice, cost_choice, formula_var_map):
-    target_formula = "approx_data/formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
+    target_formula = BASE_DIRECTORY + "formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
 
     print(target_formula)
 
@@ -640,6 +646,7 @@ def sample_dimacs_formula(file_path):
     process = subprocess.run(args=arguments, capture_output=True)
 
     output = process.stdout.decode("utf-8")
+    print(output)
 
     line = output.split("\n")[0]
 
