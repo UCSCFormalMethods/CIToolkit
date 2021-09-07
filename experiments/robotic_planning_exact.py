@@ -42,12 +42,12 @@ GRIDWORLD =         (
                     )
 
 GRIDWORLD_COSTS =   (
-                    (4, 3, 0, 3, 0, 3),
-                    (3, 2, 1, 2, 2, 2),
-                    (4, 0, 1, 0, 4, 0),
-                    (0, 2, 1, 2, 3, 2),
-                    (3, 1, 1, 0, 2, 3),
-                    (0, 2, 0, 2, 2, 2)
+                    (3, 2, 0, 2, 0, 2),
+                    (2, 1, 0, 1, 1, 1),
+                    (3, 0, 0, 0, 3, 0),
+                    (0, 1, 0, 1, 2, 1),
+                    (2, 0, 0, 0, 1, 2),
+                    (0, 1, 0, 1, 1, 1)
                     )
 
 SHOW_COSTS = False
@@ -117,6 +117,7 @@ def run():
 
     print("Cost Function States:", len(cost_function.dfa.states))
 
+    assert False
 
     start = time.time()
 
@@ -397,12 +398,14 @@ def create_cost_function():
             state_map[(x, y)] = new_state
 
     start_loc = np.where(np.array(GRIDWORLD) == 2)
+    end_loc = np.where(np.array(GRIDWORLD) == 3)
+
     start_loc = (start_loc[1][0], start_loc[0][0])
+    end_loc = (end_loc[1][0], end_loc[0][0])
 
-    accepting_states = frozenset(states)
     states.add("Sink")
+    accepting_states = {state_map[(end_loc[0], end_loc[1])]}
     start_state = state_map[(start_loc[0], start_loc[1])]
-
     transitions = {}
 
     for symbol in alphabet:
