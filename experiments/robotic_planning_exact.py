@@ -117,8 +117,6 @@ def run():
 
     print("Cost Function States:", len(cost_function.dfa.states))
 
-    assert False
-
     start = time.time()
 
     if os.path.isfile(BASE_DIRECTORY + "qci_improviser.pickle"):
