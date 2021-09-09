@@ -147,6 +147,7 @@ DELTA = 0.2 #1 - math.pow((1- OUT_DELTA), 1/num_buckets)
 EPSILON = 0.8 #math.pow(1 + OUT_GAMMA, 1/3) - 1
 LAMBDA = .3
 RHO = .4
+NUM_SAMPLES = 100
 
 ###################################################################################################
 # Main Experiment
@@ -173,6 +174,7 @@ def run():
 
     class_size_map = {key:val[0] for key,val in class_count_map.items()}
 
+    print("Counts:", class_count_map)
     print("Sizes:", class_size_map)
     print()
 
@@ -249,14 +251,28 @@ def run():
     print("Sorted Label Weights:", sorted_label_weights)
     print("Sorted Cost Weights:", sorted_cost_weights)
 
-    # Sample on repeat
-    while True:
-        print("\n")
-        label_choice = random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
-        cost_choice = random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
+    if os.path.isfile(BASE_DIRECTORY + "samples.pickle"):
+        print("Loading samples from pickle...\n")
+        samples = pickle.load(open(BASE_DIRECTORY + "samples.pickle", 'rb'))
+    else:
+        print("Sampling improviser...\n")
+        samples = []
 
-        coords = sample_improviser(label_choice, cost_choice, formula_var_map)
+        for sample_iter in range(NUM_SAMPLES):
+            print("Sample#", sample_iter)
+            label_choice = random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
+            cost_choice = random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
 
+            coords = sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map)
+            samples.append(coords)
+
+        pickle.dump(samples, open(BASE_DIRECTORY + "samples.pickle", "wb"))
+        print("Done sampling. Total time taken: " + str(time.time() - start))
+
+    print("Displaying samples....")
+
+    for coords in samples:
+        print()
         print("Coordinates:")
         print("Path Length:", len(list(filter(lambda x: x is None, coords))))
         print(coords)
@@ -271,6 +287,29 @@ def run():
         print("Rendering...")
 
         draw_improvisation(coords)
+
+    # Sample on repeat
+    # while True:
+    #     print("\n")
+    #     label_choice = random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
+    #     cost_choice = random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
+
+    #     coords = sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map)
+
+    #     print("Coordinates:")
+    #     print("Path Length:", len(list(filter(lambda x: x is None, coords))))
+    #     print(coords)
+    #     print()
+
+    #     print("Costs:")
+    #     cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
+    #     print(cost_list)
+    #     print(sum(cost_list))
+    #     print()
+
+    #     print("Rendering...")
+
+    #     draw_improvisation(coords)
 
     # ac = get_symbolic_problem_instance(min_cost=27, max_cost=41, target_label=2)
     # s = Solver()
@@ -384,16 +423,19 @@ def run():
 
     # draw_improvisation(coords)
 
-def sample_improviser(label_choice, cost_choice, formula_var_map):
+def sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map):
     target_formula = BASE_DIRECTORY + "formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
+    target_cell_count = class_count_map[(label_choice, cost_choice)][1]
+    target_hash_count = class_count_map[(label_choice, cost_choice)][2]
 
-    print(target_formula)
+    #print(target_formula)
+    #print("Cell Count:", target_cell_count, "    Hash Count:", target_hash_count)
 
     start = time.time()
 
-    var_nums = sample_dimacs_formula(target_formula)
+    var_nums = sample_dimacs_formula(target_formula, target_cell_count, target_hash_count)
 
-    print("Sampled in " + str(time.time() - start))
+    #print("Sampled in " + str(time.time() - start))
 
     solution = {}
     var_num_map = formula_var_map[(label_choice, cost_choice)]
@@ -447,16 +489,21 @@ def compute_class_counts():
         p.close()
         p.join()
 
-    formula_count_map = {formula_name:count for formula_name, count in formula_count_data}
+    sum_time = sum([time for _,_, time in formula_count_data])
+    print("Total CPU Time:", sum_time)
+
+    formula_count_map = {formula_name:count for formula_name, count, _ in formula_count_data}
 
     pickle.dump(formula_count_map, open(BASE_DIRECTORY + "/class_counts.pickle", "wb"))
 
     return formula_count_map
 
 def count_dimacs_wrapper(x):
+    start_time = time.time()
     label_num, curr_r, left_cost, right_cost = x
     formula_name = "RP_Label_" + str(label_num) + "_Cost_" + str(curr_r) + ".cnf"
-    return ((label_num, curr_r), count_dimacs_formula(BASE_DIRECTORY + "formulas/" + formula_name))
+    count = count_dimacs_formula(BASE_DIRECTORY + "formulas/" + formula_name)
+    return ((label_num, curr_r), count, time.time() - start_time)
 
 def compute_dimacs_formulas():
     if not os.path.exists(BASE_DIRECTORY + "formulas"):
@@ -475,17 +522,22 @@ def compute_dimacs_formulas():
         p.close()
         p.join()
 
-    var_maps = {key: val for key, val in var_map_list}
+    sum_time = sum([time for _,_, time in var_map_list])
+    print("Total CPU Time:", sum_time)
+
+    var_maps = {key: val for key, val, _ in var_map_list}
 
     pickle.dump(var_maps, open(BASE_DIRECTORY + "/var_maps.pickle", "wb"))
 
     return var_maps
 
 def convert_dimacs_wrapper(x):
+    start_time = time.process_time()
     label_num, curr_r, left_cost, right_cost = x
     formula_problem =  get_symbolic_problem_instance(min_cost=left_cost, max_cost=right_cost, target_label=label_num)
     formula_name = "RP_Label_" + str(label_num) + "_Cost_" + str(curr_r) + ".cnf"
-    return ((label_num, curr_r), convert_dimacs_problem_instance(formula_problem, BASE_DIRECTORY + "formulas/" + formula_name))
+    var_map = convert_dimacs_problem_instance(formula_problem, BASE_DIRECTORY + "formulas/" + formula_name)
+    return ((label_num, curr_r), var_map, time.process_time() - start_time)
 
 def get_formula_data_list():
     # Create name and parameter tuples.
@@ -621,13 +673,11 @@ def get_symbolic_problem_instance(min_cost = None, max_cost = None, target_label
 
 def count_dimacs_formula(file_path):
     # Returns (total_count, cell_count, hash_count)
-    arguments = ["approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
+    arguments = ["./approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
 
     process = subprocess.run(args=arguments, capture_output=True)
 
     output = process.stdout.decode("utf-8")
-
-    print(output)
 
     for line in output.split("\n"):
         if line[:34] == 'c [appmc] Number of solutions is: ':
@@ -640,13 +690,14 @@ def count_dimacs_formula(file_path):
 
     return (count, cell_count, hash_count)
 
-def sample_dimacs_formula(file_path):
-    arguments = ["unigen", "--verb", "0", "--multisample", "0", "--seed", str(random.randint(1,1000000000)) , "--samples", "1", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
+def sample_dimacs_formula(file_path, cell_count, hash_count):
+    arguments = ["./unigen", "--verb", "0", "--multisample", "0", "--seed", str(random.randint(1,1000000000)) , \
+    "--samples", "1", "--epsilon", str(EPSILON), "--delta", str(DELTA), "--param_hash_count", str(hash_count), "--param_cell_count", str(cell_count), file_path]
 
     process = subprocess.run(args=arguments, capture_output=True)
 
     output = process.stdout.decode("utf-8")
-    print(output)
+    #print(output)
 
     line = output.split("\n")[0]
 

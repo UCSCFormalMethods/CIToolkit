@@ -58,7 +58,7 @@ length_bounds = (1,25)
 
 NUM_SAMPLES = 1000000
 
-word_prob_bounds = (0, 3/1e6)
+word_prob_bounds = (0, 1/3e5)
 cost_bound = 40
 label_prob_bounds = (Fraction(1,6), Fraction(1,2))
 
