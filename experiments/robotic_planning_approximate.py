@@ -143,8 +143,8 @@ num_buckets = len(lo_locs) * max_r
 
 OUT_DELTA = 0.05
 OUT_GAMMA = 0.2
-DELTA = 0.2 #1 - math.pow((1- OUT_DELTA), 1/num_buckets)
-EPSILON = 0.8 #math.pow(1 + OUT_GAMMA, 1/3) - 1
+DELTA = 1 - math.pow((1- OUT_DELTA), 1/num_buckets)
+EPSILON = math.pow(1 + OUT_GAMMA, 1/3) - 1
 LAMBDA = .3
 RHO = .4
 NUM_SAMPLES = 100
@@ -271,22 +271,22 @@ def run():
 
     print("Displaying samples....")
 
-    for coords in samples:
-        print()
-        print("Coordinates:")
-        print("Path Length:", len(list(filter(lambda x: x is None, coords))))
-        print(coords)
-        print()
+    # for coords in samples:
+    #     print()
+    #     print("Coordinates:")
+    #     print("Path Length:", len(list(filter(lambda x: x is None, coords))))
+    #     print(coords)
+    #     print()
 
-        print("Costs:")
-        cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
-        print(cost_list)
-        print(sum(cost_list))
-        print()
+    #     print("Costs:")
+    #     cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
+    #     print(cost_list)
+    #     print(sum(cost_list))
+    #     print()
 
-        print("Rendering...")
+    #     print("Rendering...")
 
-        draw_improvisation(coords)
+    #     draw_improvisation(coords)
 
     # Sample on repeat
     # while True:
