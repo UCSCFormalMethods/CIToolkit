@@ -1,0 +1,428 @@
+Starting Exact LQCI Robotic Planning Experiment...
+
+Trace Length Bounds: (1, 25)
+Word Prob Bounds: (0, 3e-06)
+Label Prob Bounds: (Fraction(1, 6), Fraction(1, 2))
+Cost Bound 40
+Creating hard constraint...
+
+Done creating Hard Constraint. Total time taken: 0.6469621658325195
+Hard Constraint States: 497
+Creating label function...
+
+Done creating Label Function. Total time taken: 0.012972354888916016
+Label Function States: 37
+Creating cost function...
+
+Current length:  1
+Current length:  2
+Current length:  3
+Current length:  4
+Current length:  5
+Current length:  6
+Current length:  7
+Current length:  8
+Current length:  9
+Current length:  10
+Current length:  11
+Current length:  12
+Current length:  13
+Current length:  14
+Current length:  15
+Current length:  16
+Current length:  17
+Current length:  18
+Current length:  19
+Current length:  20
+Current length:  21
+Current length:  22
+Current length:  23
+Current length:  24
+Current length:  25
+Costs:  frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53})
+Total CPU Time: 476.599261262
+Decomposed Cost Func State Count:
+[(0, 11), (1, 28), (2, 50), (3, 76), (4, 106), (5, 138), (6, 172), (7, 208), (8, 244), (9, 280), (10, 316), (11, 352), (12, 388), (13, 424), (14, 460), (15, 496), (16, 532), (17, 568), (18, 604), (19, 640), (20, 676), (21, 712), (22, 748), (23, 784), (24, 820), (25, 856), (26, 892), (27, 928), (28, 964), (29, 1000), (30, 1036), (31, 1072), (32, 1108), (33, 1144), (34, 1180), (35, 1216), (36, 1252), (37, 1288), (38, 1324), (39, 1360), (40, 1396), (41, 1432), (42, 1468), (43, 1504), (44, 1540), (45, 1576), (46, 1612), (47, 1648), (48, 1684), (49, 1720), (50, 1756), (51, 1792), (52, 1828), (53, 1864)]
+Done creating Cost Function. Total time taken: 17.92313051223755
+Cost Function States: 37
+Creating Quantitative CI improviser...
+
+Cost: 23, Size: 12828062
+Cost: 25, Size: 5800683
+Cost: 22, Size: 16812888
+Cost: 26, Size: 3502502
+Cost: 24, Size: 8971420
+Cost: 27, Size: 1990421
+Cost: 28, Size: 1073606
+Cost: 30, Size: 273523
+Cost: 29, Size: 555752
+Cost: 2, Size: 0
+Cost: 34, Size: 10164
+Cost: 0, Size: 0
+Cost: 32, Size: 58181
+Cost: 31, Size: 130413
+Cost: 4, Size: 0
+Cost: 36, Size: 1452
+Cost: 3, Size: 0
+Cost: 35, Size: 3937
+Cost: 1, Size: 0
+Cost: 33, Size: 25641
+Cost: 6, Size: 0
+Cost: 38, Size: 122
+Cost: 5, Size: 0
+Cost: 37, Size: 456
+Cost: 7, Size: 0
+Cost: 39, Size: 57
+Cost: 8, Size: 92304
+Cost: 40, Size: 0
+Cost: 9, Size: 646970
+Cost: 41, Size: 0
+Cost: 11, Size: 4602650
+Cost: 43, Size: 0
+Cost: 13, Size: 8774987
+Cost: 45, Size: 0
+Cost: 14, Size: 9469967
+Cost: 46, Size: 0
+Cost: 12, Size: 7135999
+Cost: 44, Size: 0
+Cost: 15, Size: 10214846
+Cost: 47, Size: 0
+Cost: 10, Size: 2157142
+Cost: 42, Size: 0
+Cost: 17, Size: 15109414
+Cost: 49, Size: 0
+Cost: 18, Size: 18546606
+Cost: 50, Size: 0
+Cost: 20, Size: 21633795
+Cost: 52, Size: 0
+Cost: 19, Size: 21051372
+Cost: 51, Size: 0
+Cost: 21, Size: 20054249
+Cost: 53, Size: 0
+Cost: 16, Size: 12045928
+Cost: 48, Size: 0
+Done computing language sizes
+Total CPU Time: 621114.245056508
+Done creating Quantitative CI Improviser. Total time taken: 40401.10033416748
+Creating Max Entropy LQCI improviser...
+
+Labels:  frozenset({'Label0', 'Label1', 'Label2'})
+Costs:  frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53})
+Label: Label0, Cost: 2, Size: 0
+Label: Label0, Cost: 18, Size: 7886
+Label: Label0, Cost: 34, Size: 206
+Label: Label0, Cost: 50, Size: 0
+Label: Label1, Cost: 27, Size: 1913107
+Label: Label1, Cost: 43, Size: 0
+Label: Label2, Cost: 39, Size: 0
+Label: Label2, Cost: 46, Size: 0
+Label: Label0, Cost: 14, Size: 0
+Label: Label0, Cost: 30, Size: 3421
+Label: Label0, Cost: 46, Size: 0
+Label: Label1, Cost: 22, Size: 16640383
+Label: Label1, Cost: 38, Size: 122
+Label: Label2, Cost: 0, Size: 0
+Label: Label2, Cost: 1, Size: 0
+Label: Label2, Cost: 2, Size: 0
+Label: Label2, Cost: 3, Size: 0
+Label: Label2, Cost: 4, Size: 0
+Label: Label2, Cost: 5, Size: 0
+Label: Label2, Cost: 6, Size: 0
+Label: Label2, Cost: 7, Size: 0
+Label: Label2, Cost: 8, Size: 0
+Label: Label2, Cost: 9, Size: 0
+Label: Label2, Cost: 10, Size: 0
+Label: Label2, Cost: 11, Size: 0
+Label: Label2, Cost: 12, Size: 0
+Label: Label2, Cost: 13, Size: 0
+Label: Label2, Cost: 14, Size: 0
+Label: Label2, Cost: 15, Size: 0
+Label: Label2, Cost: 16, Size: 5398
+Label: Label2, Cost: 17, Size: 25921
+Label: Label2, Cost: 18, Size: 58984
+Label: Label2, Cost: 19, Size: 93505
+Label: Label2, Cost: 20, Size: 125501
+Label: Label2, Cost: 21, Size: 149864
+Label: Label2, Cost: 22, Size: 159711
+Label: Label2, Cost: 23, Size: 155077
+Label: Label2, Cost: 25, Size: 112540
+Label: Label2, Cost: 27, Size: 60299
+Label: Label2, Cost: 30, Size: 13169
+Label: Label2, Cost: 34, Size: 598
+Label: Label2, Cost: 40, Size: 0
+Label: Label2, Cost: 47, Size: 0
+Label: Label0, Cost: 4, Size: 0
+Label: Label0, Cost: 20, Size: 7647
+Label: Label0, Cost: 36, Size: 16
+Label: Label0, Cost: 52, Size: 0
+Label: Label1, Cost: 31, Size: 120565
+Label: Label1, Cost: 47, Size: 0
+Label: Label0, Cost: 6, Size: 0
+Label: Label0, Cost: 22, Size: 12794
+Label: Label0, Cost: 38, Size: 0
+Label: Label1, Cost: 0, Size: 0
+Label: Label1, Cost: 1, Size: 0
+Label: Label1, Cost: 2, Size: 0
+Label: Label1, Cost: 3, Size: 0
+Label: Label1, Cost: 4, Size: 0
+Label: Label1, Cost: 5, Size: 0
+Label: Label1, Cost: 6, Size: 0
+Label: Label1, Cost: 7, Size: 0
+Label: Label1, Cost: 8, Size: 92304
+Label: Label1, Cost: 9, Size: 646970
+Label: Label1, Cost: 11, Size: 4602650
+Label: Label1, Cost: 15, Size: 10214372
+Label: Label1, Cost: 28, Size: 1024040
+Label: Label1, Cost: 44, Size: 0
+Label: Label2, Cost: 45, Size: 0
+Label: Label0, Cost: 15, Size: 474
+Label: Label0, Cost: 31, Size: 1772
+Label: Label0, Cost: 47, Size: 0
+Label: Label1, Cost: 23, Size: 12654200
+Label: Label1, Cost: 39, Size: 57
+Label: Label2, Cost: 24, Size: 137039
+Label: Label2, Cost: 26, Size: 85379
+Label: Label2, Cost: 28, Size: 38642
+Label: Label2, Cost: 31, Size: 8076
+Label: Label2, Cost: 35, Size: 255
+Label: Label2, Cost: 41, Size: 0
+Label: Label2, Cost: 48, Size: 0
+Label: Label0, Cost: 3, Size: 0
+Label: Label0, Cost: 19, Size: 8310
+Label: Label0, Cost: 35, Size: 77
+Label: Label0, Cost: 51, Size: 0
+Label: Label1, Cost: 29, Size: 524873
+Label: Label1, Cost: 45, Size: 0
+Label: Label2, Cost: 49, Size: 0
+Label: Label0, Cost: 5, Size: 0
+Label: Label0, Cost: 21, Size: 8658
+Label: Label0, Cost: 37, Size: 6
+Label: Label0, Cost: 53, Size: 0
+Label: Label1, Cost: 32, Size: 53791
+Label: Label1, Cost: 48, Size: 0
+Label: Label0, Cost: 1, Size: 0
+Label: Label0, Cost: 17, Size: 5460
+Label: Label0, Cost: 33, Size: 470
+Label: Label0, Cost: 49, Size: 0
+Label: Label1, Cost: 26, Size: 3394320
+Label: Label1, Cost: 42, Size: 0
+Label: Label2, Cost: 36, Size: 47
+Label: Label2, Cost: 42, Size: 0
+Label: Label2, Cost: 50, Size: 0
+Label: Label0, Cost: 8, Size: 0
+Label: Label0, Cost: 25, Size: 25653
+Label: Label0, Cost: 41, Size: 0
+Label: Label1, Cost: 14, Size: 9469967
+Label: Label1, Cost: 24, Size: 8810397
+Label: Label1, Cost: 40, Size: 0
+Label: Label2, Cost: 29, Size: 24762
+Label: Label2, Cost: 32, Size: 3352
+Label: Label2, Cost: 37, Size: 11
+Label: Label2, Cost: 43, Size: 0
+Label: Label2, Cost: 51, Size: 0
+Label: Label0, Cost: 0, Size: 0
+Label: Label0, Cost: 16, Size: 2381
+Label: Label0, Cost: 32, Size: 1038
+Label: Label0, Cost: 48, Size: 0
+Label: Label1, Cost: 25, Size: 5662490
+Label: Label1, Cost: 41, Size: 0
+Label: Label2, Cost: 33, Size: 1846
+Label: Label2, Cost: 38, Size: 0
+Label: Label2, Cost: 44, Size: 0
+Label: Label2, Cost: 52, Size: 0
+Label: Label0, Cost: 9, Size: 0
+Label: Label0, Cost: 24, Size: 23984
+Label: Label0, Cost: 40, Size: 0
+Label: Label1, Cost: 12, Size: 7135999
+Label: Label1, Cost: 17, Size: 15078033
+Label: Label1, Cost: 33, Size: 23325
+Label: Label1, Cost: 49, Size: 0
+Label: Label0, Cost: 10, Size: 0
+Label: Label0, Cost: 26, Size: 22803
+Label: Label0, Cost: 42, Size: 0
+Label: Label1, Cost: 16, Size: 12038149
+Label: Label1, Cost: 30, Size: 256933
+Label: Label1, Cost: 46, Size: 0
+Label: Label2, Cost: 53, Size: 0
+Label: Label0, Cost: 11, Size: 0
+Label: Label0, Cost: 27, Size: 17015
+Label: Label0, Cost: 43, Size: 0
+Label: Label1, Cost: 18, Size: 18479736
+Label: Label1, Cost: 34, Size: 9360
+Label: Label1, Cost: 50, Size: 0
+Label: Label0, Cost: 12, Size: 0
+Label: Label0, Cost: 28, Size: 10924
+Label: Label0, Cost: 44, Size: 0
+Label: Label1, Cost: 19, Size: 20949557
+Label: Label1, Cost: 35, Size: 3605
+Label: Label1, Cost: 51, Size: 0
+Label: Label0, Cost: 7, Size: 0
+Label: Label0, Cost: 23, Size: 18785
+Label: Label0, Cost: 39, Size: 0
+Label: Label1, Cost: 10, Size: 2157142
+Label: Label1, Cost: 13, Size: 8774987
+Label: Label1, Cost: 20, Size: 21500647
+Label: Label1, Cost: 36, Size: 1389
+Label: Label1, Cost: 52, Size: 0
+Label: Label0, Cost: 13, Size: 0
+Label: Label0, Cost: 29, Size: 6117
+Label: Label0, Cost: 45, Size: 0
+Label: Label1, Cost: 21, Size: 19895727
+Label: Label1, Cost: 37, Size: 439
+Label: Label1, Cost: 53, Size: 0
+Done computing language sizes
+Total CPU Time: 733163.2188337737
+Making optimization problem...
+Solving optimization problem...
+===============================================================================
+                                     CVXPY                                     
+                                    v1.1.15                                    
+===============================================================================
+(CVXPY) Sep 08 11:51:00 AM: Your problem has 162 variables, 94 constraints, and 0 parameters.
+(CVXPY) Sep 08 11:51:00 AM: It is compliant with the following grammars: DCP, DQCP
+(CVXPY) Sep 08 11:51:00 AM: (If you need to solve this problem multiple times, but with different data, consider using parameters.)
+(CVXPY) Sep 08 11:51:00 AM: CVXPY will first compile your problem; then, it will invoke a numerical solver to obtain a solution.
+-------------------------------------------------------------------------------
+                                  Compilation                                  
+-------------------------------------------------------------------------------
+(CVXPY) Sep 08 11:51:00 AM: Compiling problem (target solver=ECOS).
+(CVXPY) Sep 08 11:51:00 AM: Reduction chain: Dcp2Cone -> CvxAttr2Constr -> ConeMatrixStuffing -> ECOS
+(CVXPY) Sep 08 11:51:00 AM: Applying reduction Dcp2Cone
+(CVXPY) Sep 08 11:51:00 AM: Applying reduction CvxAttr2Constr
+(CVXPY) Sep 08 11:51:00 AM: Applying reduction ConeMatrixStuffing
+(CVXPY) Sep 08 11:51:00 AM: Applying reduction ECOS
+(CVXPY) Sep 08 11:51:00 AM: Finished problem compilation (took 7.311e-02 seconds).
+-------------------------------------------------------------------------------
+                                Numerical solver                               
+-------------------------------------------------------------------------------
+(CVXPY) Sep 08 11:51:00 AM: Invoking solver ECOS  to obtain a solution.
+
+ECOS 2.0.7 - (C) embotech GmbH, Zurich Switzerland, 2012-15. Web: www.embotech.com/ECOS
+
+It     pcost       dcost      gap   pres   dres    k/t    mu     step   sigma     IR    |   BT
+ 0  +0.000e+00  -1.515e+02  +8e+02  1e+00  6e-01  1e+00  1e+00    ---    ---    0  0  - |  -  - 
+ 1  -7.662e+01  -1.324e+02  +3e+02  3e-01  1e-01  4e-01  3e-01  0.7632  1e-01   1  1  1 |  0  0
+ 2  -4.416e+01  -5.653e+01  +4e+01  1e-01  3e-02  1e-01  5e-02  0.9791  2e-01   1  1  1 |  3  0
+ 3  -3.008e+01  -3.575e+01  +2e+01  6e-02  2e-02  5e-02  2e-02  0.7833  2e-01   1  1  1 |  4  1
+ 4  -2.438e+01  -2.699e+01  +6e+00  3e-02  8e-03  3e-02  7e-03  0.6236  7e-02   1  1  1 |  2  2
+ 5  -1.996e+01  -2.099e+01  +2e+00  1e-02  3e-03  1e-02  2e-03  0.9791  3e-01   1  1  1 |  5  0
+ 6  -1.897e+01  -1.960e+01  +1e+00  7e-03  2e-03  7e-03  1e-03  0.7833  4e-01   1  1  1 |  6  1
+ 7  -1.867e+01  -1.923e+01  +8e-01  6e-03  2e-03  6e-03  9e-04  0.9791  8e-01   1  1  1 | 12  0
+ 8  -1.799e+01  -1.824e+01  +3e-01  3e-03  8e-04  3e-03  4e-04  0.6266  7e-02   1  1  1 |  2  2
+ 9  -1.769e+01  -1.783e+01  +2e-01  2e-03  5e-04  2e-03  2e-04  0.6266  2e-01   1  1  1 |  4  2
+10  -1.757e+01  -1.767e+01  +1e-01  1e-03  3e-04  1e-03  1e-04  0.9791  7e-01   1  1  1 |  9  0
+11  -1.743e+01  -1.748e+01  +4e-02  6e-04  2e-04  6e-04  5e-05  0.6266  1e-01   1  1  1 |  3  2
+12  -1.737e+01  -1.739e+01  +2e-02  3e-04  9e-05  3e-04  3e-05  0.6266  2e-01   1  1  1 |  4  2
+13  -1.733e+01  -1.735e+01  +1e-02  2e-04  6e-05  2e-04  1e-05  0.9791  6e-01   1  1  1 |  8  0
+14  -1.731e+01  -1.731e+01  +5e-03  1e-04  3e-05  1e-04  6e-06  0.6266  1e-01   1  1  1 |  3  2
+15  -1.729e+01  -1.730e+01  +3e-03  5e-05  1e-05  6e-05  3e-06  0.6266  2e-01   2  1  1 |  4  2
+16  -1.729e+01  -1.729e+01  +1e-03  3e-05  9e-06  4e-05  2e-06  0.9791  6e-01   1  0  0 |  8  0
+17  -1.728e+01  -1.728e+01  +6e-04  1e-05  4e-06  2e-05  7e-07  0.6266  5e-02   2  0  0 |  2  2
+18  -1.728e+01  -1.728e+01  +3e-04  7e-06  2e-06  8e-06  3e-07  0.7833  3e-01   2  0  0 |  5  1
+19  -1.728e+01  -1.728e+01  +1e-04  4e-06  1e-06  5e-06  2e-07  0.9791  5e-01   2  0  0 |  7  0
+20  -1.728e+01  -1.728e+01  +6e-05  2e-06  5e-07  2e-06  7e-08  0.6266  1e-01   2  0  0 |  3  2
+21  -1.728e+01  -1.728e+01  +2e-05  6e-07  2e-07  8e-07  2e-08  0.9791  3e-01   2  0  0 |  5  0
+22  -1.728e+01  -1.728e+01  +2e-05  6e-07  2e-07  8e-07  2e-08  0.9791  9e-01   2  0  0 | 17  0
+23  -1.728e+01  -1.728e+01  +4e-06  2e-07  4e-08  2e-07  5e-09  0.7833  5e-02   1  0  0 |  2  1
+24  -1.728e+01  -1.728e+01  +1e-06  1e-07  1e-08  7e-08  1e-09  0.9791  3e-01   1  0  0 |  5  0
+25  -1.728e+01  -1.728e+01  +5e-07  9e-08  6e-09  3e-08  7e-10  0.7833  3e-01   1  0  0 |  5  1
+26  -1.728e+01  -1.728e+01  +4e-07  9e-08  5e-09  3e-08  5e-10  0.9791  8e-01   2  0  0 | 12  0
+27  -1.728e+01  -1.728e+01  +2e-07  6e-08  2e-09  1e-08  2e-10  0.6266  5e-02   1  0  0 |  2  2
+28  -1.728e+01  -1.728e+01  +9e-08  5e-08  1e-09  5e-09  1e-10  0.6266  2e-01   1  0  0 |  4  2
+29  -1.728e+01  -1.728e+01  +3e-08  4e-08  5e-10  2e-09  4e-11  0.9791  4e-01   1  0  0 |  6  0
+30  -1.728e+01  -1.728e+01  +2e-08  4e-08  2e-10  1e-09  2e-11  0.7833  4e-01   0  0  0 |  6  1
+31  -1.728e+01  -1.728e+01  +2e-08  4e-08  2e-10  1e-09  2e-11  0.9791  8e-01   0  0  0 | 13  0
+32  -1.728e+01  -1.728e+01  +8e-09  3e-08  1e-10  6e-10  1e-11  0.5013  1e-01   1  0  0 |  3  3
+33  -1.728e+01  -1.728e+01  +6e-09  3e-08  8e-11  4e-10  7e-12  0.6266  6e-01   1  0  0 |  8  2
+34  -1.728e+01  -1.728e+01  +5e-09  3e-08  7e-11  4e-10  7e-12  0.9791  9e-01   0  0  0 | 15  0
+35  -1.728e+01  -1.728e+01  +3e-09  3e-08  5e-11  2e-10  4e-12  0.5013  3e-01   1  0  0 |  5  3
+36  -1.728e+01  -1.728e+01  +2e-09  2e-08  3e-11  2e-10  3e-12  0.9791  7e-01   1  0  0 | 10  0
+37  -1.728e+01  -1.728e+01  +2e-09  3e-08  3e-11  2e-10  3e-12  0.9791  1e+00   1  0  0 | 19  0
+38  -1.728e+01  -1.728e+01  +2e-09  2e-08  2e-11  1e-10  2e-12  0.4010  3e-01   1  0  0 |  5  4
+39  -1.728e+01  -1.728e+01  +1e-09  2e-08  2e-11  9e-11  2e-12  0.9791  8e-01   0  0  0 | 11  0
+40  -1.728e+01  -1.728e+01  +1e-09  2e-08  2e-11  8e-11  2e-12  0.9791  1e+00   1  0  0 | 28  0
+41  -1.728e+01  -1.728e+01  +1e-09  2e-08  1e-11  7e-11  1e-12  0.3208  6e-01   1  0  0 |  8  5
+42  -1.728e+01  -1.728e+01  +1e-09  2e-08  1e-11  7e-11  1e-12  0.4010  8e-01   1  0  0 | 12  4
+43  -1.728e+01  -1.728e+01  +1e-09  2e-08  1e-11  7e-11  1e-12  0.9791  1e+00   0  0  0 | 36  0
+44  -1.728e+01  -1.728e+01  +8e-10  2e-08  1e-11  6e-11  1e-12  0.5013  7e-01   1  0  0 | 10  3
+45  -1.728e+01  -1.728e+01  +7e-10  2e-08  1e-11  5e-11  9e-13  0.2053  6e-01   0  0  0 |  8  7
+46  -1.728e+01  -1.728e+01  +7e-10  2e-08  9e-12  5e-11  8e-13  0.6266  8e-01   1  1  0 | 13  2
+47  -1.728e+01  -1.728e+01  +6e-10  2e-08  9e-12  4e-11  8e-13  0.5013  8e-01   1  0  0 | 13  3
+48  -1.728e+01  -1.728e+01  +6e-10  2e-08  8e-12  4e-11  7e-13  0.9791  9e-01   1  0  0 | 17  0
+49  -1.728e+01  -1.728e+01  +5e-10  2e-08  8e-12  4e-11  7e-13  0.3208  8e-01   1  0  0 | 12  5
+50  -1.728e+01  -1.728e+01  +5e-10  2e-08  7e-12  3e-11  6e-13  0.6266  9e-01   0  0  0 | 15  2
+51  -1.728e+01  -1.728e+01  +5e-10  2e-08  7e-12  3e-11  6e-13  0.4010  9e-01   0  1  0 | 18  4
+52  -1.728e+01  -1.728e+01  +5e-10  2e-08  7e-12  3e-11  6e-13  0.9791  1e+00   1  0  0 | 31  0
+53  -1.728e+01  -1.728e+01  +5e-10  2e-08  7e-12  3e-11  6e-13  0.3208  9e-01   1  1  0 | 15  5
+54  -1.728e+01  -1.728e+01  +4e-10  2e-08  7e-12  3e-11  5e-13  0.4010  9e-01   1  0  0 | 15  4
+55  -1.728e+01  -1.728e+01  +4e-10  2e-08  7e-12  3e-11  5e-13  0.6266  9e-01   0  0  0 | 18  2
+56  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  3e-11  5e-13  0.9791  1e+00   0  0  0 | 20  0
+57  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  3e-11  5e-13  0.7833  1e+00   1  0  0 | 20  1
+58  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  3e-11  5e-13  0.9791  1e+00   1  0  0 | 27  0
+59  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  3e-11  5e-13  0.5013  9e-01   1  1  0 | 15  3
+60  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  2e-11  5e-13  0.5013  9e-01   1  1  0 | 14  3
+61  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  2e-11  4e-13  0.3208  9e-01   1  1  0 | 18  5
+62  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  2e-11  4e-13  0.9791  1e+00   0  0  0 | 26  0
+63  -1.728e+01  -1.728e+01  +4e-10  2e-08  6e-12  2e-11  4e-13  0.2567  1e+00   1  0  0 | 20  6
+64  -1.728e+01  -1.728e+01  +3e-10  2e-08  6e-12  2e-11  4e-13  0.9791  1e+00   0  0  0 | 22  0
+65  -1.728e+01  -1.728e+01  +3e-10  2e-08  6e-12  2e-11  4e-13  0.3208  9e-01   0  0  0 | 16  5
+66  -1.728e+01  -1.728e+01  +3e-10  2e-08  6e-12  2e-11  4e-13  0.9791  1e+00   1  0  0 | 24  0
+67  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.5013  1e+00   1  1  0 | 24  3
+68  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.2053  9e-01   1  0  0 | 17  7
+69  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.9791  1e+00   1  1  0 | 30  0
+70  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.4010  9e-01   0  1  0 | 16  4
+71  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.9791  1e+00   1  0  0 | 23  0
+72  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.9791  1e+00   0  0  0 | 25  0
+73  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.9791  1e+00   0  0  0 | 23  0
+74  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  4e-13  0.9791  1e+00   1  1  0 | 26  0
+75  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.2567  1e+00   1  0  0 | 19  6
+76  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   1  0  0 | 26  0
+77  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.5013  1e+00   0  0  0 | 21  3
+78  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   0  0  0 | 27  0
+79  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.4010  1e+00   0  0  0 | 19  4
+80  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   1  1  0 | 25  0
+81  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.4010  1e+00   0  0  0 | 22  4
+82  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   1  0  0 | 25  0
+83  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.4010  1e+00   1  1  0 | 19  4
+84  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   1  1  0 | 27  0
+85  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.2567  1e+00   1  1  0 | 19  6
+86  -1.728e+01  -1.728e+01  +3e-10  2e-08  5e-12  2e-11  3e-13  0.3208  1e+00   0  0  0 | 22  5
+87  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.2567  9e-01   1  0  0 | 16  6
+88  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   1  1  0 | 35  0
+89  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.2053  1e+00   0  1  0 | 20  7
+90  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.4010  1e+00   1  0  0 | 21  4
+91  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   0  1  0 | 22  0
+92  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   0  0  0 | 33  0
+93  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.2567  1e+00   1  1  0 | 21  6
+94  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.6266  1e+00   1  0  0 | 22  2
+95  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   1  1  0 | 27  0
+96  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.4010  1e+00   1  0  0 | 22  4
+97  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   1  1  0 | 34  0
+98  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.4010  1e+00   0  0  0 | 22  4
+99  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  2e-11  3e-13  0.9791  1e+00   0  0  0 | 26  0
+100  -1.728e+01  -1.728e+01  +2e-10  2e-08  5e-12  1e-11  3e-13  0.7833  1e+00   1  1  0 | 25  1
+Maximum number of iterations reached, stopping.
+
+Close to OPTIMAL (within feastol=1.8e-08, reltol=1.2e-11, abstol=2.1e-10).
+Runtime: 0.102336 seconds.
+
+-------------------------------------------------------------------------------
+                                    Summary                                    
+-------------------------------------------------------------------------------
+(CVXPY) Sep 08 11:51:00 AM: Problem status: optimal_inaccurate
+(CVXPY) Sep 08 11:51:00 AM: Optimal value: -1.728e+01
+(CVXPY) Sep 08 11:51:00 AM: Compilation took 7.311e-02 seconds
+(CVXPY) Sep 08 11:51:00 AM: Solver (including time spent in interface) took 1.025e-01 seconds
+Done solving....
+Done creating ME LQCI Improviser. Total time taken: 55125.83439254761
+Num Samples: 1000000
+Sampling 1000000 from Quantitative CI Improviser...
+
+Done sampling Quantitative CI Improviser. Total time taken: 67.9152979850769
+Sampling 1000000 from Max Entropy LQCI Improviser...
+
+Done sampling Max Entropy LQCI Improviser. Total time taken: 115.90652537345886
+Quantitative CI Samples Average Cost: 8.723419
+Quantitative CI Label Probabilities: [0.0, 1.0, 0.0]
+Max Entropy LQCI Samples Average Cost: 20.990133
+Max Entropy LQCI Label Probabilities: [0.167236, 0.499912, 0.332852]
