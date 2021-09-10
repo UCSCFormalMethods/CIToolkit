@@ -80,16 +80,16 @@ else:
                         )
 
     GRIDWORLD_COSTS =   (
-                        (4, 3, 0, 3, 2, 3),
-                        (3, 2, 1, 2, 2, 2),
-                        (4, 0, 1, 0, 4, 0),
-                        (2, 2, 1, 3, 3, 2),
-                        (3, 1, 1, 2, 3, 3),
-                        (2, 2, 0, 2, 2, 2)
+                        (3, 2, 0, 2, 0, 2),
+                        (2, 1, 0, 1, 1, 1),
+                        (3, 0, 0, 0, 3, 0),
+                        (0, 1, 0, 1, 2, 1),
+                        (2, 0, 0, 0, 1, 2),
+                        (0, 1, 0, 1, 1, 1)
                         )
 
     length_bounds = (1,25)
-    COST_BOUND = 40
+    COST_BOUND = 30
     ALPHA_LIST = [0,0,0]
     BETA_LIST = [1e-5,1e-5,1e-5]
 
@@ -251,6 +251,7 @@ def run():
     print("Sorted Label Weights:", sorted_label_weights)
     print("Sorted Cost Weights:", sorted_cost_weights)
 
+    start = time.time()
     if os.path.isfile(BASE_DIRECTORY + "samples.pickle"):
         print("Loading samples from pickle...\n")
         samples = pickle.load(open(BASE_DIRECTORY + "samples.pickle", 'rb'))
@@ -271,22 +272,22 @@ def run():
 
     print("Displaying samples....")
 
-    # for coords in samples:
-    #     print()
-    #     print("Coordinates:")
-    #     print("Path Length:", len(list(filter(lambda x: x is None, coords))))
-    #     print(coords)
-    #     print()
+    for coords in samples:
+        print()
+        print("Coordinates:")
+        print("Path Length:", len(list(filter(lambda x: x is None, coords))))
+        print(coords)
+        print()
 
-    #     print("Costs:")
-    #     cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
-    #     print(cost_list)
-    #     print(sum(cost_list))
-    #     print()
+        print("Costs:")
+        cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
+        print(cost_list)
+        print(sum(cost_list))
+        print()
 
-    #     print("Rendering...")
+        print("Rendering...")
 
-    #     draw_improvisation(coords)
+        draw_improvisation(coords)
 
     # Sample on repeat
     # while True:
