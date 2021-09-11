@@ -20,7 +20,7 @@ from matplotlib import collections  as mc
 
 BASE_DIRECTORY = "approx_data/"
 SHOW_COSTS = False
-LARGE_MAP = False
+LARGE_MAP = True
 
 if LARGE_MAP:
     BASE_DIRECTORY += "large_map/"
