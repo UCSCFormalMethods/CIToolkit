@@ -134,7 +134,7 @@ lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
 
 num_label_vars = 2
 
-R = 2 #1.2
+R = 1.2
 
 max_cost = 2**num_cost_vars
 max_r = math.ceil(math.log(max_cost, R))-1
@@ -166,6 +166,9 @@ def run():
     global DELTA
     DELTA = 1 - math.pow((1- OUT_DELTA), 1/num_nontriv_buckets)
 
+    print("R Value:", R)
+    print("Delta:", OUT_DELTA)
+    print("Gamma:", OUT_GAMMA)
     print("Counting/Sampling Delta:", DELTA)
     print("Counting/Sampling Epsilon:", EPSILON)
 
