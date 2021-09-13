@@ -20,7 +20,7 @@ from matplotlib import collections  as mc
 
 BASE_DIRECTORY = "approx_data/"
 SHOW_COSTS = False
-LARGE_MAP = True
+LARGE_MAP = False
 
 if LARGE_MAP:
     BASE_DIRECTORY += "large_map/"
@@ -64,8 +64,8 @@ if LARGE_MAP:
                         ( 2,  2,  2,  2,  0,  2,  2,  2,  2)
                         )
 
-    length_bounds = (1,50)
-    COST_BOUND = 60
+    length_bounds = (1,40)
+    COST_BOUND = 48
     ALPHA_LIST = [0,0,0]
     BETA_LIST = [1e-6,1e-6,1e-6]
 
@@ -134,7 +134,7 @@ lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
 
 num_label_vars = 2
 
-R = 1.2
+R = 2 #1.2
 
 max_cost = 2**num_cost_vars
 max_r = math.ceil(math.log(max_cost, R))-1
@@ -143,7 +143,7 @@ num_buckets = len(lo_locs) * max_r
 
 OUT_DELTA = 0.05
 OUT_GAMMA = 0.2
-DELTA = 1 - math.pow((1- OUT_DELTA), 1/num_buckets)
+DELTA = None # 1 - math.pow((1- OUT_DELTA), 1/num_buckets)
 EPSILON = math.pow(1 + OUT_GAMMA, 1/3) - 1
 LAMBDA = .3
 RHO = .4
@@ -153,16 +153,21 @@ NUM_SAMPLES = 100
 # Main Experiment
 ###################################################################################################
 def run():
-    print("Counting/Sampling Delta:", DELTA)
-    print("Counting/Sampling Epsilon:", EPSILON)
 
     start = time.time()
     print("Assembling DIMACS Fomulas...")
 
-    formula_var_map = compute_dimacs_formulas()
+    formula_var_map, feasibility_map = compute_dimacs_formulas()
 
     print("Assembled DIMACS Formulas in " + str(time.time() - start))
 
+    num_nontriv_buckets = sum(map(int, feasibility_map.values()))
+
+    global DELTA
+    DELTA = 1 - math.pow((1- OUT_DELTA), 1/num_nontriv_buckets)
+
+    print("Counting/Sampling Delta:", DELTA)
+    print("Counting/Sampling Epsilon:", EPSILON)
 
     start = time.time()
     print("Counting solutions for DIMACS Fomulas...")
@@ -510,10 +515,10 @@ def compute_dimacs_formulas():
     if not os.path.exists(BASE_DIRECTORY + "formulas"):
         os.makedirs(BASE_DIRECTORY + "formulas")
     
-    if os.path.exists(BASE_DIRECTORY + "/var_maps.pickle"):
+    if os.path.exists(BASE_DIRECTORY + "/formula_metadata.pickle"):
         print("Loading variable mappings from pickle...\n")
-        var_maps = pickle.load(open(BASE_DIRECTORY + "/var_maps.pickle", 'rb'))
-        return var_maps
+        formula_metadata = pickle.load(open(BASE_DIRECTORY + "/formula_metadata.pickle", 'rb'))
+        return formula_metadata
 
     formula_data = get_formula_data_list()
 
@@ -523,22 +528,33 @@ def compute_dimacs_formulas():
         p.close()
         p.join()
 
-    sum_time = sum([time for _,_, time in var_map_list])
+    sum_time = sum([time for _,_,_, time in var_map_list])
     print("Total CPU Time:", sum_time)
 
-    var_maps = {key: val for key, val, _ in var_map_list}
+    var_maps = {key: val for key, val, _, _ in var_map_list}
+    feasibility_map = {key: feasible for key, _, feasible,_ in var_map_list}
 
-    pickle.dump(var_maps, open(BASE_DIRECTORY + "/var_maps.pickle", "wb"))
+    formula_metadata = (var_maps, feasibility_map)
 
-    return var_maps
+    pickle.dump(formula_metadata, open(BASE_DIRECTORY + "/formula_metadata.pickle", "wb"))
+
+    return formula_metadata
 
 def convert_dimacs_wrapper(x):
     start_time = time.process_time()
     label_num, curr_r, left_cost, right_cost = x
     formula_problem =  get_symbolic_problem_instance(min_cost=left_cost, max_cost=right_cost, target_label=label_num)
+
+    solver = Solver()
+    solver.add(formula_problem)
+    if str(solver.check()) == "sat":
+        formula_feasible = True
+    else:
+        formula_feasible = False
+
     formula_name = "RP_Label_" + str(label_num) + "_Cost_" + str(curr_r) + ".cnf"
     var_map = convert_dimacs_problem_instance(formula_problem, BASE_DIRECTORY + "formulas/" + formula_name)
-    return ((label_num, curr_r), var_map, time.process_time() - start_time)
+    return ((label_num, curr_r), var_map, formula_feasible, time.process_time() - start_time)
 
 def get_formula_data_list():
     # Create name and parameter tuples.
