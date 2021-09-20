@@ -65,8 +65,8 @@ if LARGE_MAP:
                         ( 2,  2,  2,  2,  0,  2,  2,  2,  2)
                         )
 
-    length_bounds = (1,30)
-    COST_BOUND = 50
+    length_bounds = (1,35)
+    COST_BOUND = 60
     ALPHA_LIST = [0,0,0]
     BETA_LIST = [1e-6,1e-6,1e-6]
 
