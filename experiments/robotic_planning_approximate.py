@@ -13,13 +13,14 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import collections  as mc
+from matplotlib.textpath import TextPath
+from matplotlib.patches import PathPatch
 
 ###################################################################################################
 # Experiment Constants and Parameters
 ###################################################################################################
 
 BASE_DIRECTORY = "approx_data/"
-SHOW_COSTS = False
 LARGE_MAP = True
 
 if LARGE_MAP:
@@ -64,8 +65,8 @@ if LARGE_MAP:
                         ( 2,  2,  2,  2,  0,  2,  2,  2,  2)
                         )
 
-    length_bounds = (1,40)
-    COST_BOUND = 48
+    length_bounds = (1,30)
+    COST_BOUND = 50
     ALPHA_LIST = [0,0,0]
     BETA_LIST = [1e-6,1e-6,1e-6]
 
@@ -1006,14 +1007,26 @@ def draw_improvisation(improvisation):
         ax.axhline(x, lw=2, color='k', zorder=5)
         ax.axvline(x, lw=2, color='k', zorder=5)
 
-    if SHOW_COSTS:
-        ax.imshow(GRIDWORLD_COSTS, cmap="binary", interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0)
-    else:
-        cmap = colors.ListedColormap(['white', '#000000','grey', 'darkblue', 'orange'])
-        boundaries = [0, 1, 2, 4, 8, 12]
-        norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
+    ax.imshow(GRIDWORLD_COSTS, cmap="binary", interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0)
 
-        ax.imshow(GRIDWORLD, interpolation='none', extent=[0, len(GRIDWORLD), 0, len(GRIDWORLD)], zorder=0, cmap=cmap, norm=norm)
+    impassable = 1
+    start = 2
+    end = 3
+    hard_objectives = [4,5,6,7]
+    label_objectives = [8,9,10]
+
+    for x in range(len(GRIDWORLD)):
+        for y in range(len(GRIDWORLD)):
+            if GRIDWORLD[y][x] == impassable:
+                ax.add_patch(PathPatch(TextPath((x + 0.13, len(GRIDWORLD) - 1 - y + 0.11), "X", size=1), color="red", ec="white"))
+            elif GRIDWORLD[y][x] == start:
+                ax.add_patch(PathPatch(TextPath((x + 0.2, len(GRIDWORLD) - 1 - y + 0.11), "S", size=1), color="green", ec="white"))
+            elif GRIDWORLD[y][x] == end:
+                ax.add_patch(PathPatch(TextPath((x + 0.17, len(GRIDWORLD) - 1 - y + 0.11), "E", size=1), color="green", ec="white"))
+            elif GRIDWORLD[y][x] in hard_objectives:
+                ax.add_patch(PathPatch(TextPath((x + 0.11, len(GRIDWORLD) - 1 - y + 0.11), "O", size=1), color="blue", ec="white"))
+            elif GRIDWORLD[y][x] in label_objectives:
+                ax.add_patch(PathPatch(TextPath((x + 0.13, len(GRIDWORLD) - 1 - y + 0.11), "C", size=1), color="orange", ec="white"))
 
     start_loc = np.where(np.array(GRIDWORLD) == 2)
 
@@ -1039,6 +1052,7 @@ def draw_improvisation(improvisation):
 
     plt.axis('off')
 
+    #plt.savefig("RP_LargeMap.png", bbox_inches="tight", pad_inches=0, dpi=1024)
     plt.show()
 
 
