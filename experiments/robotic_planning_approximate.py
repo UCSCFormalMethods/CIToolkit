@@ -100,25 +100,28 @@ alphabet = {"North", "East", "South", "West"}
 
 
 # Create a mapping from a cell in gridworld to a variable assignment.
-num_cell_vars = math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
+num_cell_vars = len(GRIDWORLD) * len(GRIDWORLD[0]) # math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
 
 cell_id_map = {}
 id_cell_map = {}
 
-var_assignments = itertools.product([0,1], repeat=num_cell_vars)
+#var_assignments = itertools.product([0,1], repeat=num_cell_vars)
 
-null_cell_id = next(var_assignments)
+null_cell_id = tuple([0]*num_cell_vars) #next(var_assignments)
 
-assert list(null_cell_id) == [0]*num_cell_vars
+#assert list(null_cell_id) == [0]*num_cell_vars
 
 cell_id_map[None] = null_cell_id
 id_cell_map[null_cell_id] = None
 
+curr_ind = 0
+
 for y in range(len(GRIDWORLD)):
     for x in range(len(GRIDWORLD[0])):
-        assignment = next(var_assignments)
+        assignment = tuple([1 if i == curr_ind else 0 for i in range(num_cell_vars)]) #next(var_assignments)
         cell_id_map[(x, y)] = assignment
         id_cell_map[assignment] = (x,y)
+        curr_ind += 1
 
 num_cost_vars = 10
 
@@ -172,6 +175,8 @@ def run():
     print("Gamma:", OUT_GAMMA)
     print("Counting/Sampling Delta:", DELTA)
     print("Counting/Sampling Epsilon:", EPSILON)
+
+    assert False
 
     start = time.time()
     print("Counting solutions for DIMACS Fomulas...")
@@ -983,9 +988,6 @@ def get_var_equal_cell_formula(var, cell):
             cell_valid = And(cell_valid, Not(Bool(var + "[" + str(pos) + "]")))
 
     return cell_valid
-
-def cost_to_id(cost):
-    return tuple(map(int, "{0:b}".format(cost).rjust(num_cost_vars, "0")))
 
 def get_var_equal_cost_formula(var, cost):
     # Returns a formula that is true if var is set to cell
