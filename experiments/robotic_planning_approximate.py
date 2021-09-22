@@ -101,16 +101,20 @@ alphabet = {"North", "East", "South", "West"}
 
 
 # Create a mapping from a cell in gridworld to a variable assignment.
-num_cell_vars = len(GRIDWORLD) * len(GRIDWORLD[0]) # math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
+num_x_vars = math.ceil(math.log(len(GRIDWORLD) + 1, 2))
+num_y_vars = math.ceil(math.log(len(GRIDWORLD[0]) + 1, 2))
+num_cell_vars = num_x_vars + num_y_vars # math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
 
 cell_id_map = {}
 id_cell_map = {}
 
 #var_assignments = itertools.product([0,1], repeat=num_cell_vars)
+x_var_assignments = itertools.product([0,1], repeat=num_x_vars)
+y_var_assignments = itertools.product([0,1], repeat=num_y_vars)
 
-null_cell_id = tuple([0]*num_cell_vars) #next(var_assignments)
+null_cell_id = tuple(list(next(x_var_assignments)) + list(next(y_var_assignments)))
 
-#assert list(null_cell_id) == [0]*num_cell_vars
+assert list(null_cell_id) == [0]*num_cell_vars
 
 cell_id_map[None] = null_cell_id
 id_cell_map[null_cell_id] = None
@@ -118,8 +122,12 @@ id_cell_map[null_cell_id] = None
 curr_ind = 0
 
 for y in range(len(GRIDWORLD)):
+    y_map = next(y_var_assignments)
+    x_var_assignments = itertools.product([0,1], repeat=num_x_vars)
+    next(x_var_assignments)
     for x in range(len(GRIDWORLD[0])):
-        assignment = tuple([1 if i == curr_ind else 0 for i in range(num_cell_vars)]) #next(var_assignments)
+        x_map = next(x_var_assignments)
+        assignment = tuple(list(y_map) + list(x_map)) #next(var_assignments)
         cell_id_map[(x, y)] = assignment
         id_cell_map[assignment] = (x,y)
         curr_ind += 1
