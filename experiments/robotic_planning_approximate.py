@@ -119,8 +119,6 @@ assert list(null_cell_id) == [0]*num_cell_vars
 cell_id_map[None] = null_cell_id
 id_cell_map[null_cell_id] = None
 
-curr_ind = 0
-
 for y in range(len(GRIDWORLD)):
     y_map = next(y_var_assignments)
     x_var_assignments = itertools.product([0,1], repeat=num_x_vars)
@@ -130,7 +128,6 @@ for y in range(len(GRIDWORLD)):
         assignment = tuple(list(y_map) + list(x_map)) #next(var_assignments)
         cell_id_map[(x, y)] = assignment
         id_cell_map[assignment] = (x,y)
-        curr_ind += 1
 
 num_cost_vars = 10
 

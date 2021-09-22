@@ -64,6 +64,9 @@ cost_bound = 30
 label_prob_bounds = (Fraction(1,6), Fraction(1,2))
 
 def run():
+    print(create_combo_hard_cost_constraint().decompose())
+    assert False
+
     print("Starting Exact LQCI Robotic Planning Experiment...")
     print()
 
@@ -446,6 +449,114 @@ def create_cost_function():
     for y in range(len(GRIDWORLD)):
         for x in range(len(GRIDWORLD[0])):
             cost_map[state_map[(x, y)]] = GRIDWORLD_COSTS[y][x]
+
+    cost_map["Sink"] = 9
+
+    cost_func = AccumulatedCostDfa(cost_dfa, cost_map, max_word_length=length_bounds[1])
+
+    return cost_func
+
+def create_combo_hard_cost_constraint():
+    max_y = len(GRIDWORLD) - 1
+    max_x = len(GRIDWORLD[0]) - 1
+
+    states = set()
+    states.add("Sink")
+
+    # Maps (x,y, hc_1, hc_2, hc_3, hc_4) to a state where
+    # hc_# indicates that that hard constraint has been visited
+    state_map = dict()
+
+    for y in range(len(GRIDWORLD)):
+        for x in range(len(GRIDWORLD[0])):
+            for hc_objectives in itertools.product([0,1], repeat=4):
+                new_state = "State_(" + str(x) + "," + str(y) + ")_" + str(hc_objectives)
+                states.add(new_state)
+                state_map[(x, y, hc_objectives)] = new_state
+
+    start_loc = np.where(np.array(GRIDWORLD) == 2)
+    end_loc = np.where(np.array(GRIDWORLD) == 3)
+
+    start_loc = (start_loc[1][0], start_loc[0][0])
+    end_loc = (end_loc[1][0], end_loc[0][0])
+
+    accepting_states = {state_map[(end_loc[0], end_loc[1], (1,1,1,1))]}
+    start_state = state_map[(start_loc[0], start_loc[1], (0,0,0,0))]
+
+    transitions = {}
+
+    for symbol in alphabet:
+        transitions[("Sink", symbol)] = "Sink"
+
+    hc_1_loc = np.where(np.array(GRIDWORLD) == 4)
+    hc_1_loc = (hc_1_loc[1][0], hc_1_loc[0][0])
+
+    hc_2_loc = np.where(np.array(GRIDWORLD) == 5)
+    hc_2_loc = (hc_2_loc[1][0], hc_2_loc[0][0])
+
+    hc_3_loc = np.where(np.array(GRIDWORLD) == 6)
+    hc_3_loc = (hc_3_loc[1][0], hc_3_loc[0][0])
+
+    hc_4_loc = np.where(np.array(GRIDWORLD) == 7)
+    hc_4_loc = (hc_4_loc[1][0], hc_4_loc[0][0])
+
+    for y in range(len(GRIDWORLD)):
+        for x in range(len(GRIDWORLD[0])):
+            for hc_objectives in itertools.product([0,1], repeat=4):
+                for symbol in alphabet:
+                    hc_1, hc_2, hc_3, hc_4 = hc_objectives
+
+                    origin_state = state_map[(x, y, hc_objectives)]
+
+                    if symbol == "North":
+                        dest_x = x
+                        dest_y = y - 1
+                    elif symbol == "East":
+                        dest_x = x + 1
+                        dest_y = y
+                    elif symbol == "South":
+                        dest_x = x
+                        dest_y = y + 1
+                    elif symbol == "West":
+                        dest_x = x - 1
+                        dest_y = y
+
+                    dest_coords = (dest_x, dest_y)
+
+                    # First check map boundaries and impassable areas.
+                    if dest_x < 0 or dest_x > max_x or dest_y < 0 or dest_y > max_y:
+                        # Off the edge of the map
+                        destination_state = "Sink"
+                    elif GRIDWORLD[y][x] == 1:
+                        # In impassable area
+                        destination_state = "Sink"
+                    elif GRIDWORLD[dest_y][dest_x] == 1:
+                        # Into impassable area
+                        destination_state = "Sink"
+                    else:
+                        # Second check if at hard constraint objective.
+                        if (dest_coords) == hc_1_loc:
+                            destination_state = state_map[(dest_x, dest_y, (1, hc_2, hc_3, hc_4))]
+                        elif (dest_coords) == hc_2_loc:
+                            destination_state = state_map[(dest_x, dest_y, (hc_1, 1, hc_3, hc_4))]
+                        elif (dest_coords) == hc_3_loc:
+                            destination_state = state_map[(dest_x, dest_y, (hc_1, hc_2, 1, hc_4))]
+                        elif (dest_coords) == hc_4_loc:
+                            destination_state = state_map[(dest_x, dest_y, (hc_1, hc_2, hc_3, 1))]
+                        else:
+                            # Not at a hard constraint, hc vals stay the same
+                            destination_state = state_map[(dest_x, dest_y, (hc_1, hc_2, hc_3, hc_4))]
+
+                    transitions[(origin_state, symbol)] = destination_state
+
+    cost_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    cost_map = dict()
+
+    for y in range(len(GRIDWORLD)):
+        for x in range(len(GRIDWORLD[0])):
+            for hc_objectives in itertools.product([0,1], repeat=4):
+                cost_map[state_map[(x, y, hc_objectives)]] = GRIDWORLD_COSTS[y][x]
 
     cost_map["Sink"] = 9
 
