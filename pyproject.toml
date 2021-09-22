@@ -7,7 +7,7 @@ maintainers = ["Eric Vin <evin@ucsc.edu>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "3.9"
+python = "^3.8"
 pytest = {version = "^6.2.4", optional = true}
 pytest-randomly = {version = "^3.8.0", optional = true}
 sphinx = {version = "^4.1.1", optional = true}

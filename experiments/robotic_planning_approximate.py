@@ -8,7 +8,7 @@ import subprocess
 import multiprocessing
 import glob
 import random
-from functools import cache
+from functools import lru_cache
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -739,7 +739,6 @@ def create_hard_constraint():
     hc = False
 
     for length in range(length_bounds[0], length_bounds[1]+1):
-        print(length)
         hc = Or(hc, create_exact_length_hard_constraint(length, length_bounds[1]))
 
     return hc
@@ -808,7 +807,7 @@ def create_exact_length_hard_constraint(length, max_length):
 
     return hc
 
-@cache
+@lru_cache(maxsize=None)
 def get_feasible_transitions_formula(var_1, var_2):
     # Create a set of all possible transitions
     # (origin state id, destination state id)
@@ -979,7 +978,7 @@ def create_no_prev_lo_function(length):
 ###################################################################################################
 # General Utility Funcs
 ###################################################################################################
-@cache
+@lru_cache(maxsize=None)
 def get_var_equal_cell_formula(var, cell):
     # Returns a formula that is true if var is set to cell
     cell_valid = True
