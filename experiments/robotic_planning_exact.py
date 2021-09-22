@@ -64,9 +64,6 @@ cost_bound = 30
 label_prob_bounds = (Fraction(1,6), Fraction(1,2))
 
 def run():
-    print(create_combo_hard_cost_constraint().decompose())
-    assert False
-
     print("Starting Exact LQCI Robotic Planning Experiment...")
     print()
 
@@ -78,19 +75,20 @@ def run():
     print("Label Prob Bounds:", label_prob_bounds)
     print("Cost Bound", cost_bound)
 
-    start = time.time()
+    # start = time.time()
 
-    if os.path.isfile(BASE_DIRECTORY + "hard_constraint.pickle"):
-        print("Loading hard constraint from pickle...\n")
-        hard_constraint = pickle.load(open(BASE_DIRECTORY + "hard_constraint.pickle", 'rb'))
-    else:
-        print("Creating hard constraint...\n")
-        hard_constraint = create_hard_constraint()
-        pickle.dump(hard_constraint, open(BASE_DIRECTORY + "hard_constraint.pickle", "wb"))
-        print("Done creating Hard Constraint. Total time taken: " + str(time.time() - start))
+    # if os.path.isfile(BASE_DIRECTORY + "hard_constraint.pickle"):
+    #     print("Loading hard constraint from pickle...\n")
+    #     hard_constraint = pickle.load(open(BASE_DIRECTORY + "hard_constraint.pickle", 'rb'))
+    # else:
+    #     print("Creating hard constraint...\n")
+    #     hard_constraint = create_hard_constraint()
+    #     pickle.dump(hard_constraint, open(BASE_DIRECTORY + "hard_constraint.pickle", "wb"))
+    #     print("Done creating Hard Constraint. Total time taken: " + str(time.time() - start))
 
-    print("Hard Constraint States:", len(hard_constraint.states))
+    # print("Hard Constraint States:", len(hard_constraint.states))
 
+    hard_constraint = Dfa.min_length_dfa(alphabet, 0)
 
     start = time.time()
 
@@ -114,7 +112,7 @@ def run():
         cost_function = pickle.load(open(BASE_DIRECTORY + "cost_function.pickle", 'rb'))
     else:
         print("Creating cost function...\n")
-        cost_function = create_cost_function()
+        cost_function = create_combo_hard_cost_constraint()
         cost_function.decompose()
         pickle.dump(cost_function, open(BASE_DIRECTORY + "cost_function.pickle", "wb"))
         print("Done creating Cost Function. Total time taken: " + str(time.time() - start))
