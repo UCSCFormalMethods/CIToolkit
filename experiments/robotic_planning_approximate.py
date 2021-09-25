@@ -17,139 +17,137 @@ from matplotlib import collections  as mc
 from matplotlib.textpath import TextPath
 from matplotlib.patches import PathPatch
 
-###################################################################################################
-# Experiment Constants and Parameters
-###################################################################################################
-
-BASE_DIRECTORY = "approx_data/"
-LARGE_MAP = True
-
-if LARGE_MAP:
-    BASE_DIRECTORY += "large_map/"
-else:
-    BASE_DIRECTORY += "small_map/"
-
-# Top left corner is (0,0)
-# 0 denotes normal passable terrain
-# 1 denotes impassable terrain
-# 2 denotes the start point
-# 3 denotes the end point
-# 4 denotes hard objective 1. All hard objectives must be visited
-# 5 denotes hard objective 2. All hard objectives must be visited
-# 6 denotes hard objective 3. All hard objectives must be visited
-# 7 denotes hard objective 4. All hard objectives must be visited
-# 8 denotes label objective 0. The selected label objective must be visited first.
-# 9 denotes label objective 1. The selected label objective must be visited first.
-# 10 denotes label objective 2. The selected label objective must be visited first.
-if LARGE_MAP:
-    GRIDWORLD =         (
-                        (8, 0, 0, 3, 0, 0,  0),
-                        (0, 0, 0, 0, 0, 5,  0),
-                        (0, 0, 0, 0, 0, 0,  0),
-                        (1, 0, 1, 0, 1, 0,  1),
-                        (7, 0, 0, 0, 0, 0, 10),
-                        (0, 0, 9, 0, 0, 4,  0),
-                        (6, 0, 0, 2, 0, 0,  0)
-                        )
-
-    GRIDWORLD_COSTS =   (
-                        ( 9,  6,  3,  0,  4,  4,  4),
-                        ( 6,  3,  2,  1,  4,  2,  4),
-                        ( 3,  2,  2,  1,  2,  2,  2),
-                        ( 0, 10,  0,  1,  0, 10,  0),
-                        ( 2,  2,  2,  1,  4,  4,  2),
-                        ( 2,  4,  1,  1,  2,  4,  4),
-                        ( 2,  2,  2,  0,  2,  2,  2)
-                        )
-
-    length_bounds = (1,30)
-    COST_BOUND = 50
-    ALPHA_LIST = [0,0,0]
-    BETA_LIST = [1e-6,1e-6,1e-6]
-
-else:
-    GRIDWORLD =         (
-                        (8, 0, 3, 0, 5,  0),
-                        (0, 0, 0, 0, 0,  0),
-                        (0, 1, 0, 1, 0,  1),
-                        (7, 0, 0, 0, 0, 10),
-                        (0, 9, 0, 4, 0,  0),
-                        (6, 0, 2, 0, 0,  0)
-                        )
-
-    GRIDWORLD_COSTS =   (
-                        (3, 2, 0, 2, 0, 2),
-                        (2, 1, 0, 1, 1, 1),
-                        (3, 0, 0, 0, 3, 0),
-                        (0, 1, 0, 1, 2, 1),
-                        (2, 0, 0, 0, 1, 2),
-                        (0, 1, 0, 1, 1, 1)
-                        )
-
-    length_bounds = (1,25)
-    COST_BOUND = 30
-    ALPHA_LIST = [0,0,0]
-    BETA_LIST = [1e-5,1e-5,1e-5]
-
-
-alphabet = {"North", "East", "South", "West"}
-
-# Create a mapping from a cell in gridworld to a variable assignment.
-num_cell_vars = math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
-
-cell_id_map = {}
-id_cell_map = {}
-
-var_assignments = itertools.product([0,1], repeat=num_cell_vars)
-
-null_cell_id = next(var_assignments)
-
-assert list(null_cell_id) == [0]*num_cell_vars
-
-cell_id_map[None] = null_cell_id
-id_cell_map[null_cell_id] = None
-
-for y in range(len(GRIDWORLD)):
-    for x in range(len(GRIDWORLD[0])):
-        assignment = next(var_assignments)
-        cell_id_map[(x, y)] = assignment
-        id_cell_map[assignment] = (x,y)
-
-
-num_cost_vars = 10
-
-lc_1_loc = np.where(np.array(GRIDWORLD) == 8)
-lc_1_loc = (lc_1_loc[1][0], lc_1_loc[0][0])
-
-lc_2_loc = np.where(np.array(GRIDWORLD) == 9)
-lc_2_loc = (lc_2_loc[1][0], lc_2_loc[0][0])
-
-lc_3_loc = np.where(np.array(GRIDWORLD) == 10)
-lc_3_loc = (lc_3_loc[1][0], lc_3_loc[0][0])
-
-lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
-
-num_label_vars = 2
-
-R = 1.2
-
-max_cost = 2**num_cost_vars
-max_r = math.ceil(math.log(max_cost, R))-1
-
-num_buckets = len(lo_locs) * max_r
-
-OUT_DELTA = 0.05
-OUT_GAMMA = 0.2
-DELTA = None # 1 - math.pow((1- OUT_DELTA), 1/num_buckets)
-EPSILON = math.pow(1 + OUT_GAMMA, 1/3) - 1
-LAMBDA = .3
-RHO = .4
-NUM_SAMPLES = 100
 
 ###################################################################################################
 # Main Experiment
 ###################################################################################################
-def run():
+
+def run_approximate_experiments(LARGE_MAP):
+    global APPROX_BASE_DIRECTORY
+    APPROX_BASE_DIRECTORY = "approx_data/"
+
+    if LARGE_MAP:
+        APPROX_BASE_DIRECTORY += "large_map/"
+    else:
+        APPROX_BASE_DIRECTORY += "small_map/"
+
+    # Top left corner is (0,0)
+    # 0 denotes normal passable terrain
+    # 1 denotes impassable terrain
+    # 2 denotes the start point
+    # 3 denotes the end point
+    # 4 denotes hard objective 1. All hard objectives must be visited
+    # 5 denotes hard objective 2. All hard objectives must be visited
+    # 6 denotes hard objective 3. All hard objectives must be visited
+    # 7 denotes hard objective 4. All hard objectives must be visited
+    # 8 denotes label objective 0. The selected label objective must be visited first.
+    # 9 denotes label objective 1. The selected label objective must be visited first.
+    # 10 denotes label objective 2. The selected label objective must be visited first.
+    if LARGE_MAP:
+        GRIDWORLD =         (
+                            (8, 0, 0, 3, 0, 0,  0),
+                            (0, 0, 0, 0, 0, 5,  0),
+                            (0, 0, 0, 0, 0, 0,  0),
+                            (1, 0, 1, 0, 1, 0,  1),
+                            (7, 0, 0, 0, 0, 0, 10),
+                            (0, 0, 9, 0, 0, 4,  0),
+                            (6, 0, 0, 2, 0, 0,  0)
+                            )
+
+        GRIDWORLD_COSTS =   (
+                            ( 9,  6,  3,  0,  4,  4,  4),
+                            ( 6,  3,  2,  1,  4,  2,  4),
+                            ( 3,  2,  2,  1,  2,  2,  2),
+                            ( 0, 10,  0,  1,  0, 10,  0),
+                            ( 2,  2,  2,  1,  4,  4,  2),
+                            ( 2,  4,  1,  1,  2,  4,  4),
+                            ( 2,  2,  2,  0,  2,  2,  2)
+                            )
+
+        length_bounds = (1,30)
+        COST_BOUND = 50
+        ALPHA_LIST = [0,0,0]
+        BETA_LIST = [1e-6,1e-6,1e-6]
+
+    else:
+        GRIDWORLD =         (
+                            (8, 0, 3, 0, 5,  0),
+                            (0, 0, 0, 0, 0,  0),
+                            (0, 1, 0, 1, 0,  1),
+                            (7, 0, 0, 0, 0, 10),
+                            (0, 9, 0, 4, 0,  0),
+                            (6, 0, 2, 0, 0,  0)
+                            )
+
+        GRIDWORLD_COSTS =   (
+                            (3, 2, 0, 2, 0, 2),
+                            (2, 1, 0, 1, 1, 1),
+                            (3, 0, 0, 0, 3, 0),
+                            (0, 1, 0, 1, 2, 1),
+                            (2, 0, 0, 0, 1, 2),
+                            (0, 1, 0, 1, 1, 1)
+                            )
+
+        length_bounds = (1,25)
+        COST_BOUND = 30
+        ALPHA_LIST = [0,0,0]
+        BETA_LIST = [1e-5,1e-5,1e-5]
+
+
+    alphabet = {"North", "East", "South", "West"}
+
+    # Create a mapping from a cell in gridworld to a variable assignment.
+    num_cell_vars = math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
+
+    cell_id_map = {}
+    id_cell_map = {}
+
+    var_assignments = itertools.product([0,1], repeat=num_cell_vars)
+
+    null_cell_id = next(var_assignments)
+
+    assert list(null_cell_id) == [0]*num_cell_vars
+
+    cell_id_map[None] = null_cell_id
+    id_cell_map[null_cell_id] = None
+
+    for y in range(len(GRIDWORLD)):
+        for x in range(len(GRIDWORLD[0])):
+            assignment = next(var_assignments)
+            cell_id_map[(x, y)] = assignment
+            id_cell_map[assignment] = (x,y)
+
+
+    num_cost_vars = 10
+
+    lc_1_loc = np.where(np.array(GRIDWORLD) == 8)
+    lc_1_loc = (lc_1_loc[1][0], lc_1_loc[0][0])
+
+    lc_2_loc = np.where(np.array(GRIDWORLD) == 9)
+    lc_2_loc = (lc_2_loc[1][0], lc_2_loc[0][0])
+
+    lc_3_loc = np.where(np.array(GRIDWORLD) == 10)
+    lc_3_loc = (lc_3_loc[1][0], lc_3_loc[0][0])
+
+    lo_locs = [lc_1_loc, lc_2_loc, lc_3_loc]
+
+    num_label_vars = 2
+
+    R = 1.2
+
+    max_cost = 2**num_cost_vars
+    max_r = math.ceil(math.log(max_cost, R))-1
+
+    num_buckets = len(lo_locs) * max_r
+
+    OUT_DELTA = 0.05
+    OUT_GAMMA = 0.2
+    DELTA = None # 1 - math.pow((1- OUT_DELTA), 1/num_buckets)
+    EPSILON = math.pow(1 + OUT_GAMMA, 1/3) - 1
+    LAMBDA = .3
+    RHO = .4
+    NUM_SAMPLES = 100
+
     print()
     print("------------------------------------------------------------------------------------------")
     print("Starting Approximate LQCI Robotic Planning Experiment...")
@@ -163,13 +161,15 @@ def run():
     start = time.time()
     print("Assembling DIMACS Fomulas...")
 
-    formula_var_map, feasibility_map = compute_dimacs_formulas()
+    p1 = (num_cost_vars, num_label_vars, lo_locs)
+    p2 = (GRIDWORLD, GRIDWORLD_COSTS, length_bounds, tuple(cell_id_map.items()), frozenset(alphabet), num_cell_vars, num_cost_vars, num_label_vars, tuple(lo_locs))
+
+    formula_var_map, feasibility_map = compute_dimacs_formulas(lo_locs, max_r, R, length_bounds, num_cell_vars, p1, p2)
 
     print("Assembled DIMACS Formulas in " + str(time.time() - start))
 
     num_nontriv_buckets = sum(map(int, feasibility_map.values()))
 
-    global DELTA
     DELTA = 1 - math.pow((1- OUT_DELTA), 1/num_nontriv_buckets)
 
     print("R Value:", R)
@@ -178,12 +178,10 @@ def run():
     print("Counting/Sampling Delta:", DELTA)
     print("Counting/Sampling Epsilon:", EPSILON)
 
-    assert False
-
     start = time.time()
     print("Counting solutions for DIMACS Fomulas...")
 
-    class_count_map = compute_class_counts()
+    class_count_map = compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA)
 
     print("Counting solutions for DIMACS Formulas in " + str(time.time() - start))
     print()
@@ -210,7 +208,7 @@ def run():
         print("Label#" + str(label_iter) + "  Mean Lo Cost: " + str(label_total_lo_cost/label_count))
 
     # Initialize alpha probabilities
-    conditional_weights = {(label_iter, cost_iter):class_size_map[(label_iter, cost_iter)]*(ALPHA_LIST[label_iter]/(1+EPSILON)) for label_iter, cost_iter, _, _ in get_formula_data_list()}
+    conditional_weights = {(label_iter, cost_iter):class_size_map[(label_iter, cost_iter)]*(ALPHA_LIST[label_iter]/(1+EPSILON)) for label_iter, cost_iter, _, _ in get_formula_data_list(lo_locs, max_r, R)}
 
     label_sum_prob = {label_iter:sum([prob for ((l, c), prob) in conditional_weights.items() if l == label_iter]) for label_iter in range(len(lo_locs))}
 
@@ -232,7 +230,7 @@ def run():
         assert label_sum_prob[label_iter] == 1
 
     # Calculate conditional exptected costs
-    conditional_costs = {label_iter:sum([conditional_weights[(l,c)]*Lo for l, c, Lo, _ in get_formula_data_list() if l == label_iter]) for label_iter in range(len(lo_locs))}
+    conditional_costs = {label_iter:sum([conditional_weights[(l,c)]*Lo for l, c, Lo, _ in get_formula_data_list(lo_locs, max_r, R) if l == label_iter]) for label_iter in range(len(lo_locs))}
 
     print("Conditional Weights:", conditional_weights)
     print("Conditional Costs", conditional_costs)
@@ -268,9 +266,9 @@ def run():
     print("Sorted Cost Weights:", sorted_cost_weights)
 
     start = time.time()
-    if os.path.isfile(BASE_DIRECTORY + "samples.pickle"):
+    if os.path.isfile(APPROX_BASE_DIRECTORY + "samples.pickle"):
         print("Loading samples from pickle...\n")
-        samples = pickle.load(open(BASE_DIRECTORY + "samples.pickle", 'rb'))
+        samples = pickle.load(open(APPROX_BASE_DIRECTORY + "samples.pickle", 'rb'))
     else:
         print("Sampling improviser...\n")
         samples = []
@@ -280,168 +278,17 @@ def run():
             label_choice = random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
             cost_choice = random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
 
-            coords = sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map)
+            coords = sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map, length_bounds, num_cell_vars, id_cell_map)
+
+            draw_improvisation(coords, GRIDWORLD, GRIDWORLD_COSTS)
+
             samples.append(coords)
 
-        pickle.dump(samples, open(BASE_DIRECTORY + "samples.pickle", "wb"))
+        pickle.dump(samples, open(APPROX_BASE_DIRECTORY + "samples.pickle", "wb"))
         print("Done sampling. Total time taken: " + str(time.time() - start))
 
-    # print("Displaying samples....")
-
-    # for coords in samples:
-    #     print()
-    #     print("Coordinates:")
-    #     print("Path Length:", len(list(filter(lambda x: x is None, coords))))
-    #     print(coords)
-    #     print()
-
-    #     print("Costs:")
-    #     cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
-    #     print(cost_list)
-    #     print(sum(cost_list))
-    #     print()
-
-    #     print("Rendering...")
-
-    #     draw_improvisation(coords)
-
-    # Sample on repeat
-    # while True:
-    #     print("\n")
-    #     label_choice = random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
-    #     cost_choice = random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
-
-    #     coords = sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map)
-
-    #     print("Coordinates:")
-    #     print("Path Length:", len(list(filter(lambda x: x is None, coords))))
-    #     print(coords)
-    #     print()
-
-    #     print("Costs:")
-    #     cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
-    #     print(cost_list)
-    #     print(sum(cost_list))
-    #     print()
-
-    #     print("Rendering...")
-
-    #     draw_improvisation(coords)
-
-    # ac = get_symbolic_problem_instance(min_cost=27, max_cost=41, target_label=2)
-    # s = Solver()
-    # s.add(ac)
-    # print(s.check())
-    # solution = s.model()
-    # print(solution)
-
-    # str_solutions = {var.name(): solution[var] for var in solution.decls()}
-
-    # print("CostSum: ", str_solutions["CostSum"])
-
-    # print("Parsing...")
-
-    # coords = []
-
-    # for var_iter in range(length_bounds[0], length_bounds[1]+1):
-    #     var = "Cell_" + str(var_iter)
-    #     cell_id = []
-
-    #     for pos in range(num_cell_vars):
-    #         var_pos = var + "[" + str(pos) + "]"
-
-    #         if solution[Bool(var_pos)]:
-    #             cell_id.append(1)
-    #         else:
-    #             cell_id.append(0)
-
-    #     coords.append(id_cell_map[tuple(cell_id)])
-
-    # arguments = ["cryptominisat5", "--verb", "0", "experiments/approx_data/formulas/RP_Label_0_Cost_7.cnf"]
-
-    # process = subprocess.run(args=arguments, capture_output=True)
-
-    # output = process.stdout.decode("utf-8")
-    # solution = {}
-
-    # for line in output.split("\n"):
-    #     if len(line) == 0:
-    #         break
-    #     elif line[0] == "s":
-    #         assert "SATISFIABLE" in line
-    #     elif line[0] == "v":
-    #         trimmed_line = line[1:]
-
-    #         var_nums = map(int, [item.strip() for item in trimmed_line.split()])
-
-    #         for num in var_nums:
-
-    #             var = abs(num)
-
-    #             if num == 0:
-    #                 break
-    #             elif num > 0:
-    #                 solution[num_var_map[abs(num)]] = True
-    #             else:
-    #                 solution[num_var_map[abs(num)]] = False
-
-    # target_label = 1
-    # min_cost = 0
-    # max_cost = 34
-
-    # out_file_path = "test.cnf"
-
-    # problem = get_symbolic_problem_instance(min_cost=min_cost, max_cost=max_cost, target_label=target_label)
-    # var_num_map = convert_cnf_problem_instance(problem, out_file_path)
-    # num_var_map = {v: k for k, v in var_num_map.items()}
-
-    # print("Solving...")
-
-    # s = Solver()
-    # s.add(ac)
-    # print(s.check())
-    # solution = s.model()
-    # print(solution)
-
-    # str_solutions = {var.name(): solution[var] for var in solution.decls()}
-
-    # print("CostSum: ", str_solutions["CostSum"])
-
-    # print("Parsing...")
-
-    # coords = []
-
-    # for var_iter in range(length_bounds[0], length_bounds[1]+1):
-    #     var = "Cell_" + str(var_iter)
-    #     cell_id = []
-
-    #     for pos in range(num_cell_vars):
-    #         var_pos = var + "[" + str(pos) + "]"
-
-    #         if solution[var_pos]:
-    #             cell_id.append(1)
-    #         else:
-    #             cell_id.append(0)
-
-    #     coords.append(id_cell_map[tuple(cell_id)])
-
-    # print("Coordinates:")
-    # print(len(list(filter(lambda x: x is None, coords))))
-    # print(coords)
-    # print()
-
-    # print("Costs:")
-    # cost_list = [GRIDWORLD_COSTS[coord[1]][coord[0]] if (coord is not None) else 0 for coord in coords]
-    # print(cost_list)
-    # print(sum(cost_list))
-    # print()
-
-    # print("Rendering...")
-
-    # draw_improvisation(coords)
-
-def sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map):
-    target_formula = BASE_DIRECTORY + "formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
+def sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map, length_bounds, num_cell_vars, id_cell_map):
+    target_formula = APPROX_BASE_DIRECTORY + "formulas/RP_Label_" + str(label_choice) + "_Cost_" + str(cost_choice) + ".cnf"
     target_cell_count = class_count_map[(label_choice, cost_choice)][1]
     target_hash_count = class_count_map[(label_choice, cost_choice)][2]
 
@@ -490,15 +337,17 @@ def sample_improviser(label_choice, cost_choice, formula_var_map, class_count_ma
 ###################################################################################################
 # Experiment Funcs
 ###################################################################################################
-def compute_class_counts():
-    if os.path.exists(BASE_DIRECTORY + "/class_counts.pickle"):
+def compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA):
+    if os.path.exists(APPROX_BASE_DIRECTORY + "/class_counts.pickle"):
         print("Loading class sizes dictionary from pickle...\n")
-        class_counts = pickle.load(open(BASE_DIRECTORY + "/class_counts.pickle", 'rb'))
+        class_counts = pickle.load(open(APPROX_BASE_DIRECTORY + "/class_counts.pickle", 'rb'))
         return class_counts
 
-    formula_files = glob.glob(BASE_DIRECTORY + "formulas/*.cnf")
+    formula_files = glob.glob(APPROX_BASE_DIRECTORY + "formulas/*.cnf")
 
-    formula_data = get_formula_data_list()
+    formula_data = get_formula_data_list(lo_locs, max_r, R)
+
+    formula_data = [(x, EPSILON, DELTA) for x in formula_data]
 
     with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
         formula_count_data = p.map(count_dimacs_wrapper, formula_data, chunksize=1)
@@ -511,27 +360,30 @@ def compute_class_counts():
 
     formula_count_map = {formula_name:count for formula_name, count, _ in formula_count_data}
 
-    pickle.dump(formula_count_map, open(BASE_DIRECTORY + "/class_counts.pickle", "wb"))
+    pickle.dump(formula_count_map, open(APPROX_BASE_DIRECTORY + "/class_counts.pickle", "wb"))
 
     return formula_count_map
 
 def count_dimacs_wrapper(x):
     start_time = time.time()
+    x, EPSILON, DELTA = x
     label_num, curr_r, left_cost, right_cost = x
     formula_name = "RP_Label_" + str(label_num) + "_Cost_" + str(curr_r) + ".cnf"
-    count = count_dimacs_formula(BASE_DIRECTORY + "formulas/" + formula_name)
+    count = count_dimacs_formula(APPROX_BASE_DIRECTORY + "formulas/" + formula_name, EPSILON, DELTA)
     return ((label_num, curr_r), count, time.time() - start_time)
 
-def compute_dimacs_formulas():
-    if not os.path.exists(BASE_DIRECTORY + "formulas"):
-        os.makedirs(BASE_DIRECTORY + "formulas")
+def compute_dimacs_formulas(lo_locs, max_r, R, length_bounds, num_cell_vars, p1, p2):
+    if not os.path.exists(APPROX_BASE_DIRECTORY + "formulas"):
+        os.makedirs(APPROX_BASE_DIRECTORY + "formulas")
     
-    if os.path.exists(BASE_DIRECTORY + "/formula_metadata.pickle"):
+    if os.path.exists(APPROX_BASE_DIRECTORY + "/formula_metadata.pickle"):
         print("Loading variable mappings from pickle...\n")
-        formula_metadata = pickle.load(open(BASE_DIRECTORY + "/formula_metadata.pickle", 'rb'))
+        formula_metadata = pickle.load(open(APPROX_BASE_DIRECTORY + "/formula_metadata.pickle", 'rb'))
         return formula_metadata
 
-    formula_data = get_formula_data_list()
+    formula_data = get_formula_data_list(lo_locs, max_r, R)
+    formula_data = [(x, length_bounds, num_cell_vars) for x in formula_data]
+    formula_data = [(x, p1, p2) for x in formula_data]
 
     with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
         var_map_list = p.map(convert_dimacs_wrapper, formula_data, chunksize=1)
@@ -547,15 +399,17 @@ def compute_dimacs_formulas():
 
     formula_metadata = (var_maps, feasibility_map)
 
-    pickle.dump(formula_metadata, open(BASE_DIRECTORY + "/formula_metadata.pickle", "wb"))
+    pickle.dump(formula_metadata, open(APPROX_BASE_DIRECTORY + "/formula_metadata.pickle", "wb"))
 
     return formula_metadata
 
 def convert_dimacs_wrapper(x):
     start_time = time.process_time()
-    label_num, curr_r, left_cost, right_cost = x
+    x_prime, p1, p2 = x
+    formula_data, length_bounds, num_cell_vars = x_prime
+    label_num, curr_r, left_cost, right_cost = formula_data
 
-    formula_problem =  get_symbolic_problem_instance(min_cost=left_cost, max_cost=right_cost, target_label=label_num)
+    formula_problem =  get_symbolic_problem_instance(p1, p2, min_cost=left_cost, max_cost=right_cost, target_label=label_num)
 
     solver = Solver()
     solver.add(formula_problem)
@@ -565,10 +419,10 @@ def convert_dimacs_wrapper(x):
         formula_feasible = False
 
     formula_name = "RP_Label_" + str(label_num) + "_Cost_" + str(curr_r) + ".cnf"
-    var_map = convert_dimacs_problem_instance(formula_problem, BASE_DIRECTORY + "formulas/" + formula_name)
+    var_map = convert_dimacs_problem_instance(formula_problem, APPROX_BASE_DIRECTORY + "formulas/" + formula_name, length_bounds, num_cell_vars)
     return ((label_num, curr_r), var_map, formula_feasible, time.process_time() - start_time)
 
-def get_formula_data_list():
+def get_formula_data_list(lo_locs, max_r, R):
     # Create name and parameter tuples.
     formula_data = []
 
@@ -586,7 +440,7 @@ def get_formula_data_list():
 
     return formula_data
 
-def convert_dimacs_problem_instance(problem, out_file_path):
+def convert_dimacs_problem_instance(problem, out_file_path, length_bounds, num_cell_vars):
     # Convert z3 expression to CNF form.
     tactic = Then('simplify', 'bit-blast', 'tseitin-cnf')
     goal = tactic(problem)
@@ -677,11 +531,13 @@ def add_dimacs_variable(var, context):
         next_var += 1
         return (next_var, mapping)
 
-def get_symbolic_problem_instance(min_cost = None, max_cost = None, target_label = None):
+def get_symbolic_problem_instance(p1, p2, min_cost = None, max_cost = None, target_label = None):
     # NOTE: MAX COST IS NOT INCLUSIVE
-    BASE_HARD_CONSTRAINT = create_hard_constraint()
-    BASE_COST_FUNCTION = create_cost_function()
-    BASE_LABEL_FUNCTION = create_label_function()
+    BASE_HARD_CONSTRAINT = create_hard_constraint(p2)
+    BASE_COST_FUNCTION = create_cost_function(p2)
+    BASE_LABEL_FUNCTION = create_label_function(p2)
+
+    num_cost_vars, num_label_vars, lo_locs = p1
 
     problem = And(BASE_HARD_CONSTRAINT, BASE_COST_FUNCTION, BASE_LABEL_FUNCTION)
 
@@ -700,7 +556,7 @@ def get_symbolic_problem_instance(min_cost = None, max_cost = None, target_label
 
     return problem
 
-def count_dimacs_formula(file_path):
+def count_dimacs_formula(file_path, EPSILON, DELTA):
     # Returns (total_count, cell_count, hash_count)
     arguments = ["./approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
 
@@ -721,7 +577,7 @@ def count_dimacs_formula(file_path):
 
 def sample_dimacs_formula(file_path, cell_count, hash_count):
     arguments = ["./unigen", "--verb", "0", "--multisample", "0", "--seed", str(random.randint(1,1000000000)) , \
-    "--samples", "1", "--epsilon", str(EPSILON), "--delta", str(DELTA), "--param_hash_count", str(hash_count), "--param_cell_count", str(cell_count), file_path]
+    "--samples", "1", "--param_hash_count", str(hash_count), "--param_cell_count", str(cell_count), file_path]
 
     process = subprocess.run(args=arguments, capture_output=True)
 
@@ -737,15 +593,21 @@ def sample_dimacs_formula(file_path, cell_count, hash_count):
 ###################################################################################################
 # Hard Constraint Funcs
 ###################################################################################################
-def create_hard_constraint():
+def create_hard_constraint(p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, _, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
+
     hc = False
 
     for length in range(length_bounds[0], length_bounds[1]+1):
-        hc = Or(hc, create_exact_length_hard_constraint(length, length_bounds[1]))
+        hc = Or(hc, create_exact_length_hard_constraint(length, length_bounds[1], p))
 
     return hc
 
-def create_exact_length_hard_constraint(length, max_length):
+def create_exact_length_hard_constraint(length, max_length, p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, cell_id_map_items, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
+
+    cell_id_map = {key:val for (key,val) in cell_id_map_items}
+
     # Make constraint accept any accepting path.
     start_loc = np.where(np.array(GRIDWORLD) == 2)
     end_loc = np.where(np.array(GRIDWORLD) == 3)
@@ -756,8 +618,8 @@ def create_exact_length_hard_constraint(length, max_length):
     start_var = "Cell_1"
     end_var = "Cell_" + str(length)
 
-    start_cell_valid = get_var_equal_cell_formula(start_var, cell_id_map[(start_loc)])
-    end_cell_valid = get_var_equal_cell_formula(end_var, cell_id_map[(end_loc)])
+    start_cell_valid = get_var_equal_cell_formula(start_var, cell_id_map[(start_loc)], p)
+    end_cell_valid = get_var_equal_cell_formula(end_var, cell_id_map[(end_loc)], p)
 
     # Start cell is valid
     hc = start_cell_valid
@@ -768,7 +630,7 @@ def create_exact_length_hard_constraint(length, max_length):
     for var_iter in range(2, length+1):
         next_var = "Cell_" + str(var_iter)
 
-        hc = And(hc, get_feasible_transitions_formula(last_var, next_var))
+        hc = And(hc, get_feasible_transitions_formula(last_var, next_var, p))
 
         last_var = next_var
 
@@ -779,7 +641,7 @@ def create_exact_length_hard_constraint(length, max_length):
     for var_iter in range(length+1, max_length+1):
         ignored_var = "Cell_" + str(var_iter)
 
-        hc = And(hc, get_var_equal_cell_formula(ignored_var, cell_id_map[None]))
+        hc = And(hc, get_var_equal_cell_formula(ignored_var, cell_id_map[None], p))
 
     # Make constraint visit all hard objectives.
     hc_1_loc = np.where(np.array(GRIDWORLD) == 4)
@@ -803,14 +665,18 @@ def create_exact_length_hard_constraint(length, max_length):
         for var_iter in range(1, length+1):
             target_var = "Cell_" + str(var_iter)
 
-            ho_formula = Or(ho_formula, get_var_equal_cell_formula(target_var, ho_cell))
+            ho_formula = Or(ho_formula, get_var_equal_cell_formula(target_var, ho_cell, p))
 
         hc = And(hc, ho_formula)
 
     return hc
 
 @lru_cache(maxsize=None)
-def get_feasible_transitions_formula(var_1, var_2):
+def get_feasible_transitions_formula(var_1, var_2, p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, cell_id_map_items, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
+
+    cell_id_map = {key:val for (key,val) in cell_id_map_items}
+
     # Create a set of all possible transitions
     # (origin state id, destination state id)
     transitions = set()
@@ -857,9 +723,9 @@ def get_feasible_transitions_formula(var_1, var_2):
     for transition in transitions:
         orig_cell, dest_cell = transition
 
-        orig_cell_valid = get_var_equal_cell_formula(var_1, orig_cell)
+        orig_cell_valid = get_var_equal_cell_formula(var_1, orig_cell, p)
 
-        dest_cell_valid = get_var_equal_cell_formula(var_2, dest_cell)
+        dest_cell_valid = get_var_equal_cell_formula(var_2, dest_cell, p)
 
         transition_formula = Or(transition_formula, And(orig_cell_valid, dest_cell_valid))
 
@@ -868,7 +734,8 @@ def get_feasible_transitions_formula(var_1, var_2):
 ###################################################################################################
 # CostFunction Funcs
 ###################################################################################################
-def create_cost_function():
+def create_cost_function(p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, _, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
     cf = True
 
     # Create a function that fixes the cost of each cell_cost_var to
@@ -876,7 +743,7 @@ def create_cost_function():
     for var_iter in range(1, length_bounds[1]+1):
         target_var = "Cell_" + str(var_iter)
 
-        cf = And(cf, get_var_cost_function(target_var))
+        cf = And(cf, get_var_cost_function(target_var, p))
 
     # Create a function that fixes the variable "CostSum" to be the sum of
     # all cost variables
@@ -905,8 +772,11 @@ def create_cost_function():
 
     return cf
 
-def get_var_cost_function(var):
-    # Sets cell_cost_var to the id associated with the cost in
+def get_var_cost_function(var, p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, cell_id_map_items, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
+
+    cell_id_map = {key:val for (key,val) in cell_id_map_items}
+
     # GRIDWORLD_COSTS
     cell_cost_var = var + str("_Cost")
 
@@ -917,8 +787,8 @@ def get_var_cost_function(var):
 
     # Fixes the null cost to zero
 
-    cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[None])
-    cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, 0)
+    cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[None], p)
+    cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, 0, p)
 
     cell_and_cost_formula = Implies(cell_valid_formula, cost_valid_formula)
 
@@ -929,8 +799,8 @@ def get_var_cost_function(var):
         for x in range(len(GRIDWORLD[0])):
             cell_cost = GRIDWORLD_COSTS[y][x]
 
-            cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[(x,y)])
-            cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, cell_cost)
+            cell_valid_formula = get_var_equal_cell_formula(var, cell_id_map[(x,y)], p)
+            cost_valid_formula = get_var_equal_cost_formula(cell_cost_var, cell_cost, p)
 
             cell_and_cost_formula = Implies(cell_valid_formula, cost_valid_formula)
 
@@ -942,13 +812,17 @@ def get_var_cost_function(var):
 # LabelFunction Funcs
 ###################################################################################################
 
-def create_label_function():
+def create_label_function(p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, cell_id_map_items, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
+
+    cell_id_map = {key:val for (key,val) in cell_id_map_items}
+
     lf = True
 
     for lo_iter, lo_loc in enumerate(lo_locs):
         lo_id = cell_id_map[lo_loc]
 
-        lo_indicator = create_label_indicator(lo_id, length_bounds[1])
+        lo_indicator = create_label_indicator(lo_id, length_bounds[1], p)
 
         lo_implication = Implies(BitVec("LabelChoice", num_label_vars) == BitVecVal(lo_iter, num_label_vars), lo_indicator)
 
@@ -956,23 +830,27 @@ def create_label_function():
 
     return lf
 
-def create_label_indicator(lo_id, length):
+def create_label_indicator(lo_id, length, p):
     # Creates a func that is true if and only if lo_id has aready been the first label cell encountered
     # or no other lo_id has been encountered and the current cell is lo_id
     if length == 1:
-        return get_var_equal_cell_formula("Cell_1", lo_id)    
+        return get_var_equal_cell_formula("Cell_1", lo_id, p)
     else:
-        return Or(create_label_indicator(lo_id, length-1), And(create_no_prev_lo_function(length-1), get_var_equal_cell_formula("Cell_" + str(length), lo_id)))
+        return Or(create_label_indicator(lo_id, length-1, p), And(create_no_prev_lo_function(length-1, p), get_var_equal_cell_formula("Cell_" + str(length), lo_id, p)))
 
-def create_no_prev_lo_function(length):
+def create_no_prev_lo_function(length, p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, cell_id_map_items, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
+
+    cell_id_map = {key:val for (key,val) in cell_id_map_items}
+
     if length == 1:
         func = True
     else:
-        func = create_no_prev_lo_function(length-1)
+        func = create_no_prev_lo_function(length-1, p)
 
     for lo_loc in lo_locs:
         lo_id = cell_id_map[lo_loc]
-        func = And(func, Not(get_var_equal_cell_formula("Cell_" + str(length), lo_id)))
+        func = And(func, Not(get_var_equal_cell_formula("Cell_" + str(length), lo_id, p)))
 
     return func
 
@@ -981,7 +859,9 @@ def create_no_prev_lo_function(length):
 # General Utility Funcs
 ###################################################################################################
 @lru_cache(maxsize=None)
-def get_var_equal_cell_formula(var, cell):
+def get_var_equal_cell_formula(var, cell, p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, _, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
+
     # Returns a formula that is true if var is set to cell
     cell_valid = True
 
@@ -993,7 +873,8 @@ def get_var_equal_cell_formula(var, cell):
 
     return cell_valid
 
-def get_var_equal_cost_formula(var, cost):
+def get_var_equal_cost_formula(var, cost, p):
+    GRIDWORLD, GRIDWORLD_COSTS, length_bounds, _, alphabet, num_cell_vars, num_cost_vars, num_label_vars, lo_locs = p
     # Returns a formula that is true if var is set to cell
     # cost_valid = expr(True)
 
@@ -1006,7 +887,7 @@ def get_var_equal_cost_formula(var, cost):
     return BitVec(var, num_cost_vars) == BitVecVal(cost, num_cost_vars)
 
 
-def draw_improvisation(improvisation):
+def draw_improvisation(improvisation, GRIDWORLD, GRIDWORLD_COSTS):
     fig, ax = plt.subplots(1, 1, tight_layout=True)
 
     for x in range(len(GRIDWORLD) + 1):
@@ -1063,5 +944,4 @@ def draw_improvisation(improvisation):
 
 
 if __name__ == '__main__':
-    draw_improvisation([(0,0)])
-    #run()
+    run_approximate_experiments(False)

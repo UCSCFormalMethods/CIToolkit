@@ -22,12 +22,12 @@ from citoolkit.labellingfunctions.labelling_dfa import LabellingDfa
 from citoolkit.costfunctions.accumulated_cost_dfa import AccumulatedCostDfa
 
 def run_exact_experiments(LARGE_MAP):
-    BASE_DIRECTORY = "exact_data/"
+    EXACT_BASE_DIRECTORY = "exact_data/"
 
     if LARGE_MAP:
-        BASE_DIRECTORY += "large_map/"
+        EXACT_BASE_DIRECTORY += "large_map/"
     else:
-        BASE_DIRECTORY += "small_map/"
+        EXACT_BASE_DIRECTORY += "small_map/"
 
     # Top left corner is (0,0)
     # 0 denotes normal passable terrain
@@ -64,8 +64,6 @@ def run_exact_experiments(LARGE_MAP):
 
         length_bounds = (1,30)
         COST_BOUND = 50
-        ALPHA_LIST = [0,0,0]
-        BETA_LIST = [1e-6,1e-6,1e-6]
 
     else:
         GRIDWORLD =         (
@@ -88,17 +86,12 @@ def run_exact_experiments(LARGE_MAP):
 
         length_bounds = (1,25)
         COST_BOUND = 30
-        ALPHA_LIST = [0,0,0]
-        BETA_LIST = [1e-5,1e-5,1e-5]
 
     alphabet = {"North", "East", "South", "West"}
-
-    length_bounds = (1,25)
 
     NUM_SAMPLES = 1000000
 
     word_prob_bounds = (0, 1/3e5)
-    cost_bound = 30
     label_prob_bounds = (Fraction(1,6), Fraction(1,2))
 
     print("\n")
@@ -109,23 +102,23 @@ def run_exact_experiments(LARGE_MAP):
         print("Using Small Map...")
     print()
 
-    if not os.path.exists(BASE_DIRECTORY):
-        os.makedirs(BASE_DIRECTORY)
+    if not os.path.exists(EXACT_BASE_DIRECTORY):
+        os.makedirs(EXACT_BASE_DIRECTORY)
 
     print("Trace Length Bounds:", length_bounds)
     print("Word Prob Bounds:", word_prob_bounds)
     print("Label Prob Bounds:", label_prob_bounds)
-    print("Cost Bound", cost_bound)
+    print("Cost Bound", COST_BOUND)
 
     # start = time.time()
 
-    # if os.path.isfile(BASE_DIRECTORY + "hard_constraint.pickle"):
+    # if os.path.isfile(EXACT_BASE_DIRECTORY + "hard_constraint.pickle"):
     #     print("Loading hard constraint from pickle...\n")
-    #     hard_constraint = pickle.load(open(BASE_DIRECTORY + "hard_constraint.pickle", 'rb'))
+    #     hard_constraint = pickle.load(open(EXACT_BASE_DIRECTORY + "hard_constraint.pickle", 'rb'))
     # else:
     #     print("Creating hard constraint...\n")
     #     hard_constraint = create_hard_constraint()
-    #     pickle.dump(hard_constraint, open(BASE_DIRECTORY + "hard_constraint.pickle", "wb"))
+    #     pickle.dump(hard_constraint, open(EXACT_BASE_DIRECTORY + "hard_constraint.pickle", "wb"))
     #     print("Done creating Hard Constraint. Total time taken: " + str(time.time() - start))
 
     # print("Hard Constraint States:", len(hard_constraint.states))
@@ -134,14 +127,14 @@ def run_exact_experiments(LARGE_MAP):
 
     start = time.time()
 
-    if os.path.isfile(BASE_DIRECTORY + "label_function.pickle"):
+    if os.path.isfile(EXACT_BASE_DIRECTORY + "label_function.pickle"):
         print("Loading label function from pickle...\n")
-        label_function = pickle.load(open(BASE_DIRECTORY + "label_function.pickle", 'rb'))
+        label_function = pickle.load(open(EXACT_BASE_DIRECTORY + "label_function.pickle", 'rb'))
     else:
         print("Creating label function...\n")
         label_function = create_label_function(GRIDWORLD, alphabet)
         label_function.decompose()
-        pickle.dump(label_function, open(BASE_DIRECTORY + "label_function.pickle", "wb"))
+        pickle.dump(label_function, open(EXACT_BASE_DIRECTORY + "label_function.pickle", "wb"))
         print("Done creating Label Function. Total time taken: " + str(time.time() - start))
 
     print("Label Function States:", len(label_function.dfa.states))
@@ -149,63 +142,63 @@ def run_exact_experiments(LARGE_MAP):
 
     start = time.time()
 
-    if os.path.isfile(BASE_DIRECTORY + "cost_function.pickle"):
+    if os.path.isfile(EXACT_BASE_DIRECTORY + "cost_function.pickle"):
         print("Loading cost function from pickle...\n")
-        cost_function = pickle.load(open(BASE_DIRECTORY + "cost_function.pickle", 'rb'))
+        cost_function = pickle.load(open(EXACT_BASE_DIRECTORY + "cost_function.pickle", 'rb'))
     else:
         print("Creating cost function...\n")
         cost_function = create_combo_hard_cost_constraint(GRIDWORLD, GRIDWORLD_COSTS, alphabet, length_bounds)
         cost_function.decompose()
-        pickle.dump(cost_function, open(BASE_DIRECTORY + "cost_function.pickle", "wb"))
+        pickle.dump(cost_function, open(EXACT_BASE_DIRECTORY + "cost_function.pickle", "wb"))
         print("Done creating Cost Function. Total time taken: " + str(time.time() - start))
 
     print("Cost Function States:", len(cost_function.dfa.states))
 
     start = time.time()
 
-    if os.path.isfile(BASE_DIRECTORY + "qci_improviser.pickle"):
+    if os.path.isfile(EXACT_BASE_DIRECTORY + "qci_improviser.pickle"):
         print("Loading Quantitative CI improviser from pickle...\n")
-        qci_improviser = pickle.load(open(BASE_DIRECTORY + "qci_improviser.pickle", 'rb'))
+        qci_improviser = pickle.load(open(EXACT_BASE_DIRECTORY + "qci_improviser.pickle", 'rb'))
     else:
         print("Creating Quantitative CI improviser...\n")
-        qci_improviser = QuantitativeCI((hard_constraint & label_function.dfa).explicit(), cost_function, length_bounds, cost_bound, word_prob_bounds)
-        pickle.dump(qci_improviser, open(BASE_DIRECTORY + "qci_improviser.pickle", "wb"))
+        qci_improviser = QuantitativeCI((hard_constraint & label_function.dfa).explicit(), cost_function, length_bounds, COST_BOUND, word_prob_bounds)
+        pickle.dump(qci_improviser, open(EXACT_BASE_DIRECTORY + "qci_improviser.pickle", "wb"))
         print("Done creating Quantitative CI Improviser. Total time taken: " + str(time.time() - start))
 
 
     start = time.time()
 
-    if os.path.isfile(BASE_DIRECTORY + "melqci_improviser.pickle"):
+    if os.path.isfile(EXACT_BASE_DIRECTORY + "melqci_improviser.pickle"):
         print("Loading Max Entropy LQCI improviser from pickle...\n")
-        melqci_improviser = pickle.load(open(BASE_DIRECTORY + "melqci_improviser.pickle", 'rb'))
+        melqci_improviser = pickle.load(open(EXACT_BASE_DIRECTORY + "melqci_improviser.pickle", 'rb'))
     else:
         print("Creating Max Entropy LQCI improviser...\n")
-        melqci_improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, cost_bound, label_prob_bounds)
-        pickle.dump(melqci_improviser, open(BASE_DIRECTORY + "melqci_improviser.pickle", "wb"))
+        melqci_improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, COST_BOUND, label_prob_bounds)
+        pickle.dump(melqci_improviser, open(EXACT_BASE_DIRECTORY + "melqci_improviser.pickle", "wb"))
         print("Done creating ME LQCI Improviser. Total time taken: " + str(time.time() - start))
 
     print("Num Samples:", NUM_SAMPLES)
 
     start = time.time()
 
-    if os.path.isfile(BASE_DIRECTORY + "qci_samples.pickle"):
+    if os.path.isfile(EXACT_BASE_DIRECTORY + "qci_samples.pickle"):
         print("Loading " + str(NUM_SAMPLES) + " samples for Quantitative CI Improviser for pickle...\n")
-        qci_samples = pickle.load(open(BASE_DIRECTORY + "qci_samples.pickle", 'rb'))
+        qci_samples = pickle.load(open(EXACT_BASE_DIRECTORY + "qci_samples.pickle", 'rb'))
     else:
         print("Sampling " + str(NUM_SAMPLES) + " from Quantitative CI Improviser...\n")
         qci_samples = [qci_improviser.improvise() for _ in range(NUM_SAMPLES)]
-        pickle.dump(qci_samples, open(BASE_DIRECTORY + "qci_samples.pickle", "wb"))
+        pickle.dump(qci_samples, open(EXACT_BASE_DIRECTORY + "qci_samples.pickle", "wb"))
         print("Done sampling Quantitative CI Improviser. Total time taken: " + str(time.time() - start))
 
     start = time.time()
 
-    if os.path.isfile(BASE_DIRECTORY + "melqci_samples.pickle"):
+    if os.path.isfile(EXACT_BASE_DIRECTORY + "melqci_samples.pickle"):
         print("Loading " + str(NUM_SAMPLES) + " samples for Max Entropy LQCI Improviser for pickle...\n")
-        melqci_samples = pickle.load(open(BASE_DIRECTORY + "melqci_samples.pickle", 'rb'))
+        melqci_samples = pickle.load(open(EXACT_BASE_DIRECTORY + "melqci_samples.pickle", 'rb'))
     else:
         print("Sampling " + str(NUM_SAMPLES) + " from Max Entropy LQCI Improviser...\n")
         melqci_samples = [melqci_improviser.improvise() for _ in range(NUM_SAMPLES)]
-        pickle.dump(melqci_samples, open(BASE_DIRECTORY + "melqci_samples.pickle", "wb"))
+        pickle.dump(melqci_samples, open(EXACT_BASE_DIRECTORY + "melqci_samples.pickle", "wb"))
         print("Done sampling Max Entropy LQCI Improviser. Total time taken: " + str(time.time() - start))
 
     qci_label_counts = [0,0,0]
@@ -656,4 +649,4 @@ def draw_improvisation(improvisation, GRIDWORLD, GRIDWORLD_COSTS):
 
     plt.show()
 if __name__ == '__main__':
-    run_exact_experiments(LARGE_MAP = True)
+    run_exact_experiments(LARGE_MAP = False)
