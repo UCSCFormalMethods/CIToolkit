@@ -21,50 +21,97 @@ from fractions import Fraction
 from citoolkit.labellingfunctions.labelling_dfa import LabellingDfa
 from citoolkit.costfunctions.accumulated_cost_dfa import AccumulatedCostDfa
 
-BASE_DIRECTORY = "exact_data/"
+def run_exact_experiments(LARGE_MAP):
+    BASE_DIRECTORY = "exact_data/"
 
-# Top left corner is (0,0)
-# 0 denotes normal passable terrain
-# 1 denotes impassable terrain
-# 2 denotes the start point
-# 3 denotes the end point
-# 4 denotes hard objective 1. All hard objectives must be visited
-# 5 denotes hard objective 2. All hard objectives must be visited
-# 6 denotes hard objective 3. All hard objectives must be visited
-# 7 denotes hard objective 4. All hard objectives must be visited
-# 8 denotes label objective 0. The selected label objective must be visited first.
-# 9 denotes label objective 1. The selected label objective must be visited first.
-# 10 denotes label objective 2. The selected label objective must be visited first.
-GRIDWORLD =         (
-                    (8, 0, 3, 0, 5,  0),
-                    (0, 0, 0, 0, 0,  0),
-                    (0, 1, 0, 1, 0,  1),
-                    (7, 0, 0, 0, 0, 10),
-                    (0, 9, 0, 4, 0,  0),
-                    (6, 0, 2, 0, 0,  0)
-                    )
+    if LARGE_MAP:
+        BASE_DIRECTORY += "large_map/"
+    else:
+        BASE_DIRECTORY += "small_map/"
 
-GRIDWORLD_COSTS =   (
-                    (3, 2, 0, 2, 0, 2),
-                    (2, 1, 0, 1, 1, 1),
-                    (3, 0, 0, 0, 3, 0),
-                    (0, 1, 0, 1, 2, 1),
-                    (2, 0, 0, 0, 1, 2),
-                    (0, 1, 0, 1, 1, 1)
-                    )
+    # Top left corner is (0,0)
+    # 0 denotes normal passable terrain
+    # 1 denotes impassable terrain
+    # 2 denotes the start point
+    # 3 denotes the end point
+    # 4 denotes hard objective 1. All hard objectives must be visited
+    # 5 denotes hard objective 2. All hard objectives must be visited
+    # 6 denotes hard objective 3. All hard objectives must be visited
+    # 7 denotes hard objective 4. All hard objectives must be visited
+    # 8 denotes label objective 0. The selected label objective must be visited first.
+    # 9 denotes label objective 1. The selected label objective must be visited first.
+    # 10 denotes label objective 2. The selected label objective must be visited first.
+    if LARGE_MAP:
+        GRIDWORLD =         (
+                            (8, 0, 0, 0, 3, 0, 0, 0,  0),
+                            (0, 0, 0, 0, 0, 0, 5, 0,  0),
+                            (0, 0, 0, 0, 0, 0, 0, 0,  0),
+                            (0, 0, 0, 0, 0, 0, 0, 0,  0),
+                            (1, 1, 0, 1, 0, 1, 1, 0,  1),
+                            (7, 0, 0, 0, 0, 0, 0, 0, 10),
+                            (0, 0, 0, 9, 0, 4, 0, 0,  0),
+                            (0, 0, 0, 0, 0, 0, 0, 0,  0),
+                            (6, 0, 0, 0, 2, 0, 0, 0,  0)
+                            )
 
-alphabet = {"North", "East", "South", "West"}
+        GRIDWORLD_COSTS =   (
+                            ( 9,  6,  3,  2,  0,  4,  4,  4,  2),
+                            ( 6,  3,  2,  2,  1,  4,  2,  4,  2),
+                            ( 3,  2,  2,  2,  1,  2,  2,  2,  2),
+                            ( 2,  2,  2,  2,  1,  2,  2,  2,  2),
+                            ( 0,  0, 10,  0,  1,  0,  0, 10,  0),
+                            ( 2,  2,  2,  2,  1,  4,  4,  2,  2),
+                            ( 2,  4,  4,  1,  1,  4,  4,  4,  2),
+                            ( 2,  4,  4,  2,  1,  2,  4,  4,  2),
+                            ( 2,  2,  2,  2,  0,  2,  2,  2,  2)
+                            )
 
-length_bounds = (1,25)
+        length_bounds = (1,35)
+        COST_BOUND = 60
+        ALPHA_LIST = [0,0,0]
+        BETA_LIST = [1e-6,1e-6,1e-6]
 
-NUM_SAMPLES = 1000000
+    else:
+        GRIDWORLD =         (
+                            (8, 0, 3, 0, 5,  0),
+                            (0, 0, 0, 0, 0,  0),
+                            (0, 1, 0, 1, 0,  1),
+                            (7, 0, 0, 0, 0, 10),
+                            (0, 9, 0, 4, 0,  0),
+                            (6, 0, 2, 0, 0,  0)
+                            )
 
-word_prob_bounds = (0, 1/3e5)
-cost_bound = 30
-label_prob_bounds = (Fraction(1,6), Fraction(1,2))
+        GRIDWORLD_COSTS =   (
+                            (3, 2, 0, 2, 0, 2),
+                            (2, 1, 0, 1, 1, 1),
+                            (3, 0, 0, 0, 3, 0),
+                            (0, 1, 0, 1, 2, 1),
+                            (2, 0, 0, 0, 1, 2),
+                            (0, 1, 0, 1, 1, 1)
+                            )
 
-def run():
+        length_bounds = (1,25)
+        COST_BOUND = 30
+        ALPHA_LIST = [0,0,0]
+        BETA_LIST = [1e-5,1e-5,1e-5]
+
+
+    alphabet = {"North", "East", "South", "West"}
+
+    length_bounds = (1,25)
+
+    NUM_SAMPLES = 1000000
+
+    word_prob_bounds = (0, 1/3e5)
+    cost_bound = 30
+    label_prob_bounds = (Fraction(1,6), Fraction(1,2))
+
+    print("\n")
     print("Starting Exact LQCI Robotic Planning Experiment...")
+    if LARGE_MAP:
+        print("Using Large Map...")
+    else:
+        print("Using Small Map...")
     print()
 
     if not os.path.exists(BASE_DIRECTORY):
@@ -97,7 +144,7 @@ def run():
         label_function = pickle.load(open(BASE_DIRECTORY + "label_function.pickle", 'rb'))
     else:
         print("Creating label function...\n")
-        label_function = create_label_function()
+        label_function = create_label_function(GRIDWORLD, alphabet)
         label_function.decompose()
         pickle.dump(label_function, open(BASE_DIRECTORY + "label_function.pickle", "wb"))
         print("Done creating Label Function. Total time taken: " + str(time.time() - start))
@@ -112,7 +159,7 @@ def run():
         cost_function = pickle.load(open(BASE_DIRECTORY + "cost_function.pickle", 'rb'))
     else:
         print("Creating cost function...\n")
-        cost_function = create_combo_hard_cost_constraint()
+        cost_function = create_combo_hard_cost_constraint(GRIDWORLD, GRIDWORLD_COSTS, alphabet, length_bounds)
         cost_function.decompose()
         pickle.dump(cost_function, open(BASE_DIRECTORY + "cost_function.pickle", "wb"))
         print("Done creating Cost Function. Total time taken: " + str(time.time() - start))
@@ -206,7 +253,7 @@ def run():
     print("Max Entropy LQCI Samples Average Cost:", melqci_sum_cost/NUM_SAMPLES)
     print("Max Entropy LQCI Label Probabilities:", [count/NUM_SAMPLES for count in melqci_label_counts])
 
-def create_hard_constraint():
+def create_hard_constraint(GRIDWORLD, alphabet):
     max_y = len(GRIDWORLD) - 1
     max_x = len(GRIDWORLD[0]) - 1
 
@@ -303,7 +350,7 @@ def create_hard_constraint():
 
     return hard_constraint
 
-def create_label_function():
+def create_label_function(GRIDWORLD, alphabet):
     max_y = len(GRIDWORLD) - 1
     max_x = len(GRIDWORLD[0]) - 1
 
@@ -383,7 +430,7 @@ def create_label_function():
 
     return label_func
 
-def create_cost_function():
+def create_cost_function(GRIDWORLD, GRIDWORLD_COSTS, alphabet, length_bounds):
     max_y = len(GRIDWORLD) - 1
     max_x = len(GRIDWORLD[0]) - 1
 
@@ -454,7 +501,7 @@ def create_cost_function():
 
     return cost_func
 
-def create_combo_hard_cost_constraint():
+def create_combo_hard_cost_constraint(GRIDWORLD, GRIDWORLD_COSTS, alphabet, length_bounds):
     max_y = len(GRIDWORLD) - 1
     max_x = len(GRIDWORLD[0]) - 1
 
@@ -562,7 +609,7 @@ def create_combo_hard_cost_constraint():
 
     return cost_func
 
-def draw_improvisation(improvisation):
+def draw_improvisation(improvisation, GRIDWORLD, GRIDWORLD_COSTS):
     fig, ax = plt.subplots(1, 1, tight_layout=True)
 
     for x in range(len(GRIDWORLD) + 1):
@@ -614,9 +661,4 @@ def draw_improvisation(improvisation):
 
     plt.show()
 if __name__ == '__main__':
-    run()
-
-    # hc = create_hard_constraint()
-
-    # while True:
-    #     draw_improvisation(hc.sample(*length_bounds))
+    run_exact_experiments(LARGE_MAP = True)

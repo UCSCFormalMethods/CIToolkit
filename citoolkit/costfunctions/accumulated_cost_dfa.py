@@ -65,7 +65,7 @@ class AccumulatedCostDfa(CostFunc):
             return dict()
 
         decomp_cost_func = dict()
-        
+
         state_rename_map = dict()
         state_iter = 0
 

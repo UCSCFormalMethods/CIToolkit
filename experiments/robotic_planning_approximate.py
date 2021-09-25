@@ -43,27 +43,23 @@ else:
 # 10 denotes label objective 2. The selected label objective must be visited first.
 if LARGE_MAP:
     GRIDWORLD =         (
-                        (8, 0, 0, 0, 3, 0, 0, 0,  0),
-                        (0, 0, 0, 0, 0, 0, 5, 0,  0),
-                        (0, 0, 0, 0, 0, 0, 0, 0,  0),
-                        (0, 0, 0, 0, 0, 0, 0, 0,  0),
-                        (1, 1, 0, 1, 0, 1, 1, 0,  1),
-                        (7, 0, 0, 0, 0, 0, 0, 0, 10),
-                        (0, 0, 0, 9, 0, 4, 0, 0,  0),
-                        (0, 0, 0, 0, 0, 0, 0, 0,  0),
-                        (6, 0, 0, 0, 2, 0, 0, 0,  0)
+                        (8, 0, 0, 3, 0, 0,  0),
+                        (0, 0, 0, 0, 0, 5,  0),
+                        (0, 0, 0, 0, 0, 0,  0),
+                        (1, 0, 1, 0, 1, 0,  1),
+                        (7, 0, 0, 0, 0, 0, 10),
+                        (0, 0, 9, 0, 0, 4,  0),
+                        (6, 0, 0, 2, 0, 0,  0)
                         )
 
     GRIDWORLD_COSTS =   (
-                        ( 9,  6,  3,  2,  0,  4,  4,  4,  2),
-                        ( 6,  3,  2,  2,  1,  4,  2,  4,  2),
-                        ( 3,  2,  2,  2,  1,  2,  2,  2,  2),
-                        ( 2,  2,  2,  2,  1,  2,  2,  2,  2),
-                        ( 0,  0, 10,  0,  1,  0,  0, 10,  0),
-                        ( 2,  2,  2,  2,  1,  4,  4,  2,  2),
-                        ( 2,  4,  4,  1,  1,  4,  4,  4,  2),
-                        ( 2,  4,  4,  2,  1,  2,  4,  4,  2),
-                        ( 2,  2,  2,  2,  0,  2,  2,  2,  2)
+                        ( 9,  6,  3,  0,  4,  4,  4),
+                        ( 6,  3,  2,  1,  4,  2,  4),
+                        ( 3,  2,  2,  1,  2,  2,  2),
+                        ( 0, 10,  0,  1,  0, 10,  0),
+                        ( 2,  2,  2,  1,  4,  4,  2),
+                        ( 2,  4,  1,  1,  2,  4,  4),
+                        ( 2,  2,  2,  0,  2,  2,  2)
                         )
 
     length_bounds = (1,35)
@@ -98,21 +94,15 @@ else:
 
 alphabet = {"North", "East", "South", "West"}
 
-
-
 # Create a mapping from a cell in gridworld to a variable assignment.
-num_x_vars = math.ceil(math.log(len(GRIDWORLD) + 1, 2))
-num_y_vars = math.ceil(math.log(len(GRIDWORLD[0]) + 1, 2))
-num_cell_vars = num_x_vars + num_y_vars # math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
+num_cell_vars = math.ceil(math.log(len(GRIDWORLD) * len(GRIDWORLD[0]) + 1, 2))
 
 cell_id_map = {}
 id_cell_map = {}
 
-#var_assignments = itertools.product([0,1], repeat=num_cell_vars)
-x_var_assignments = itertools.product([0,1], repeat=num_x_vars)
-y_var_assignments = itertools.product([0,1], repeat=num_y_vars)
+var_assignments = itertools.product([0,1], repeat=num_cell_vars)
 
-null_cell_id = tuple(list(next(x_var_assignments)) + list(next(y_var_assignments)))
+null_cell_id = next(var_assignments)
 
 assert list(null_cell_id) == [0]*num_cell_vars
 
@@ -120,14 +110,11 @@ cell_id_map[None] = null_cell_id
 id_cell_map[null_cell_id] = None
 
 for y in range(len(GRIDWORLD)):
-    y_map = next(y_var_assignments)
-    x_var_assignments = itertools.product([0,1], repeat=num_x_vars)
-    next(x_var_assignments)
     for x in range(len(GRIDWORLD[0])):
-        x_map = next(x_var_assignments)
-        assignment = tuple(list(y_map) + list(x_map)) #next(var_assignments)
+        assignment = next(var_assignments)
         cell_id_map[(x, y)] = assignment
         id_cell_map[assignment] = (x,y)
+
 
 num_cost_vars = 10
 
@@ -163,6 +150,16 @@ NUM_SAMPLES = 100
 # Main Experiment
 ###################################################################################################
 def run():
+    print()
+    print("------------------------------------------------------------------------------------------")
+    print("Starting Approximate LQCI Robotic Planning Experiment...")
+    if LARGE_MAP:
+        print("Using Large Map...")
+    else:
+        print("Using Small Map...")
+    print()
+
+
     start = time.time()
     print("Assembling DIMACS Fomulas...")
 
@@ -1066,4 +1063,5 @@ def draw_improvisation(improvisation):
 
 
 if __name__ == '__main__':
-    run()
+    draw_improvisation([(0,0)])
+    #run()
