@@ -22,14 +22,16 @@ from matplotlib.patches import PathPatch
 # Main Experiment
 ###################################################################################################
 
-def run_approximate_experiments(LARGE_MAP):
+def run_approximate_experiments(LARGE_MAP, GAMMA):
     global APPROX_BASE_DIRECTORY
     APPROX_BASE_DIRECTORY = "approx_data/"
 
     if LARGE_MAP:
-        APPROX_BASE_DIRECTORY += "large_map/"
+        APPROX_BASE_DIRECTORY += "large_map_"
     else:
-        APPROX_BASE_DIRECTORY += "small_map/"
+        APPROX_BASE_DIRECTORY += "small_map_"
+
+    APPROX_BASE_DIRECTORY += str(int(GAMMA*100)) + "/"
 
     # Top left corner is (0,0)
     # 0 denotes normal passable terrain
@@ -141,7 +143,7 @@ def run_approximate_experiments(LARGE_MAP):
     num_buckets = len(lo_locs) * max_r
 
     OUT_DELTA = 0.05
-    OUT_GAMMA = 0.2
+    OUT_GAMMA = GAMMA
     DELTA = None # 1 - math.pow((1- OUT_DELTA), 1/num_buckets)
     EPSILON = math.pow(1 + OUT_GAMMA, 1/3) - 1
     LAMBDA = .3
@@ -155,6 +157,7 @@ def run_approximate_experiments(LARGE_MAP):
         print("Using Large Map...")
     else:
         print("Using Small Map...")
+    print("GAMMA: " + str(GAMMA))
     print()
 
 

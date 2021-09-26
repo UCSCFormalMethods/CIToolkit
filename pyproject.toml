@@ -19,6 +19,7 @@ matplotlib = "^3.4.3"
 pyeda = "^0.28.0"
 z3-solver = "^4.8.12"
 boolexpr = "^2.4"
+psutil = "^5.8.0"
 
 [tool.poetry.extras]
 dev = [

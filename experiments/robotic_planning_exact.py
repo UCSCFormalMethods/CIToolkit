@@ -94,7 +94,8 @@ def run_exact_experiments(LARGE_MAP):
     word_prob_bounds = (0, 1/3e5)
     label_prob_bounds = (Fraction(1,6), Fraction(1,2))
 
-    print("\n")
+    print()
+    print("------------------------------------------------------------------------------------------")
     print("Starting Exact LQCI Robotic Planning Experiment...")
     if LARGE_MAP:
         print("Using Large Map...")

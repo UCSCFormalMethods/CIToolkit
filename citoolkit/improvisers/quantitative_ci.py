@@ -61,7 +61,7 @@ class QuantitativeCI(Improviser):
         for cost in cost_func.costs:
             self.i_specs[cost] = hard_constraint & cost_specs[cost]
 
-        with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 32)) as p:
+        with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 8)) as p:
             func_input = [(cost, spec, length_bounds) for (cost, spec) in self.i_specs.items()]
             spec_items = p.map(get_language_size, func_input, chunksize=1)
 
