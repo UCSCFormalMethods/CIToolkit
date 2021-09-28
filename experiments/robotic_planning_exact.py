@@ -64,7 +64,7 @@ def run_exact_experiments(LARGE_MAP):
 
         length_bounds = (1,30)
         COST_BOUND = 50
-
+        word_prob_bounds = (0, 1/3e6)
     else:
         GRIDWORLD =         (
                             (8, 0, 3, 0, 5,  0),
@@ -86,13 +86,12 @@ def run_exact_experiments(LARGE_MAP):
 
         length_bounds = (1,25)
         COST_BOUND = 30
+        word_prob_bounds = (0, 1/3e5)
 
     alphabet = {"North", "East", "South", "West"}
 
     NUM_SAMPLES = 1000000
-
-    word_prob_bounds = (0, 1/3e5)
-    label_prob_bounds = (Fraction(1,6), Fraction(1,2))
+    label_prob_bounds = (Fraction(3,10), Fraction(4,10))
 
     print()
     print("------------------------------------------------------------------------------------------")
