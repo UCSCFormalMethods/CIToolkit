@@ -148,7 +148,7 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     EPSILON = math.pow(1 + OUT_GAMMA, 1/3) - 1
     LAMBDA = .3
     RHO = .4
-    NUM_SAMPLES = 100
+    NUM_SAMPLES = 1000
 
     print()
     print("------------------------------------------------------------------------------------------")

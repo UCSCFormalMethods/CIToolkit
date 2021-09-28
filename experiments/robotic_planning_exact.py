@@ -90,7 +90,7 @@ def run_exact_experiments(LARGE_MAP):
 
     alphabet = {"North", "East", "South", "West"}
 
-    NUM_SAMPLES = 1000000
+    NUM_SAMPLES = 1000
     label_prob_bounds = (Fraction(3,10), Fraction(4,10))
 
     print()
