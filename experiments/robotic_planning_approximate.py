@@ -69,7 +69,7 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
         length_bounds = (1,30)
         COST_BOUND = 50
         ALPHA_LIST = [0,0,0]
-        BETA_LIST = [1e-6,1e-6,1e-6]
+        BETA_LIST = [1e-5,1e-5,1e-5]
 
     else:
         GRIDWORLD =         (
@@ -283,7 +283,7 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
 
             coords = sample_improviser(label_choice, cost_choice, formula_var_map, class_count_map, length_bounds, num_cell_vars, id_cell_map)
 
-            draw_improvisation(coords, GRIDWORLD, GRIDWORLD_COSTS)
+            #draw_improvisation(coords, GRIDWORLD, GRIDWORLD_COSTS)
 
             samples.append(coords)
 
