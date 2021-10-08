@@ -158,8 +158,8 @@ def run_exact_experiments(LARGE_MAP):
         print("Loading Labelled Quantitative CI improviser from pickle...\n")
         qci_improviser = pickle.load(open(EXACT_BASE_DIRECTORY + "lqci_improviser.pickle", 'rb'))
     else:
-        print("Creating Quantitative CI improviser...\n")
-        lqci_improviser = LabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, COST_BOUND, label_prob_bounds, word_prob_bounds)
+        print("Creating Labelled Quantitative CI improviser...\n")
+        lqci_improviser = LabelledQuantitativeCI(hard_constraint, cost_function, label_function, length_bounds, COST_BOUND, label_prob_bounds, [(0,1e-5),(0,1e-5),(0,1e-5)])
         pickle.dump(lqci_improviser, open(EXACT_BASE_DIRECTORY + "lqci_improviser.pickle", "wb"))
         print("Done creating Labelled Quantitative CI Improviser. Total time taken: " + str(time.time() - start))
 
