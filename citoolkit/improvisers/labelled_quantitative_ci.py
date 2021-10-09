@@ -5,6 +5,7 @@ for the Labelled Quantitative CI problem.
 from __future__ import annotations
 
 import multiprocessing
+import multiprocessing.pool
 import gc
 
 import warnings
