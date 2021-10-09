@@ -85,10 +85,20 @@ class LabelledQuantitativeCI(Improviser):
         # that minimizes cost.
         self.label_improvisers = {}
 
-        for label in label_func.labels:
-            label_class_spec = hard_constraint & label_specs[label]
 
-            self.label_improvisers[label] = self.LabelClassImproviser(label, label_class_spec, cost_func, length_bounds, word_prob_bounds[label])
+        with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 3)) as p:
+            func_input = [(self.LabelClassImproviser, label, (hard_constraint & label_specs[label]), cost_func, length_bounds, word_prob_bounds[label]) for label in label_func.labels]
+            spec_items = p.map(dummy_func, func_input, chunksize=1)
+
+            p.close()
+            p.join()
+
+            self.label_improvisers = {spec.base_label:spec for spec in spec_items}
+
+        for label in label_func.labels:
+            #label_class_spec = hard_constraint & label_specs[label]
+
+            #self.label_improvisers[label] = self.LabelClassImproviser(label, label_class_spec, cost_func, length_bounds, word_prob_bounds[label])
 
             # If the label classes is empty, check that label_prob_bounds[0] == 0, as otherwise the improviser is infeasible.
             if self.label_improvisers[label].label_class_size == 0 and label_prob_bounds[0] > 0:
@@ -197,6 +207,19 @@ class LabelledQuantitativeCI(Improviser):
 
             for cost in cost_func.costs:
                 self.cost_class_specs[cost] = base_spec & cost_specs[cost]
+
+
+            with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 5)) as p:
+                func_input = [(base_label, cost, spec, length_bounds) for (cost,spec) in self.cost_class_specs.items()]
+                spec_items = p.map(get_language_size, func_input, chunksize=1)
+
+                p.close()
+                p.join()
+
+                print("Done computing language sizes for label " + base_label)
+                print("Total CPU Time:", sum([x[2] for x in spec_items]))
+
+                cost_class_specs = {key[1]:spec for (key,spec, _) in spec_items}
 
             # Compute the size of each cost class and the size of the complete label class.
             cost_class_sizes = {cost:self.cost_class_specs[cost].language_size(*length_bounds) for cost in cost_func.costs}
@@ -445,3 +468,10 @@ def get_language_size(param):
     gc.collect()
     print("Label: " + str(label) + ", Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
     return ((label, cost), spec, time.process_time() - start_time)
+
+def dummy_func(param):
+    constructor, label, base_spec, cost_func, length_bounds, prob_bounds = param
+
+    spec = constructor(label, base_spec, cost_func, length_bounds, prob_bounds)
+
+    return spec
