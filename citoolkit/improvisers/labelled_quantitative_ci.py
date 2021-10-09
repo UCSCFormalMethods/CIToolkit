@@ -86,7 +86,7 @@ class LabelledQuantitativeCI(Improviser):
         self.label_improvisers = {}
 
 
-        with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 3)) as p:
+        with NestablePool(min(multiprocessing.cpu_count() - 2, 3)) as p:
             func_input = [(self.LabelClassImproviser, label, (hard_constraint & label_specs[label]), cost_func, length_bounds, word_prob_bounds[label]) for label in label_func.labels]
             spec_items = p.map(dummy_func, func_input, chunksize=1)
 
@@ -475,3 +475,20 @@ def dummy_func(param):
     spec = constructor(label, base_spec, cost_func, length_bounds, prob_bounds)
 
     return spec
+
+# Source: https://izziswift.com/python-process-pool-non-daemonic/
+class NoDaemonProcess(multiprocessing.Process):
+    @property
+    def daemon(self):
+        return False
+    @daemon.setter
+    def daemon(self, value):
+        pass
+class NoDaemonContext(type(multiprocessing.get_context())):
+    Process = NoDaemonProcess
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class NestablePool(multiprocessing.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(NestablePool, self).__init__(*args, **kwargs)
