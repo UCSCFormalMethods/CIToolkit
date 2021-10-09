@@ -34,4 +34,4 @@ if __name__ == '__main__':
     # func_timeout(run_approximate_experiments, (False, 1))
     #func_timeout(run_exact_experiments, (False,))
     # func_timeout(run_exact_experiments, (True,))
-    run_exact_experiments()
+    run_exact_experiments(False)
