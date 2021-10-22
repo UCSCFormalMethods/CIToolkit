@@ -61,7 +61,6 @@ class StaticCostDfa(CostFunc):
 
         :returns: A dictionary mapping each cost to a Dfa Spec that
         accepts if and only if a word has that cost.
-
         """
         # Check if value is cached.
         if self.decomp_cost_func is not None:

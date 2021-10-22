@@ -86,20 +86,10 @@ class LabelledQuantitativeCI(Improviser):
         # that minimizes cost.
         self.label_improvisers = {}
 
-
-        with NestablePool(min(multiprocessing.cpu_count() - 2, 3)) as p:
-            func_input = [(self.LabelClassImproviser, label, (hard_constraint & label_specs[label]), cost_func, length_bounds, word_prob_bounds[label]) for label in label_func.labels]
-            spec_items = p.map(dummy_func, func_input, chunksize=1)
-
-            p.close()
-            p.join()
-
-            self.label_improvisers = {spec.base_label:spec for spec in spec_items}
-
         for label in label_func.labels:
-            #label_class_spec = hard_constraint & label_specs[label]
+            label_class_spec = hard_constraint & label_specs[label]
 
-            #self.label_improvisers[label] = self.LabelClassImproviser(label, label_class_spec, cost_func, length_bounds, word_prob_bounds[label])
+            self.label_improvisers[label] = self.LabelClassImproviser(label, label_class_spec, cost_func, length_bounds, word_prob_bounds[label])
 
             # If the label classes is empty, check that label_prob_bounds[0] == 0, as otherwise the improviser is infeasible.
             if self.label_improvisers[label].label_class_size == 0 and label_prob_bounds[0] > 0:
@@ -108,7 +98,7 @@ class LabelledQuantitativeCI(Improviser):
         # Create a set of all labels that have non empty label classes.
         feasible_labels = frozenset([label for label in label_func.labels if self.label_improvisers[label].label_class_size != 0])
 
-        # Compute number of label classes that are assigned .
+        # Compute number of label classes that are assigned.
         # Note: The enumerate below is 0 indexed unlike in paper.
         if label_prob_bounds[0] == label_prob_bounds[1]:
             max_prob_classes = len(feasible_labels)
@@ -208,19 +198,6 @@ class LabelledQuantitativeCI(Improviser):
 
             for cost in cost_func.costs:
                 self.cost_class_specs[cost] = base_spec & cost_specs[cost]
-
-
-            with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 5)) as p:
-                func_input = [(base_label, cost, spec, length_bounds) for (cost,spec) in self.cost_class_specs.items()]
-                spec_items = p.map(get_language_size, func_input, chunksize=1)
-
-                p.close()
-                p.join()
-
-                print("Done computing language sizes for label " + base_label)
-                print("Total CPU Time:", sum([x[2] for x in spec_items]))
-
-                cost_class_specs = {key[1]:spec for (key,spec, _) in spec_items}
 
             # Compute the size of each cost class and the size of the complete label class.
             cost_class_sizes = {cost:self.cost_class_specs[cost].language_size(*length_bounds) for cost in cost_func.costs}
@@ -345,47 +322,16 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
         cost_class_specs = {}
         cost_class_sizes = {}
 
-        print("Labels: ", label_func.labels)
-        print("Costs: ", cost_func.costs)
+        for label in label_func.labels:
+            label_class_spec = hard_constraint & label_specs[label]
 
-        # for label in label_func.labels:
-        #     label_class_spec = hard_constraint & label_specs[label]
-
-        #     for cost in cost_func.costs:
-        #         cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
-        #         cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
-
-        import os
-        import pickle
-
-        if os.path.isfile("exact_data/cost_classes.pickle"):
-            cost_class_specs = pickle.load(open("exact_data/cost_classes.pickle", 'rb'))
-        else:
-            for label in label_func.labels:
-                label_class_spec = (hard_constraint & label_specs[label])
-
-                for cost in cost_func.costs:
-                    cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
-
-            with multiprocessing.Pool(min(multiprocessing.cpu_count() - 2, 16)) as p:
-                func_input = [(label, cost, spec, length_bounds) for ((label, cost),spec) in cost_class_specs.items()]
-                spec_items = p.map(get_language_size, func_input, chunksize=1)
-
-                p.close()
-                p.join()
-
-                print("Done computing language sizes")
-                print("Total CPU Time:", sum([x[2] for x in spec_items]))
-
-                cost_class_specs = {key:spec for (key,spec, _) in spec_items}
-
-            pickle.dump(cost_class_specs, open("exact_data/cost_classes.pickle", "wb"))
+            for cost in cost_func.costs:
+                cost_class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
+                cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
 
         for label in label_func.labels:
             for cost in cost_func.costs:
                 cost_class_sizes[(label, cost)] = cost_class_specs[(label, cost)].language_size(*length_bounds)
-
-        print("Making optimization problem...")
 
         # Create optimization variables and constants. Assuming n labels and m costs, the variable at position
         # x*m + y represents the probability allocated to words with label x and cost y.
@@ -425,13 +371,9 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
                     empty_cost_class_vector[label_iter*len(cost_func.costs) + cost_iter] = 1
                     constraints.append(cp.multiply(x, empty_cost_class_vector) == 0)
 
-        print("Solving optimization problem...")
-
         # Create and solve problem
         prob = cp.Problem(objective, constraints)
-        result = prob.solve(verbose=True)
-
-        print("Done solving....")
+        result = prob.solve(verbose=False)
 
         # Check if problem is feasible. If not, raise an InfeasibleImproviserError.
         if "infeasible" in prob.status:
@@ -460,36 +402,3 @@ class MaxEntropyLabelledQuantitativeCI(Improviser):
         selected_cost_class = random.choices(population=self.sorted_cost_class_specs, weights=self.sorted_cost_class_weights, k=1)[0]
 
         return selected_cost_class.sample(*self.length_bounds)
-
-
-def get_language_size(param):
-    start_time = time.process_time()
-    label, cost, spec, length_bounds = param
-    spec = spec.explicit()
-    gc.collect()
-    print("Label: " + str(label) + ", Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
-    return ((label, cost), spec, time.process_time() - start_time)
-
-def dummy_func(param):
-    constructor, label, base_spec, cost_func, length_bounds, prob_bounds = param
-
-    spec = constructor(label, base_spec, cost_func, length_bounds, prob_bounds)
-
-    return spec
-
-# Source: https://izziswift.com/python-process-pool-non-daemonic/
-class NoDaemonProcess(multiprocessing.Process):
-    @property
-    def daemon(self):
-        return False
-    @daemon.setter
-    def daemon(self, value):
-        pass
-class NoDaemonContext(type(multiprocessing.get_context())):
-    Process = NoDaemonProcess
-# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
-# because the latter is only a wrapper function, not a proper class.
-class NestablePool(multiprocessing.pool.Pool):
-    def __init__(self, *args, **kwargs):
-        kwargs['context'] = NoDaemonContext()
-        super(NestablePool, self).__init__(*args, **kwargs)

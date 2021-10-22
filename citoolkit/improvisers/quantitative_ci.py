@@ -68,9 +68,6 @@ class QuantitativeCI(Improviser):
             p.close()
             p.join()
 
-            print("Done computing language sizes")
-            print("Total CPU Time:", sum([x[2] for x in spec_items]))
-
             self.i_specs = {key:spec for (key,spec, _) in spec_items}
 
         # Compute the size of I.
@@ -134,5 +131,4 @@ def get_language_size(param):
     cost, spec, length_bounds = param
     spec = spec.explicit()
     gc.collect()
-    print("Cost: " + str(cost) + ", Size: " + str(spec.language_size(*length_bounds)))
     return (cost, spec, time.process_time() - start_time)

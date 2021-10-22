@@ -45,6 +45,8 @@ def test_accumulated_cost_dfa_cost():
 
     dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
 
+    # Create cost_map and accumulated cost dfa mapping each state to a
+    # cost equal to its state number.
     cost_map = {}
     cost_map["State1"] = 1
     cost_map["State2"] = 2
@@ -54,6 +56,7 @@ def test_accumulated_cost_dfa_cost():
 
     accumulated_cost_dfa = AccumulatedCostDfa(dfa, cost_map, max_word_length=6)
 
+    # Check that select words have the correct cost.
     assert accumulated_cost_dfa.cost(tuple("0001")) == 10
     assert accumulated_cost_dfa.cost(tuple("0000")) is None
     assert accumulated_cost_dfa.cost(tuple("110111")) == 16
@@ -164,7 +167,7 @@ def test_accumulated_cost_dfa_decompose_random():
         dfa = generate_random_dfa()
 
         cost_map = {}
-        
+
         for state in dfa.states:
             cost_map[state] = random.randint(0, 10)
 
