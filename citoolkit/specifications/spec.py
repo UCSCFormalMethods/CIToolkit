@@ -11,7 +11,9 @@ from abc import ABC, abstractmethod
 class Spec(ABC):
     """ The Spec class is a parent class to all specifications.
 
-    :param alphabet: The alphabet this specification is defined over.
+    :param alphabet: The alphabet this specification is defined over. An
+        empty alphabet indicates a special specification that is well defined
+        over all alphabets.
     """
     def __init__(self, alphabet: set[str]) -> None:
         self.alphabet = frozenset(alphabet)
@@ -104,12 +106,17 @@ class AbstractSpec(Spec):
         # Performs checks to make sure that AbstractSpec is being used
         # correctly.
 
-        if spec_2 is not None:
-            alphabet = spec_1.alphabet | spec_2.alphabet
+        # Determine if alphabet is well defined and if so fixes it.
+        if spec_2 is None:
+            alphabet = spec_1.alphabet
+        elif len(spec_1.alphabet) == 0:
+            alphabet = spec_2.alphabet
+        elif len(spec_2.alphabet) == 0:
+            alphabet = spec_1.alphabet
+        else:
+            alphabet = spec_1.alphabet & spec_2.alphabet
             if alphabet != spec_1.alphabet or alphabet != spec_2.alphabet:
                 raise ValueError("Cannot perform operations on specifications with different alphabets.")
-        else:
-            alphabet = spec_1.alphabet
 
         if operation not in SpecOp:
             raise ValueError("Unsupported specification operation.")
@@ -177,18 +184,18 @@ class AbstractSpec(Spec):
 
 
         # Otherwise, raise a NotImplementedError
-        if isinstance(self.spec_1, AbstractSpec) and self.spec_1.explicit is not None:
-            refined_spec_1 = self.spec_1.explicit
+        if isinstance(self.spec_1, AbstractSpec):
+            spec_1_explicit = self.spec_1.explicit()
         else:
-            refined_spec_1 = self.spec_1
+            spec_1_explicit = self.spec_1
 
-        if isinstance(self.spec_2, AbstractSpec) and self.spec_2.explicit is not None:
-            refined_spec_2 = self.spec_2.explicit
+        if isinstance(self.spec_2, AbstractSpec):
+            spec_2_explicit = self.spec_2.explicit()
         else:
-            refined_spec_2 = self.spec_2
+            spec_2_explicit = self.spec_2
 
         raise NotImplementedError("Computation if language_size for abstract specifications of types '" \
-                                  + refined_spec_1.__class__.__name__ + "' and '" + refined_spec_2.__class__.__name__ \
+                                  + spec_1_explicit.__class__.__name__ + "' and '" + spec_2_explicit.__class__.__name__ \
                                   + " with operation " + str(self.operation) + " is not supported.")
 
     def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
@@ -213,22 +220,22 @@ class AbstractSpec(Spec):
         except NotImplementedError:
             pass
 
-        # Check if have a "hack" to compute language_size anyway
+        # Check if have a "hack" to uniformly sample anyway
 
 
         # Otherwise, raise a NotImplementedError
-        if isinstance(self.spec_1, AbstractSpec) and self.spec_1.explicit is not None:
-            refined_spec_1 = self.spec_1.explicit
+        if isinstance(self.spec_1, AbstractSpec):
+            spec_1_explicit = self.spec_1.explicit()
         else:
-            refined_spec_1 = self.spec_1
+            spec_1_explicit = self.spec_1
 
-        if isinstance(self.spec_2, AbstractSpec) and self.spec_2.explicit is not None:
-            refined_spec_2 = self.spec_2.explicit
+        if isinstance(self.spec_2, AbstractSpec):
+            spec_2_explicit = self.spec_2.explicit()
         else:
-            refined_spec_2 = self.spec_2
+            spec_2_explicit = self.spec_2
 
         raise NotImplementedError("Uniform sampling for abstract specifications of types '" \
-                                  + refined_spec_1.__class__.__name__ + "' and '" + refined_spec_2.__class__.__name__ \
+                                  + spec_1_explicit.__class__.__name__ + "' and '" + spec_2_explicit.__class__.__name__ \
                                   + " with operation " + str(self.operation) + " is not supported.")
 
     def explicit(self) -> Spec:
@@ -259,7 +266,51 @@ class AbstractSpec(Spec):
 
         # Attempts to make an explicit specification, raising an error
         # if such a construction is not supported.
-        if isinstance(spec_1_explicit, Dfa) and (spec_2_explicit is None or isinstance(spec_2_explicit, Dfa)):
+        if isinstance(spec_1_explicit, UniverseSpec) or isinstance(spec_2_explicit, UniverseSpec):
+            ## At least one specification is a UniverseSpec.
+
+            # Pick the spec that is not a UniverseSpec (or any spec
+            # if all are UniverseSpecs).
+            if isinstance(spec_1_explicit, UniverseSpec):
+                target_spec = spec_2_explicit
+            else:
+                target_spec = spec_1_explicit
+
+            if self.operation == SpecOp.UNION:
+                self.explicit_form = UniverseSpec()
+            elif self.operation == SpecOp.INTERSECTION:
+                self.explicit_form = target_spec
+            elif self.operation == SpecOp.NEGATION:
+                self.explicit_form = NullSpec()
+            else:
+                raise NotImplementedError("Explict construction for '" + spec_1_explicit.__class__.__name__ + \
+                                      "' and '" + spec_2_explicit.__class__.__name__ + "' with operation '" + \
+                                      str(self.operation) + "' is not supported.")
+
+        elif isinstance(spec_1_explicit, NullSpec) or isinstance(spec_2_explicit, NullSpec):
+            ## At least one specification is a NullSpec.
+
+            # Pick the spec that is not a NullSpec (or any spec
+            # if all are NullSpecs).
+            if isinstance(spec_1_explicit, NullSpec):
+                target_spec = spec_2_explicit
+            else:
+                target_spec = spec_1_explicit
+
+            if self.operation == SpecOp.UNION:
+                self.explicit_form = target_spec
+            elif self.operation == SpecOp.INTERSECTION:
+                self.explicit_form = NullSpec()
+            elif self.operation == SpecOp.NEGATION:
+                self.explicit_form = UniverseSpec()
+            else:
+                raise NotImplementedError("Explict construction for '" + spec_1_explicit.__class__.__name__ + \
+                                      "' and '" + spec_2_explicit.__class__.__name__ + "' with operation '" + \
+                                      str(self.operation) + "' is not supported.")
+
+        elif isinstance(spec_1_explicit, Dfa) and (spec_2_explicit is None or isinstance(spec_2_explicit, Dfa)):
+            ## All specifications are DFAs.
+
             if self.operation == SpecOp.UNION:
                 self.explicit_form = Dfa.union_construction(spec_1_explicit, spec_2_explicit)
             elif self.operation == SpecOp.INTERSECTION:
@@ -270,8 +321,74 @@ class AbstractSpec(Spec):
                 raise NotImplementedError("Explict construction for '" + spec_1_explicit.__class__.__name__ + \
                                       "' and '" + spec_2_explicit.__class__.__name__ + "' with operation '" + \
                                       str(self.operation) + "' is not supported.")
+
         else:
             raise NotImplementedError("Explict constructions for '" + spec_1_explicit.__class__.__name__ + \
                                       "' and '" + spec_2_explicit.__class__.__name__ + " are not supported.")
 
         return self.explicit_form
+
+class UniverseSpec(Spec):
+    """ The UniverseSpec class represents a Spec that accepts
+    all strings. It has the properties (Spec & UniverseSpec = Spec),
+    (Spec | UniverseSpec = UniverseSpec), and (~UniverseSpec = NullSpec).
+    """
+    def __init__(self):
+        # Since the UniverseSpec is defined regardless of alphabet,
+        # we set the alphabet to be the empty set.
+        super().__init__(set())
+
+    def accepts(self, word) -> bool:
+        """ Always returns True, as the UniverseSpec accepts all strings."""
+        return True
+
+    def language_size(self, min_length: int = None, max_length: int = None) -> int:
+        """ Raises a NotImplementedError, as UniverseSpec does not have a bounded language size."""
+        raise NotImplementedError("The UniverseSpec does not have a bounded language_size.")
+
+    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
+        """ Raises a NotImplementedError, as UniverseSpec does not have a well defined way to sample uniformly."""
+        raise NotImplementedError("The UniverseSpec does not support well defined uniform sampling.")
+
+    def __eq__(self, other: object) -> bool:
+        """ Checks equality with another object.
+
+        :returns: True if other is a UniverseSpec object and NotImplemented otherwise.
+        """
+        if isinstance(other, UniverseSpec):
+            return True
+        else:
+            return NotImplemented
+
+
+class NullSpec(Spec):
+    """ The NullSpec class represents a Spec that accepts
+    no strings. It has the properties (Spec & NulleSpec = NullSpec),
+    (Spec | NullSpec = UniverseSpec), and (~NullSpec = UniverseSpec).
+    """
+    def __init__(self):
+        # Since the NullSpec is defined regardless of alphabet,
+        # we set the alphabet to be the empty set.
+        super().__init__(set())
+
+    def accepts(self, word) -> bool:
+        """ Always returns False, as the NullSpec accepts all strings."""
+        return False
+
+    def language_size(self, min_length: int = None, max_length: int = None) -> int:
+        """ Returns 0, as the NullSpec accepts no strings."""
+        return 0
+
+    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
+        """ Raises a NotImplementedError, as there are no strings to sample from."""
+        raise NotImplementedError("The language of NullSpec is empty, and therefore does not support uniform sampling.")
+
+    def __eq__(self, other: object) -> bool:
+        """ Checks equality with another object.
+
+        :returns: True if other is a NullSpec object and NotImplemented otherwise.
+        """
+        if isinstance(other, NullSpec):
+            return True
+        else:
+            return NotImplemented

@@ -712,7 +712,7 @@ class State:
     def __eq__(self, other: object) -> bool:
         """ Checks equality, either with another State or a string.
 
-        :returns: True if the state values represent the same State, returns false
+        :returns: True if the state values represent the same State, returns NotImplemented
             otherwise.
         """
         if isinstance(other, State):

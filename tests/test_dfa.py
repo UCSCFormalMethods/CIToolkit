@@ -6,7 +6,7 @@ import itertools
 
 import pytest
 
-from citoolkit.specifications.spec import AbstractSpec
+from citoolkit.specifications.spec import AbstractSpec, UniverseSpec, NullSpec
 from citoolkit.specifications.dfa import Dfa, State, DfaCycleError, DfaEmptyLanguageError
 
 ###################################################################################################
@@ -915,6 +915,42 @@ def test_dfa_difference():
     assert not abstract_difference.accepts(list("020")) and not explicit_difference.accepts(list("020"))
     assert not abstract_difference.accepts(list("12")) and not explicit_difference.accepts(list("12"))
     assert not abstract_difference.accepts(list("012210")) and not explicit_difference.accepts(list("012210"))
+
+def test_dfa_abstract_universe_null():
+    """ Tests that combining a DFA with UniverseSpecs/NullSpecs
+    works as intended.
+    """
+
+    # Create a simple DFA
+    alphabet = {"0", "1", "2"}
+    states = {"0_Seen", "1_Seen", "2_Seen", "3_Seen"}
+    accepting_states = {"3_Seen"}
+    start_state = "0_Seen"
+
+    transitions = {}
+    for state in states:
+        for symbol in alphabet:
+            transitions[(state, symbol)] = "0_Seen"
+
+    transitions[("0_Seen", "1")] = "1_Seen"
+    transitions[("1_Seen", "1")] = "2_Seen"
+    transitions[("2_Seen", "1")] = "3_Seen"
+
+    transitions[("3_Seen", "0")] = "3_Seen"
+    transitions[("3_Seen", "1")] = "3_Seen"
+
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    # Check operations with UniverseSpec/NullSpec
+    assert (UniverseSpec() | dfa).explicit() == UniverseSpec()
+    assert (dfa | UniverseSpec()).explicit() == UniverseSpec()
+    assert (UniverseSpec() & dfa).explicit() == dfa
+    assert (dfa & UniverseSpec()).explicit() == dfa
+
+    assert (NullSpec() | dfa).explicit() == dfa
+    assert (dfa | NullSpec()).explicit() == dfa
+    assert (NullSpec() & dfa).explicit() == NullSpec()
+    assert (dfa & NullSpec()).explicit() == NullSpec()
 
 def test_dfa_exact_length_constructor():
     """ Tests that the Dfa returned by the exact_length_dfa
