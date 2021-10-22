@@ -59,6 +59,10 @@ class AccumulatedCostDfa(CostFunc):
         # Initialize cache values to None
         self.decomp_cost_func = None
 
+    ####################################################################################################
+    # CostFunc Functions
+    ####################################################################################################
+
     def cost(self, word) -> Optional[Rational]:
         """ Returns the appropriate cost for a word. This cost is
         found by first checking if the interior Dfa accepts a word.
@@ -152,6 +156,10 @@ class AccumulatedCostDfa(CostFunc):
         self.decomp_cost_func = decomp_cost_func
 
         return decomp_cost_func
+
+    ####################################################################################################
+    # AccumulatedCostDfa Property Functions
+    ####################################################################################################
 
     @staticmethod
     def _compute_cost_table(dfa, cost_map, max_word_length):

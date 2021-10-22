@@ -156,7 +156,7 @@ def test_static_cost_dfa_irrational():
     dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
 
     # Construct a Static Cost DFA that assigns cost to strings based off
-    # of the number of "1" symbols they have seen. However, 4.5 is not
+    # of the number of "1" symbols they have seen. However, 4.5 is
     # actually of type Real, not Rational.
     cost_map = {}
     cost_map["1_Seen"] =  1
@@ -169,7 +169,7 @@ def test_static_cost_dfa_irrational():
         StaticCostDfa(dfa, cost_map)
 
 def test_static_cost_dfa_string_states():
-    """ Creates a simple complete LabellingDfa with only string States
+    """ Creates a simple complete StaticCostDfa with only string States
     and ensures this does not raise an error.
     """
 
@@ -216,7 +216,7 @@ def test_static_cost_dfa_string_states():
     # Creates a Static Cost DFA, which should not raise an exception.
     static_cost_dfa = StaticCostDfa(dfa, cost_map)
 
-    # Checks select strings against the Labelling DFA
+    # Checks select strings against the Static Cost DFA
     assert static_cost_dfa.cost(list("")) is None
     assert static_cost_dfa.cost(list("0")) is None
     assert static_cost_dfa.cost(list("1")) == 1
@@ -290,7 +290,7 @@ def test_static_cost_dfa_class_states():
     # Creates a Static Cost DFA, which should not raise an exception.
     static_cost_dfa = StaticCostDfa(dfa, cost_map)
 
-    # Checks select strings against the Labelling DFA
+    # Checks select strings against the Static Cost DFA
     assert static_cost_dfa.cost(list("")) is None
     assert static_cost_dfa.cost(list("0")) is None
     assert static_cost_dfa.cost(list("1")) == 1
@@ -365,7 +365,7 @@ def test_static_cost_dfa_mixed_states():
     # Creates a Static Cost DFA, which should not raise an exception.
     static_cost_dfa = StaticCostDfa(dfa, cost_map)
 
-    # Checks select strings against the Labelling DFA
+    # Checks select strings against the Static Cost DFA
     assert static_cost_dfa.cost(list("")) is None
     assert static_cost_dfa.cost(list("0")) is None
     assert static_cost_dfa.cost(list("1")) == 1
@@ -433,7 +433,9 @@ def test_static_cost_dfa_no_costs():
     # Creates a StaticCostDFA, which should not raise an exception.
     static_cost_dfa = StaticCostDfa(dfa, cost_map)
 
-    # Checks select strings against the Labelling DFA
+    # Checks select strings against the Static Cost DFA
+    assert static_cost_dfa.decompose() == dict()
+
     assert static_cost_dfa.cost(list("")) is None
     assert static_cost_dfa.cost(list("0")) is None
     assert static_cost_dfa.cost(list("1")) is None

@@ -383,6 +383,8 @@ def test_labelled_dfa_no_labels():
     labelling_dfa = LabellingDfa(dfa, label_map)
 
     # Checks select strings against the Labelling DFA
+    assert labelling_dfa.decompose() == dict()
+
     assert labelling_dfa.label(list("")) is None
     assert labelling_dfa.label(list("0")) is None
     assert labelling_dfa.label(list("1")) is None
