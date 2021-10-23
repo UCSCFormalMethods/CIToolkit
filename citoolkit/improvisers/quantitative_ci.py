@@ -4,8 +4,6 @@ for the Quantitative CI problem.
 
 from __future__ import annotations
 
-import random
-
 from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeCI
 from citoolkit.improvisers.improviser import InfeasibleImproviserError
 from citoolkit.specifications.spec import Spec
