@@ -8,7 +8,7 @@ from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeC
 from citoolkit.improvisers.improviser import InfeasibleImproviserError
 from citoolkit.specifications.spec import Spec
 from citoolkit.costfunctions.cost_func import SoftConstraintCostFunc
-from citoolkit.labellingfunctions.labelling_func import TrivialLabelFunc
+from citoolkit.labellingfunctions.labelling_func import TrivialLabellingFunc
 
 class ClassicCI(LabelledQuantitativeCI):
     """ An improviser for the original Control Improvisation problem.
@@ -44,7 +44,7 @@ class ClassicCI(LabelledQuantitativeCI):
 
         # Convert to equivalent LQCI parameters
         cost_func = SoftConstraintCostFunc(soft_constraint)
-        label_func = TrivialLabelFunc()
+        label_func = TrivialLabellingFunc()
         cost_bound = epsilon
         label_prob_bounds = (1,1)
         word_prob_bounds = {"TrivialLabel": prob_bounds}

@@ -34,7 +34,7 @@ class LabellingFunc(ABC):
             accepts only words labelled with that label by this labelling function.
         """
 
-class TrivialLabelFunc(LabellingFunc):
+class TrivialLabellingFunc(LabellingFunc):
     """ The TrivialLabelFunc class assigns the label "TrivialLabel" to every string. """
     def __init__(self) -> None:
         super().__init__(alphabet=frozenset(), labels=frozenset(["TrivialLabel"]))
