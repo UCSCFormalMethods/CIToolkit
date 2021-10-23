@@ -48,7 +48,6 @@ class TrivialLabelFunc(LabellingFunc):
         """
         return "TrivialLabel"
 
-    @abstractmethod
     def decompose(self) -> dict[str, Spec]:
         """ Decompose this labelling function into a Spec object for
         each label that accepts only on words with that label.

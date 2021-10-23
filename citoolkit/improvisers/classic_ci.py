@@ -6,10 +6,13 @@ from __future__ import annotations
 
 import random
 
-from citoolkit.improvisers.improviser import Improviser, InfeasibleImproviserError
+from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeCI
+from citoolkit.improvisers.improviser import InfeasibleImproviserError
 from citoolkit.specifications.spec import Spec
+from citoolkit.costfunctions.cost_func import SoftConstraintCostFunc
+from citoolkit.labellingfunctions.labelling_func import TrivialLabelFunc
 
-class ClassicCI(Improviser):
+class ClassicCI(LabelledQuantitativeCI):
     """ An improviser for the original Control Improvisation problem.
 
     :param hard_constraint: A specification that must accept all improvisations
@@ -41,51 +44,12 @@ class ClassicCI(Improviser):
         if (len(prob_bounds) != 2) or (prob_bounds[0] < 0) or (prob_bounds[0] > prob_bounds[1]) or (prob_bounds[1] > 1):
             raise ValueError("The prob_bounds parameter should contain two floats, with 0 <= prob_bounds[0] <= prob_bounds[1] <= 1.")
 
-        # Store all constructor parameters
-        self.hard_constraint = hard_constraint
-        self.soft_constraint = soft_constraint
-        self.length_bounds = length_bounds
-        self.epsilon = epsilon
-        self.prob_bounds = prob_bounds
+        # Convert to equivalent LQCI parameters
+        cost_func = SoftConstraintCostFunc(soft_constraint)
+        label_func = TrivialLabelFunc()
+        cost_bound = epsilon
+        label_prob_bounds = (1,1)
+        word_prob_bounds = {"TrivialLabel": prob_bounds}
 
-        # Initializes improviser values. In this case i refers to I\A instead of I
-        self.i_spec = hard_constraint - soft_constraint
-        self.a_spec = hard_constraint & soft_constraint
-
-        i_size = self.i_spec.language_size(*self.length_bounds)
-        a_size = self.a_spec.language_size(*self.length_bounds)
-
-        min_prob, max_prob = prob_bounds
-
-        self.i_prob = max(1 - max_prob * a_size, min_prob * i_size)
-        self.a_prob = 1 - self.i_prob
-
-        # Checks that improviser is feasible. If not raise an InfeasibleImproviserError.
-        if (i_size + a_size) < (1/max_prob) or (min_prob != 0 and (i_size + a_size) > (1/min_prob)):
-            if min_prob == 0:
-                inv_min_prob = float("inf")
-            else:
-                inv_min_prob = 1/min_prob
-
-            raise InfeasibleImproviserError("Violation of condition 1/prob_bounds[1] <= (i_size + a_size) <= 1/prob_bounds[0]. Instead, " \
-                                            + str(1/max_prob) + " <= " + str(i_size + a_size) + " <= " + str(inv_min_prob))
-
-        if (1 - epsilon)/max_prob > a_size:
-            raise InfeasibleImproviserError("Violation of condition (1 - epsilon)/prob_bounds[1] <= a_size. Instead, " \
-                                            + str((1 - epsilon)/max_prob) + " <= " + str(a_size))
-
-        if min_prob != 0 and epsilon/min_prob < i_size:
-            raise InfeasibleImproviserError("Violation of condition epsilon/prob_bounds[0] >= i_size. Instead, " \
-                                            + str(epsilon/max_prob) + " >= " + str(i_size))
-
-    def improvise(self) -> tuple[str,...]:
-        """ Improvise a single word.
-
-        :returns: A single improvised word.
-        """
-        rand = random.random()
-
-        if rand < self.i_prob:
-            return self.i_spec.sample(*self.length_bounds)
-        else:
-            return self.a_spec.sample(*self.length_bounds)
+        # Solve associated LQCI problem.
+        super().__init__(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds)
