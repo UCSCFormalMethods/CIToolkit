@@ -5,7 +5,7 @@ for the Labelled CI problem.
 from __future__ import annotations
 
 from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeCI, MaxEntropyLabelledQuantitativeCI
-from citoolkit.improvisers.improviser import InfeasibleImproviserError
+from citoolkit.improvisers.improviser import InfeasibleCostError, InfeasibleSoftConstraintError
 from citoolkit.specifications.spec import Spec
 from citoolkit.labellingfunctions.labelling_func import LabellingFunc
 from citoolkit.costfunctions.cost_func import SoftConstraintCostFunc
@@ -64,9 +64,12 @@ class LabelledCI(LabelledQuantitativeCI):
         cost_func = SoftConstraintCostFunc(soft_constraint)
         cost_bound = epsilon
 
-        # Solve associated LQCI problem.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds)
-
+        # Solve associated LQCI problem, catching and transforming InfeasibleImproviserExceptions to fit this problem.
+        try:
+            super().__init__(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds)
+        except InfeasibleCostError as exc:
+            raise InfeasibleSoftConstraintError("Greedy construction does not satisfy soft constraint, meaning no improviser can."\
+                + " Maximum soft constraint probability was " + str(1 - exc.best_cost) + ".", (1-exc.best_cost)) from exc
 
 class MaxEntropyLabelledCI(MaxEntropyLabelledQuantitativeCI):
     """ An improviser for the Maximum Entropy Labelled Control Improvisation problem.
@@ -104,10 +107,6 @@ class MaxEntropyLabelledCI(MaxEntropyLabelledQuantitativeCI):
 
         if (len(label_prob_bounds) != 2) or (label_prob_bounds[0] < 0) or (label_prob_bounds[0] > label_prob_bounds[1]) or (label_prob_bounds[1] > 1):
             raise ValueError("The prob_bounds parameter should contain two floats, with 0 <= prob_bounds[0] <= prob_bounds[1] <= 1.")
-
-        # Checks that there are any words that satisfy the hard constraint and have a label
-        if (hard_constraint & label_func.dfa).language_size(*length_bounds) == 0:
-            raise InfeasibleImproviserError("There are no words that both satisfy the hard constraint and have an assigned label.")
 
         # Convert to equivalent LQCI parameters
         cost_func = SoftConstraintCostFunc(soft_constraint)

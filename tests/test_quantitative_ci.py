@@ -5,7 +5,8 @@ from fractions import Fraction
 
 import pytest
 
-from citoolkit.improvisers.improviser import InfeasibleImproviserError
+from citoolkit.improvisers.improviser import InfeasibleImproviserError, \
+    InfeasibleCostError, InfeasibleRandomnessError
 from citoolkit.improvisers.quantitative_ci import QuantitativeCI
 from citoolkit.specifications.dfa import Dfa
 from citoolkit.costfunctions.static_cost_dfa import StaticCostDfa
@@ -152,11 +153,11 @@ def test_quantitative_ci_infeasible():
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleCostError):
         QuantitativeCI(hard_constraint, cost_function, length_bounds, 1, prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
-        QuantitativeCI(hard_constraint, cost_function, length_bounds, cost_bound, [Fraction(1,15), Fraction(1,15)])
+    with pytest.raises(InfeasibleRandomnessError):
+        QuantitativeCI(hard_constraint, cost_function, length_bounds, cost_bound, [Fraction(1,10), Fraction(1,10)])
 
 ###################################################################################################
 # Randomized Tests

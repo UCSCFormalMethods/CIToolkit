@@ -5,7 +5,8 @@ from fractions import Fraction
 
 import pytest
 
-from citoolkit.improvisers.improviser import InfeasibleImproviserError
+from citoolkit.improvisers.improviser import InfeasibleImproviserError, InfeasibleSoftConstraintError,\
+    InfeasibleLabelRandomnessError, InfeasibleWordRandomnessError
 from citoolkit.improvisers.labelled_ci import LabelledCI, MaxEntropyLabelledCI
 from citoolkit.specifications.dfa import Dfa
 from citoolkit.labellingfunctions.labelling_dfa import LabellingDfa
@@ -184,13 +185,13 @@ def test_labelled_ci_infeasible():
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleSoftConstraintError):
         LabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, 0.16, label_prob_bounds, word_prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleLabelRandomnessError):
         LabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, (0.33,0.33), word_prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleWordRandomnessError):
         LabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds, {label:(.2,.8) for label in label_func.labels})
 
 def test_max_entropy_labelled_ci_improvise():
@@ -591,7 +592,7 @@ def test_max_entropy_labelled_ci_improvise_random():
             a_base_spec = hard_constraint & soft_constraint
             a_words_total = sum([(a_base_spec & label_spec).language_size(*length_bounds) for (label, label_spec) in label_func.decompose().items()])
 
-            epsilon = min(1, 1.1 * (1 - Fraction(a_words_total, words_total)))
+            epsilon = min(1, Fraction(11, 10) * (1 - Fraction(a_words_total, words_total)))
 
             label_min_prob = Fraction(1, len(label_func.labels) * random.randint(1, 10))
             label_max_prob = min(1, Fraction(random.randint(1, 10) , len(label_func.labels)))
@@ -605,6 +606,8 @@ def test_max_entropy_labelled_ci_improvise_random():
             improviser = MaxEntropyLabelledCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds)
         except InfeasibleImproviserError:
             melci_feasible = False
+        except UserWarning:
+            continue
         else:
             melci_feasible = True
 

@@ -5,7 +5,8 @@ from fractions import Fraction
 
 import pytest
 
-from citoolkit.improvisers.improviser import InfeasibleImproviserError
+from citoolkit.improvisers.improviser import InfeasibleImproviserError, InfeasibleCostError,\
+    InfeasibleLabelRandomnessError, InfeasibleWordRandomnessError
 from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeCI, MaxEntropyLabelledQuantitativeCI
 from citoolkit.specifications.dfa import Dfa
 from citoolkit.costfunctions.static_cost_dfa import StaticCostDfa
@@ -259,20 +260,20 @@ def test_labelled_quantitative_ci_infeasible():
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleCostError):
         LabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, 0.3, label_prob_bounds, word_prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleCostError):
         LabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, (Fraction(1,3), Fraction(1,3)), word_prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleLabelRandomnessError):
         LabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, (Fraction(1,4), Fraction(1,4)), word_prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleCostError):
         strict_word_prob_bounds = {"Label_Pos2":(Fraction(1,13), Fraction(1,13)), "Label_Pos3":(Fraction(1,20),Fraction(1,4)), "Label_Pos4":(Fraction(1,4),Fraction(1,4))}
         LabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, strict_word_prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleWordRandomnessError):
         infeasible_word_prob_bounds = {"Label_Pos2":(Fraction(1,12), Fraction(1,12)), "Label_Pos3":(Fraction(1,20),Fraction(1,4)), "Label_Pos4":(Fraction(1,6),Fraction(5,12))}
         LabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, infeasible_word_prob_bounds)
 
@@ -699,10 +700,10 @@ def test_max_entropy_labelled_quantitative_ci_improvise_random():
     or are feasible and improvise correctly.
     """
     for _ in range(_RANDOM_LQCI_TEST_NUM_ITERS):
-        # Generate random set of LabelledCI parameters. 50% chance to
+        # Generate random set of LabelledQuantitativeCI parameters. 50% chance to
         # generate an instance where each parameter is individually feasible.
         if random.random() < 0.5:
-            # Generate completely random LCI instance.
+            # Generate completely random LQCI instance.
             min_length = random.randint(_MIN_WORD_LENGTH_BOUND, _MAX_WORD_LENGTH_BOUND)
             max_length = random.randint(min_length, _MAX_WORD_LENGTH_BOUND)
             length_bounds = (min_length, max_length)
@@ -809,6 +810,8 @@ def test_max_entropy_labelled_quantitative_ci_improvise_random():
             improviser = MaxEntropyLabelledQuantitativeCI(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds)
         except InfeasibleImproviserError:
             melqci_feasible = False
+        except UserWarning:
+            continue
         else:
             melqci_feasible = True
 

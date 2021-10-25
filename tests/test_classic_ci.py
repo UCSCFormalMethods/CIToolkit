@@ -5,7 +5,8 @@ from fractions import Fraction
 
 import pytest
 
-from citoolkit.improvisers.improviser import InfeasibleImproviserError
+from citoolkit.improvisers.improviser import InfeasibleImproviserError,\
+    InfeasibleSoftConstraintError, InfeasibleRandomnessError
 from citoolkit.improvisers.classic_ci import ClassicCI
 from citoolkit.specifications.dfa import Dfa
 
@@ -148,13 +149,13 @@ def test_classic_ci_infeasible():
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleSoftConstraintError):
         ClassicCI(hard_constraint, soft_constraint, length_bounds, 0, prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleSoftConstraintError):
         ClassicCI(hard_constraint, soft_constraint, (3,6), epsilon, prob_bounds)
 
-    with pytest.raises(InfeasibleImproviserError):
+    with pytest.raises(InfeasibleRandomnessError):
         ClassicCI(hard_constraint, soft_constraint, length_bounds, epsilon, (.25,.25))
 
 ###################################################################################################

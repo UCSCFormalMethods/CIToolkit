@@ -5,7 +5,8 @@ for the Quantitative CI problem.
 from __future__ import annotations
 
 from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeCI
-from citoolkit.improvisers.improviser import InfeasibleImproviserError
+from citoolkit.improvisers.improviser import InfeasibleImproviserError, InfeasibleRandomnessError, \
+                                             InfeasibleLabelRandomnessError, InfeasibleWordRandomnessError
 from citoolkit.specifications.spec import Spec
 from citoolkit.costfunctions.cost_func import CostFunc
 from citoolkit.labellingfunctions.labelling_func import TrivialLabellingFunc
@@ -46,5 +47,16 @@ class QuantitativeCI(LabelledQuantitativeCI):
         label_prob_bounds = (1,1)
         word_prob_bounds = {"TrivialLabel": prob_bounds}
 
-        # Solve associated LQCI problem.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds)
+        # Solve associated LQCI problem, catching and transforming InfeasibleImproviserExceptions to fit this problem.
+        try:
+            super().__init__(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds)
+        except InfeasibleLabelRandomnessError as exc:
+            raise InfeasibleImproviserError("There are no feasible improvisations.") from exc
+        except InfeasibleWordRandomnessError as exc:
+            if prob_bounds[0] == 0:
+                inv_min_prob = float("inf")
+            else:
+                inv_min_prob = 1/prob_bounds[0]
+
+            raise InfeasibleRandomnessError("Violation of condition 1/prob_bounds[1] <= i_size <= 1/prob_bounds[0]. Instead, " \
+                + str(1/prob_bounds[1]) + " <= " + str(exc.set_size)  + " <= " + str(inv_min_prob), exc.set_size) from exc
