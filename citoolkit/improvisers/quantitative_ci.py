@@ -10,6 +10,7 @@ from citoolkit.improvisers.improviser import InfeasibleImproviserError, Infeasib
 from citoolkit.specifications.spec import Spec
 from citoolkit.costfunctions.cost_func import CostFunc
 from citoolkit.labellingfunctions.labelling_func import TrivialLabellingFunc
+from citoolkit.util.logging import cit_log
 
 class QuantitativeCI(LabelledQuantitativeCI):
     """ An improviser for the Quantitative Control Improvisation problem.
@@ -25,7 +26,8 @@ class QuantitativeCI(LabelledQuantitativeCI):
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
     def __init__(self, hard_constraint: Spec, cost_func: CostFunc, length_bounds: tuple[int, int], \
-                 cost_bound: float, prob_bounds: tuple[float, float]) -> None:
+                 cost_bound: float, prob_bounds: tuple[float, float],\
+                 num_threads:int =1, verbose:bool =False) -> None:
         # Checks that parameters are well formed
         if not isinstance(hard_constraint, Spec):
             raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
@@ -47,9 +49,13 @@ class QuantitativeCI(LabelledQuantitativeCI):
         label_prob_bounds = (1,1)
         word_prob_bounds = {"TrivialLabel": prob_bounds}
 
+        if verbose:
+            cit_log("Generalizing QCI problem to equivalent LQCI problem.")
+
         # Solve associated LQCI problem, catching and transforming InfeasibleImproviserExceptions to fit this problem.
         try:
-            super().__init__(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds)
+            super().__init__(hard_constraint, cost_func, label_func, length_bounds, cost_bound, label_prob_bounds, word_prob_bounds, \
+                num_threads=num_threads, verbose=verbose)
         except InfeasibleLabelRandomnessError as exc:
             raise InfeasibleImproviserError("There are no feasible improvisations.") from exc
         except InfeasibleWordRandomnessError as exc:

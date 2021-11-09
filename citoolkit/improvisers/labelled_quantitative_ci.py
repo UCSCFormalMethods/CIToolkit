@@ -3,17 +3,23 @@ for the Labelled Quantitative CI problem.
 """
 
 from __future__ import annotations
+from typing import Optional
 
+import time
 import warnings
 import random
+from numbers import Rational
+
 import cvxpy as cp
 import numpy as np
+from multiprocess import Pool
 
 from citoolkit.improvisers.improviser import Improviser, InfeasibleImproviserError, InfeasibleCostError,\
                                              InfeasibleLabelRandomnessError, InfeasibleWordRandomnessError
 from citoolkit.specifications.spec import Spec
 from citoolkit.costfunctions.cost_func import CostFunc
 from citoolkit.labellingfunctions.labelling_func import LabellingFunc
+from citoolkit.util.logging import cit_log
 
 class _LabelledQuantitativeCIBase(Improviser):
     """ The base class for the LabelledQuantitativeCI class and the
@@ -38,23 +44,82 @@ class _LabelledQuantitativeCIBase(Improviser):
         of a generated word.
     """
     def __init__(self, hard_constraint: Spec, cost_func: CostFunc, \
-                 label_func: LabellingFunc, length_bounds: tuple[int, int]) -> None:
-        # Compute spec for each label/cost class and precompute language size for
-        # each class.
+                 label_func: LabellingFunc, length_bounds: tuple[int, int],
+                 direct_specs: Optional[dict[tuple[str, Rational], Spec]],\
+                 num_threads: int, verbose: bool) -> None:
+        # Set verbosity level and num_threads.
+        self.verbose = verbose
+        self.num_threads = num_threads
+
         self.class_specs = {}
         self.class_keys = None
         self.class_probabilities = None
         self.length_bounds = length_bounds
 
-        label_specs = label_func.decompose()
-        cost_specs = cost_func.decompose()
+        if direct_specs is None:
+            # Compute spec for each label/cost class.
+            if self.verbose:
+                cit_log("Beginning function decomposition and abstract spec construction.")
 
-        for label in label_func.labels:
-            label_class_spec = hard_constraint & label_specs[label]
+            label_specs = label_func.decompose()
+            cost_specs = cost_func.decompose()
 
-            for cost in cost_func.costs:
-                self.class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
-                self.class_specs[(label, cost)].language_size(*length_bounds)
+            for label in label_func.labels:
+                label_class_spec = hard_constraint & label_specs[label]
+
+                for cost in cost_func.costs:
+                    self.class_specs[(label, cost)] = label_class_spec & cost_specs[cost]
+
+            if self.verbose:
+                cit_log("Function decomposition and abstract spec construction completed.")
+        else:
+            # Use precomputed specs found in direct_specs after verifying completeness.
+            if self.verbose:
+                cit_log("Using precomputed specs.")
+
+            for label in label_func.labels:
+                for cost in cost_func.costs:
+                    if (label, cost) not in direct_specs:
+                        raise ValueError("Incomplete direct_specs dictionary provided. " + str((label,cost)) + " is missing an associated Spec.")
+
+                    self.class_specs[(label, cost)] = direct_specs[(label, cost)]
+
+        # Count the language size for each spec.
+        if self.verbose:
+            start_time = time.time()
+            cit_log("Beginning language size counting. Using " + str(num_threads) + " thread(s).")
+
+        if num_threads <= 1:
+            cpu_time = "N/A"
+            # 1 thread, so compute all sizes iteratively.
+            for label in label_func.labels:
+                for cost in cost_func.costs:
+                    self.class_specs[(label, cost)].language_size(*length_bounds)
+        else:
+            # Multiple threads, so create wrapper and thread pool and map specs before
+            # resaving specs containing cached language sizes.
+            with Pool(self.num_threads) as pool:
+                # Helper function for pool.map
+                def count_wrapper(class_id):
+                    process_start_time = time.process_time()
+                    label, cost = class_id
+                    spec = self.class_specs[(label, cost)]
+
+                    spec.language_size(*length_bounds)
+
+                    return (class_id, spec, time.process_time() - process_start_time)
+
+                class_ids = self.class_specs.keys()
+
+                pool_output = pool.map(count_wrapper, class_ids)
+
+                # Extract relevant info from pool_output
+                cpu_time = "{:.4f}".format(sum([runtime for _,_,runtime in pool_output]))
+                self.class_specs = {class_id: class_spec for class_id, class_spec, _ in pool_output}
+
+        if self.verbose:
+            wall_time = "{:.4f}".format(time.time() - start_time)
+            cit_log("Language size counting completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
 
     def improvise(self) -> tuple[str,...]:
         """ Improvise a single word. Base class must populate self.class_probabilities
@@ -90,8 +155,10 @@ class LabelledQuantitativeCI(_LabelledQuantitativeCIBase):
     """
     def __init__(self, hard_constraint: Spec, cost_func: CostFunc, label_func: LabellingFunc, \
                  length_bounds: tuple[int, int], cost_bound: float, \
-                 label_prob_bounds: tuple[float, float], word_prob_bounds: dict[str, tuple[float, float]]) -> None:
-        # Checks that parameters are well formed
+                 label_prob_bounds: tuple[float, float], word_prob_bounds: dict[str, tuple[float, float]],
+                 direct_specs: Optional[dict[tuple[str, Rational], Spec]]=None,\
+                 num_threads: int =1, verbose: bool =False) -> None:
+        # Checks that parameters are well formed.
         if not isinstance(hard_constraint, Spec):
             raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
 
@@ -125,8 +192,12 @@ class LabelledQuantitativeCI(_LabelledQuantitativeCIBase):
         if len(cost_func.costs) == 0:
             raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
 
-        # Intialize LQCI base class.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds)
+        # Initialize LQCI base class.
+        super().__init__(hard_constraint, cost_func, label_func, length_bounds, direct_specs=direct_specs, num_threads=num_threads, verbose=verbose)
+
+        if self.verbose:
+            start_time = time.time()
+            cit_log("Beginning LQCI distribution calculation.")
 
         # Extract label/cost class sizes from class specs.
         cost_class_sizes = {}
@@ -240,6 +311,10 @@ class LabelledQuantitativeCI(_LabelledQuantitativeCIBase):
             raise InfeasibleCostError("Greedy construction does not satisfy cost_bound, meaning no improviser can."\
                                       + " Minimum expected cost was " + str(expected_cost) + ".", expected_cost)
 
+        if self.verbose:
+            wall_time = "{:.4f}".format(time.time() - start_time)
+            cit_log("LQCI distribution calculation completed. Wallclock Runtime: " + wall_time)
+
 class MaxEntropyLabelledQuantitativeCI(_LabelledQuantitativeCIBase):
     """ An improviser for the Maximum Entropy Labelled Quantitative Control Improvisation problem.
 
@@ -256,9 +331,10 @@ class MaxEntropyLabelledQuantitativeCI(_LabelledQuantitativeCIBase):
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
     def __init__(self, hard_constraint: Spec, cost_func: CostFunc, label_func: LabellingFunc, \
-                 length_bounds: tuple[int, int], cost_bound: float, \
-                 label_prob_bounds: tuple[float, float]) -> None:
-        # Checks that parameters are well formed
+                 length_bounds: tuple[int, int], cost_bound: float, label_prob_bounds: tuple[float, float],
+                 direct_specs: Optional[dict[tuple[str, Rational], Spec]]=None,\
+                 num_threads: int =1, verbose: bool =False) -> None:
+        # Checks that parameters are well formed.
         if not isinstance(hard_constraint, Spec):
             raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
 
@@ -284,7 +360,11 @@ class MaxEntropyLabelledQuantitativeCI(_LabelledQuantitativeCIBase):
             raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
 
         # Initialize LQCI base class.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds)
+        super().__init__(hard_constraint, cost_func, label_func, length_bounds, direct_specs=direct_specs, num_threads=num_threads, verbose=verbose)
+
+        if self.verbose:
+            start_time = time.time()
+            cit_log("Beginning MELQCI distribution calculation.")
 
         # Extract class sizes from class specs.
         cost_class_sizes = {}
@@ -333,7 +413,10 @@ class MaxEntropyLabelledQuantitativeCI(_LabelledQuantitativeCIBase):
 
         # Create and solve problem
         prob = cp.Problem(objective, constraints)
-        result = prob.solve(verbose=False)
+        if self.verbose:
+            cit_log("Solving MELQCI distribution optimization problem.")
+
+        result = prob.solve(verbose=verbose)
 
         # Check if problem is infeasible. If so, raise an InfeasibleImproviserError.
         if "infeasible" in prob.status:
@@ -354,3 +437,7 @@ class MaxEntropyLabelledQuantitativeCI(_LabelledQuantitativeCIBase):
             for cost_iter, cost in enumerate(sorted(cost_func.costs)):
                 if cost_class_sizes[(label, cost)] == 0:
                     self.class_probabilities[label_iter*len(cost_func.costs) + cost_iter] = 0
+
+        if self.verbose:
+            wall_time = "{:.4f}".format(time.time() - start_time)
+            cit_log("MELQCI distribution calculation completed. Wallclock Runtime: " + wall_time)
