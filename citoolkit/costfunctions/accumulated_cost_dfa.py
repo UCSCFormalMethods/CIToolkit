@@ -7,9 +7,9 @@ from numbers import Rational
 from collections import Counter
 
 from citoolkit.specifications.dfa import Dfa, State
-from citoolkit.costfunctions.cost_func import CostFunc
+from citoolkit.costfunctions.cost_func import ExactCostFunc
 
-class AccumulatedCostDfa(CostFunc):
+class AccumulatedCostDfa(ExactCostFunc):
     """ Class encoding an Accumulated Cost Deterministic Finite Automata.
     This is represented with a Dfa that has each state mapped to a cost.
     A word has a cost if and only if it is accepted by the Dfa. The cost

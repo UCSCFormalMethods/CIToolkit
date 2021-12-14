@@ -37,7 +37,6 @@ def test_z3_formula_basic():
     spec.language_size()
 
     for i in range(1000):
-
         print(i)
         sample = spec.sample(seed=i)
         print(sample)

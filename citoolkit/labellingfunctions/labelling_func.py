@@ -5,9 +5,9 @@ from typing import Optional
 
 from abc import ABC, abstractmethod
 
-from citoolkit.specifications.spec import ExactSpec, UniverseSpec
+from citoolkit.specifications.spec import ExactSpec, ApproximateSpec, UniverseSpec
 
-class LabellingFunc(ABC):
+class ExactLabellingFunc(ABC):
     """ The LabelFunc class is a parent class to all labelling functions.
 
     :param alphabet: The alphabet this specification is defined over.
@@ -34,7 +34,26 @@ class LabellingFunc(ABC):
             accepts only words labelled with that label by this labelling function.
         """
 
-class TrivialLabellingFunc(LabellingFunc):
+class ApproximateLabelFunc(ABC):
+    """ The ApproximateCostFunc class is a parent class to all approximate cost functions.
+
+    :param alphabet: The alphabet this specification is defined over.
+    """
+    def __init__(self, alphabet: set[str]) -> None:
+        self.alphabet = frozenset(alphabet)
+
+    @abstractmethod
+    def realize(self, min_cost, max_cost) -> ApproximateSpec:
+        """ Realize this cost function into an ApproximateSpec object that accepts
+        only words with cost in the range [min_cost, max_cost].
+
+        :param min_cost: The minimum cost accepted by the realized cost function.
+        :param max_cost: The maximum cost accepted by the realized cost function.
+        :returns: An ApproximateSpec object that accepts only words with cost
+            in the range [min_cost, max_cost].
+        """
+
+class TrivialLabellingFunc(ExactLabellingFunc):
     """ The TrivialLabelFunc class assigns the label "TrivialLabel" to every string. """
     def __init__(self) -> None:
         super().__init__(alphabet=frozenset(), labels=frozenset(["TrivialLabel"]))

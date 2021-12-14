@@ -95,7 +95,7 @@ class ApproximateSpec(Spec):
     approximate language size counting and sampling.
     """
     @abstractmethod
-    def language_size(self, tolerance, confidence, min_length: int = None, max_length: int = None) -> int:
+    def language_size(self, tolerance, confidence, seed=1, min_length: int = None, max_length: int = None) -> int:
         """ Approximately computes the number of strings accepted by this specification.
             With probability 1 - confidence, the following holds true,
             true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
@@ -108,7 +108,7 @@ class ApproximateSpec(Spec):
         """
 
     @abstractmethod
-    def sample(self, tolerance, min_length: int = None, max_length: int = None) -> Any:
+    def sample(self, tolerance, seed=1, min_length: int = None, max_length: int = None) -> Any:
         """ Generate a word approximately uniformly at random from this specification.
             Let true_prob be 1/true_count and returned_prob be the probability of sampling
             any particular solution. With probability 1 - confidence, the following holds true,

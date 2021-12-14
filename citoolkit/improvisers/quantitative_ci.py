@@ -8,7 +8,7 @@ from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeC
 from citoolkit.improvisers.improviser import InfeasibleImproviserError, InfeasibleRandomnessError, \
                                              InfeasibleLabelRandomnessError, InfeasibleWordRandomnessError
 from citoolkit.specifications.spec import ExactSpec
-from citoolkit.costfunctions.cost_func import CostFunc
+from citoolkit.costfunctions.cost_func import ExactCostFunc
 from citoolkit.labellingfunctions.labelling_func import TrivialLabellingFunc
 from citoolkit.util.logging import cit_log
 
@@ -25,15 +25,15 @@ class QuantitativeCI(LabelledQuantitativeCI):
         probability with which we can generate a word.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-    def __init__(self, hard_constraint: ExactSpec, cost_func: CostFunc, length_bounds: tuple[int, int], \
+    def __init__(self, hard_constraint: ExactSpec, cost_func: ExactCostFunc, length_bounds: tuple[int, int], \
                  cost_bound: float, prob_bounds: tuple[float, float],\
                  num_threads:int =1, verbose:bool =False) -> None:
         # Checks that parameters are well formed
         if not isinstance(hard_constraint, ExactSpec):
             raise ValueError("The hard_constraint parameter must be a member of the ExactSpec class.")
 
-        if not isinstance(cost_func, CostFunc):
-            raise ValueError("The cost_func parameter must be a member of the CostFunc class.")
+        if not isinstance(cost_func, ExactCostFunc):
+            raise ValueError("The cost_func parameter must be a member of the ExactCostFunc class.")
 
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")

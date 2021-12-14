@@ -7,7 +7,7 @@ from __future__ import annotations
 from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeCI, MaxEntropyLabelledQuantitativeCI
 from citoolkit.improvisers.improviser import InfeasibleCostError, InfeasibleSoftConstraintError
 from citoolkit.specifications.spec import ExactSpec
-from citoolkit.labellingfunctions.labelling_func import LabellingFunc
+from citoolkit.labellingfunctions.labelling_func import ExactLabellingFunc
 from citoolkit.costfunctions.cost_func import SoftConstraintCostFunc
 from citoolkit.util.logging import cit_log
 
@@ -30,7 +30,7 @@ class LabelledCI(LabelledQuantitativeCI):
         with label.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-    def __init__(self, hard_constraint: ExactSpec, soft_constraint: ExactSpec, label_func: LabellingFunc, \
+    def __init__(self, hard_constraint: ExactSpec, soft_constraint: ExactSpec, label_func: ExactLabellingFunc, \
                  length_bounds: tuple[int, int], epsilon: float, \
                  label_prob_bounds: tuple[float, float], word_prob_bounds: dict[str, tuple[float, float]],
                  num_threads: int =1,verbose: bool =False) -> None:
@@ -41,8 +41,8 @@ class LabelledCI(LabelledQuantitativeCI):
         if not isinstance(soft_constraint, ExactSpec):
             raise ValueError("The soft_constraint parameter must be a member of the ExactSpec class.")
 
-        if not isinstance(label_func, LabellingFunc):
-            raise ValueError("The label_func parameter must be a member of the LabellingFunc class.")
+        if not isinstance(label_func, ExactLabellingFunc):
+            raise ValueError("The label_func parameter must be a member of the ExactLabellingFunc class.")
 
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")
@@ -92,7 +92,7 @@ class MaxEntropyLabelledCI(MaxEntropyLabelledQuantitativeCI):
         marginal probability with which we can generate a word with a particular label.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-    def __init__(self, hard_constraint: ExactSpec, soft_constraint: ExactSpec, label_func: LabellingFunc, \
+    def __init__(self, hard_constraint: ExactSpec, soft_constraint: ExactSpec, label_func: ExactLabellingFunc, \
                  length_bounds: tuple[int, int], epsilon: float, \
                  label_prob_bounds: tuple[float, float], num_threads: int =1, verbose:bool =False) -> None:
         # Checks that parameters are well formed
@@ -102,8 +102,8 @@ class MaxEntropyLabelledCI(MaxEntropyLabelledQuantitativeCI):
         if not isinstance(soft_constraint, ExactSpec):
             raise ValueError("The soft_constraint parameter must be a member of the ExactSpec class.")
 
-        if not isinstance(label_func, LabellingFunc):
-            raise ValueError("The label_func parameter must be a member of the LabellingFunc class.")
+        if not isinstance(label_func, ExactLabellingFunc):
+            raise ValueError("The label_func parameter must be a member of the ExactLabellingFunc class.")
 
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")

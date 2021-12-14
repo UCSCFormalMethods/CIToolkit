@@ -4,9 +4,9 @@ from __future__ import annotations
 from typing import Optional
 
 from citoolkit.specifications.dfa import Dfa, State
-from citoolkit.labellingfunctions.labelling_func import LabellingFunc
+from citoolkit.labellingfunctions.labelling_func import ExactLabellingFunc
 
-class LabellingDfa(LabellingFunc):
+class LabellingDfa(ExactLabellingFunc):
     """ Class encoding a Labelling Deterministic Finite Automata.
     This is represented with a Dfa that has each accepting state
     mapped to a label. A word is labelled if it is accepted by the

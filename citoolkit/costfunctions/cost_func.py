@@ -7,9 +7,9 @@ from numbers import Rational
 
 from abc import ABC, abstractmethod
 
-from citoolkit.specifications.spec import ExactSpec
+from citoolkit.specifications.spec import ExactSpec, ApproximateSpec
 
-class CostFunc(ABC):
+class ExactCostFunc(ABC):
     """ The CostFunc class is a parent class to all cost functions.
 
     :param alphabet: The alphabet this specification is defined over.
@@ -43,7 +43,26 @@ class CostFunc(ABC):
             accepts only words assigned that cost by this cost function.
         """
 
-class SoftConstraintCostFunc(CostFunc):
+class ApproximateCostFunc(ABC):
+    """ The ApproximateCostFunc class is a parent class to all approximate cost functions.
+
+    :param alphabet: The alphabet this specification is defined over.
+    """
+    def __init__(self, alphabet: set[str]) -> None:
+        self.alphabet = frozenset(alphabet)
+
+    @abstractmethod
+    def realize(self, min_cost, max_cost) -> ApproximateSpec:
+        """ Realize this cost function into an ApproximateSpec object that accepts
+        only words with cost in the range [min_cost, max_cost].
+
+        :param min_cost: The minimum cost accepted by the realized cost function.
+        :param max_cost: The maximum cost accepted by the realized cost function.
+        :returns: An ApproximateSpec object that accepts only words with cost
+            in the range [min_cost, max_cost].
+        """
+
+class SoftConstraintCostFunc(ExactCostFunc):
     """ The SoftConstraintCostFunc class takes in a soft constraint ExactSpec and
     produces an equivalent cost function for use in Quantitative CI. The new
     cost function assigns all words that are accepted by that ExactSpec cost 1.

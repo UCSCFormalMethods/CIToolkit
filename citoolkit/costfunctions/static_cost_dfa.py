@@ -6,9 +6,9 @@ from typing import Optional
 from numbers import Rational
 
 from citoolkit.specifications.dfa import Dfa, State
-from citoolkit.costfunctions.cost_func import CostFunc
+from citoolkit.costfunctions.cost_func import ExactCostFunc
 
-class StaticCostDfa(CostFunc):
+class StaticCostDfa(ExactCostFunc):
     """ Class encoding a Static Cost Deterministic Finite Automata.
     This is represented with a Dfa that has each accepting state
     mapped to a cost. A word has a cost if it is accepted by the
