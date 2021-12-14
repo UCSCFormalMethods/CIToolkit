@@ -45,3 +45,6 @@ def test_z3_formula_basic():
         assert (sample["y"] > 64) == sample["y_big"]
         assert (sample["z"] > 64) == sample["z_big"]
         assert (sample["x"] + sample["y"] + sample["z"])%256 == 200
+
+if __name__ == '__main__':
+    test_z3_formula_basic()
