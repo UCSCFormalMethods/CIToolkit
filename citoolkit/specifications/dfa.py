@@ -5,9 +5,9 @@ from typing import Union
 
 import random
 
-from citoolkit.specifications.spec import Spec
+from citoolkit.specifications.spec import ExactSpec
 
-class Dfa(Spec):
+class Dfa(ExactSpec):
     """ The Dfa class encodes a Deterministic Finite Automata specification.
 
     Note: All state variables in all parameters can be State objects or strings.

@@ -8,7 +8,7 @@ from citoolkit.improvisers.labelled_quantitative_ci import LabelledQuantitativeC
 from citoolkit.improvisers.improviser import InfeasibleImproviserError, InfeasibleRandomnessError,\
                                              InfeasibleCostError, InfeasibleSoftConstraintError,\
                                              InfeasibleLabelRandomnessError, InfeasibleWordRandomnessError
-from citoolkit.specifications.spec import Spec
+from citoolkit.specifications.spec import ExactSpec
 from citoolkit.costfunctions.cost_func import SoftConstraintCostFunc
 from citoolkit.labellingfunctions.labelling_func import TrivialLabellingFunc
 from citoolkit.util.logging import cit_log
@@ -27,14 +27,14 @@ class ClassicCI(LabelledQuantitativeCI):
     :raises ValueError: If passed parameters are not of the correct type.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-    def __init__(self, hard_constraint: Spec, soft_constraint: Spec, length_bounds: tuple[int, int], \
+    def __init__(self, hard_constraint: ExactSpec, soft_constraint: ExactSpec, length_bounds: tuple[int, int], \
                  epsilon: float, prob_bounds: tuple[float, float], num_threads: int =1, verbose: bool =False) -> None:
         # Checks that parameters are well formed
-        if not isinstance(hard_constraint, Spec):
-            raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
+        if not isinstance(hard_constraint, ExactSpec):
+            raise ValueError("The hard_constraint parameter must be a member of the ExactSpec class.")
 
-        if not isinstance(soft_constraint, Spec):
-            raise ValueError("The soft_constraint parameter must be a member of the Spec class.")
+        if not isinstance(soft_constraint, ExactSpec):
+            raise ValueError("The soft_constraint parameter must be a member of the ExactSpec class.")
 
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")

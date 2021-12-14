@@ -5,7 +5,7 @@ from typing import Optional
 
 from abc import ABC, abstractmethod
 
-from citoolkit.specifications.spec import Spec, UniverseSpec
+from citoolkit.specifications.spec import ExactSpec, UniverseSpec
 
 class LabellingFunc(ABC):
     """ The LabelFunc class is a parent class to all labelling functions.
@@ -26,11 +26,11 @@ class LabellingFunc(ABC):
         """
 
     @abstractmethod
-    def decompose(self) -> dict[str, Spec]:
-        """ Decompose this labelling function into a Spec object for
+    def decompose(self) -> dict[str, ExactSpec]:
+        """ Decompose this labelling function into an ExactSpec object for
         each label that accepts only on words with that label.
 
-        :returns: A dictionary mapping each label to a Spec object that
+        :returns: A dictionary mapping each label to an ExactSpec object that
             accepts only words labelled with that label by this labelling function.
         """
 
@@ -48,11 +48,11 @@ class TrivialLabellingFunc(LabellingFunc):
         """
         return "TrivialLabel"
 
-    def decompose(self) -> dict[str, Spec]:
-        """ Decompose this labelling function into a Spec object for
+    def decompose(self) -> dict[str, ExactSpec]:
+        """ Decompose this labelling function into an ExactSpec object for
         each label that accepts only on words with that label.
 
-        :returns: A dictionary mapping each label to a Spec object that
+        :returns: A dictionary mapping each label to an ExactSpec object that
             accepts only words labelled with that label by this labelling function.
         """
         return {"TrivialLabel": UniverseSpec()}

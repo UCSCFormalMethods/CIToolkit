@@ -16,7 +16,7 @@ from multiprocess import Pool
 
 from citoolkit.improvisers.improviser import Improviser, InfeasibleImproviserError, InfeasibleCostError,\
                                              InfeasibleLabelRandomnessError, InfeasibleWordRandomnessError
-from citoolkit.specifications.spec import Spec
+from citoolkit.specifications.spec import ExactSpec
 from citoolkit.costfunctions.cost_func import CostFunc
 from citoolkit.labellingfunctions.labelling_func import LabellingFunc
 from citoolkit.util.logging import cit_log
@@ -43,9 +43,9 @@ class _LabelledQuantitativeCIBase(Improviser):
     :param length_bounds: A tuple containing lower and upper bounds on the length
         of a generated word.
     """
-    def __init__(self, hard_constraint: Spec, cost_func: CostFunc, \
+    def __init__(self, hard_constraint: ExactSpec, cost_func: CostFunc, \
                  label_func: LabellingFunc, length_bounds: tuple[int, int],
-                 direct_specs: Optional[dict[tuple[str, Rational], Spec]],\
+                 direct_specs: Optional[dict[tuple[str, Rational], ExactSpec]],\
                  num_threads: int, verbose: bool) -> None:
         # Set verbosity level and num_threads.
         self.verbose = verbose
@@ -153,14 +153,14 @@ class LabelledQuantitativeCI(_LabelledQuantitativeCIBase):
         with label.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-    def __init__(self, hard_constraint: Spec, cost_func: CostFunc, label_func: LabellingFunc, \
+    def __init__(self, hard_constraint: ExactSpec, cost_func: CostFunc, label_func: LabellingFunc, \
                  length_bounds: tuple[int, int], cost_bound: float, \
                  label_prob_bounds: tuple[float, float], word_prob_bounds: dict[str, tuple[float, float]],
-                 direct_specs: Optional[dict[tuple[str, Rational], Spec]]=None,\
+                 direct_specs: Optional[dict[tuple[str, Rational], ExactSpec]]=None,\
                  num_threads: int =1, verbose: bool =False) -> None:
         # Checks that parameters are well formed.
-        if not isinstance(hard_constraint, Spec):
-            raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
+        if not isinstance(hard_constraint, ExactSpec):
+            raise ValueError("The hard_constraint parameter must be a member of the ExactSpec class.")
 
         if not isinstance(cost_func, CostFunc):
             raise ValueError("The cost_func parameter must be a member of the CostFunc class.")
@@ -330,13 +330,13 @@ class MaxEntropyLabelledQuantitativeCI(_LabelledQuantitativeCIBase):
         marginal probability with which we can generate a word with a particular label.
     :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
     """
-    def __init__(self, hard_constraint: Spec, cost_func: CostFunc, label_func: LabellingFunc, \
+    def __init__(self, hard_constraint: ExactSpec, cost_func: CostFunc, label_func: LabellingFunc, \
                  length_bounds: tuple[int, int], cost_bound: float, label_prob_bounds: tuple[float, float],
-                 direct_specs: Optional[dict[tuple[str, Rational], Spec]]=None,\
+                 direct_specs: Optional[dict[tuple[str, Rational], ExactSpec]]=None,\
                  num_threads: int =1, verbose: bool =False) -> None:
         # Checks that parameters are well formed.
-        if not isinstance(hard_constraint, Spec):
-            raise ValueError("The hard_constraint parameter must be a member of the Spec class.")
+        if not isinstance(hard_constraint, ExactSpec):
+            raise ValueError("The hard_constraint parameter must be a member of the ExactSpec class.")
 
         if not isinstance(cost_func, CostFunc):
             raise ValueError("The cost_func parameter must be a member of the CostFunc class.")

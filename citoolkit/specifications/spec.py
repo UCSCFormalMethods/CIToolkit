@@ -3,13 +3,13 @@ and the AbstractSpec class, which allows one to perform the union,
 intersection, and negation operations on specifications."""
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any
 
 from enum import Enum
 from abc import ABC, abstractmethod
 
 class Spec(ABC):
-    """ The Spec class is a parent class to all specifications.
+    """ The Spec class is a parent class to all exact and approximate specifications.
 
     :param alphabet: The alphabet this specification is defined over. An
         empty alphabet indicates a special specification that is well defined
@@ -25,24 +25,6 @@ class Spec(ABC):
         :param word: The word which is checked for membership in the lanugage
             of this specification.
         :returns: True if this Spec accepts word and false otherwise.
-        """
-
-    @abstractmethod
-    def language_size(self, min_length: int = None, max_length: int = None) -> int:
-        """ Computes the number of strings accepted by this specification.
-
-        :param min_length: An inclusive lower bound on word size to consider.
-        :param max_length: An inclusive upper bound on word size to consider.
-        :returns: The size of the language accepted by this Spec.
-        """
-
-    @abstractmethod
-    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
-        """ Generate a word uniformly at random from this specification.
-
-        :param min_length: An inclusive lower bound on word size to consider.
-        :param max_length: An inclusive upper bound on word size to consider.
-        :returns: A uniformly sampled word from the language of this Spec.
         """
 
     def __or__(self, other: Spec) -> AbstractSpec:
@@ -85,6 +67,59 @@ class Spec(ABC):
         complement_spec_2 = AbstractSpec(other, None, SpecOp.NEGATION)
 
         return AbstractSpec(self, complement_spec_2, SpecOp.INTERSECTION)
+
+class ExactSpec(Spec):
+    """ The ExactSpec class is the parent class to all classes that support
+    exact language size counting and sampling.
+    """
+    @abstractmethod
+    def language_size(self, min_length: int = None, max_length: int = None) -> int:
+        """ Computes the number of strings accepted by this specification.
+
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
+        :returns: The size of the language accepted by this Spec.
+        """
+
+    @abstractmethod
+    def sample(self, min_length: int = None, max_length: int = None) -> Any:
+        """ Generate a word uniformly at random from this specification.
+
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
+        :returns: A uniformly sampled word from the language of this Spec.
+        """
+
+class ApproximateSpec(Spec):
+    """ The ApproximateSpec class is the parent class to all classes that support
+    approximate language size counting and sampling.
+    """
+    @abstractmethod
+    def language_size(self, tolerance, confidence, min_length: int = None, max_length: int = None) -> int:
+        """ Approximately computes the number of strings accepted by this specification.
+            With probability 1 - confidence, the following holds true,
+            true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
+
+        :param tolerance: The tolerance of the count.
+        :param confidence: The confidence in the count.
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
+        :returns: The approximate size of the language accepted by this Spec.
+        """
+
+    @abstractmethod
+    def sample(self, tolerance, min_length: int = None, max_length: int = None) -> Any:
+        """ Generate a word approximately uniformly at random from this specification.
+            Let true_prob be 1/true_count and returned_prob be the probability of sampling
+            any particular solution. With probability 1 - confidence, the following holds true,
+            1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
+
+        :param tolerance: The tolerance of the count.
+        :param confidence: The confidence in the count.
+        :param min_length: An inclusive lower bound on word size to consider.
+        :param max_length: An inclusive upper bound on word size to consider.
+        :returns: An approximately uniformly sampled word from the language of this Spec.
+        """
 
 class SpecOp(Enum):
     """ An enum enconding the different operations that can be performed on specifications."""
@@ -198,7 +233,7 @@ class AbstractSpec(Spec):
                                   + spec_1_explicit.__class__.__name__ + "' and '" + spec_2_explicit.__class__.__name__ \
                                   + " with operation " + str(self.operation) + " is not supported.")
 
-    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
+    def sample(self, min_length: int = None, max_length: int = None) -> Any:
         """ Samples uniformly at random from the language of this specification.
         For an AbstractSpec, we first try to compute it's explicit form,
         in which case we can rely on the subclasses' sample method.
@@ -342,14 +377,6 @@ class UniverseSpec(Spec):
         """ Always returns True, as the UniverseSpec accepts all strings."""
         return True
 
-    def language_size(self, min_length: int = None, max_length: int = None) -> int:
-        """ Raises a NotImplementedError, as UniverseSpec does not have a bounded language size."""
-        raise NotImplementedError("The UniverseSpec does not have a bounded language_size.")
-
-    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
-        """ Raises a NotImplementedError, as UniverseSpec does not have a well defined way to sample uniformly."""
-        raise NotImplementedError("The UniverseSpec does not support well defined uniform sampling.")
-
     def __eq__(self, other: object) -> bool:
         """ Checks equality with another object.
 
@@ -374,14 +401,6 @@ class NullSpec(Spec):
     def accepts(self, word) -> bool:
         """ Always returns False, as the NullSpec accepts all strings."""
         return False
-
-    def language_size(self, min_length: int = None, max_length: int = None) -> int:
-        """ Returns 0, as the NullSpec accepts no strings."""
-        return 0
-
-    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
-        """ Raises a NotImplementedError, as there are no strings to sample from."""
-        raise NotImplementedError("The language of NullSpec is empty, and therefore does not support uniform sampling.")
 
     def __eq__(self, other: object) -> bool:
         """ Checks equality with another object.

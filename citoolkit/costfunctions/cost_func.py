@@ -7,7 +7,7 @@ from numbers import Rational
 
 from abc import ABC, abstractmethod
 
-from citoolkit.specifications.spec import Spec
+from citoolkit.specifications.spec import ExactSpec
 
 class CostFunc(ABC):
     """ The CostFunc class is a parent class to all cost functions.
@@ -35,25 +35,25 @@ class CostFunc(ABC):
         """
 
     @abstractmethod
-    def decompose(self) -> dict[Rational, Spec]:
-        """ Decompose this cost function into a Spec object for
+    def decompose(self) -> dict[Rational, ExactSpec]:
+        """ Decompose this cost function into an ExactSpec object for
         each cost that accepts only on words with that cost.
 
-        :returns: A dictionary mapping each cost to a Spec object that
+        :returns: A dictionary mapping each cost to an ExactSpec object that
             accepts only words assigned that cost by this cost function.
         """
 
 class SoftConstraintCostFunc(CostFunc):
-    """ The SoftConstraintCostFunc class takes in a soft constraint Spec and
+    """ The SoftConstraintCostFunc class takes in a soft constraint ExactSpec and
     produces an equivalent cost function for use in Quantitative CI. The new
-    cost function assigns all words that are accepted by that Spec cost 1.
-    All other words are assigned cost 0 (Note that the Spec must support the
+    cost function assigns all words that are accepted by that ExactSpec cost 1.
+    All other words are assigned cost 0 (Note that the ExactSpec must support the
     negation operation).
 
     :param soft_constraint: The soft constraint for which an equivalent cost
         function will be constructed.
     """
-    def __init__(self, soft_constraint: Spec) -> None:
+    def __init__(self, soft_constraint: ExactSpec) -> None:
         self.soft_constraint = soft_constraint
 
         super().__init__(alphabet=frozenset(), costs=frozenset([0,1]))
@@ -70,11 +70,11 @@ class SoftConstraintCostFunc(CostFunc):
         else:
             return 1
 
-    def decompose(self) -> dict[Rational, Spec]:
-        """ Decompose this cost function into a Spec object for
+    def decompose(self) -> dict[Rational, ExactSpec]:
+        """ Decompose this cost function into a ExactSpec object for
         each cost that accepts only on words with that cost.
 
-        :returns: A dictionary mapping each cost to a Spec object that
+        :returns: A dictionary mapping each cost to a ExactSpec object that
             accepts only words assigned that cost by this cost function.
         """
         decomposed_cost_func = {}
