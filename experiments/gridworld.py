@@ -173,7 +173,7 @@ def make_dfa_wrapper(input_data):
     max_y = len(gridworld) - 1
     max_x = len(gridworld[0]) - 1
 
-    max_cost = get_gridworld_max_cost(gridworld, gridworld_costs, length_bounds)
+    max_cost = class_key[1]
 
     start_loc = np.where(np.array(gridworld) == 2)
     end_loc = np.where(np.array(gridworld) == 3)
@@ -218,25 +218,16 @@ def make_dfa_wrapper(input_data):
     # l_# in (1,2,3) indicates that the robot has charged at charging point #.
     state_map = dict()
 
-    # for y in range(len(gridworld)):
-    #     for x in range(len(gridworld[0])):
-    #         for cost in range(max_cost+1):
-    #             for hc_objectives in itertools.product([0,1], repeat=4):
-    #                 for label_num in range(4):
-    #                     new_state = "State_(" + str(x) + "," + str(y) + ")_" + str(cost) + "_" + str(hc_objectives) + "_" + str(label_num)
-    #                     states.add(new_state)
-    #                     state_map[(x, y, cost, hc_objectives, label_num)] = new_state
+    for y in range(len(gridworld)):
+        for x in range(len(gridworld[0])):
+            for cost in range(max_cost+1):
+                for hc_objectives in itertools.product([0,1], repeat=4):
+                    for label_num in range(4):
+                        new_state = "State_(" + str(x) + "," + str(y) + ")_" + str(cost) + "_" + str(hc_objectives) + "_" + str(label_num)
+                        states.add(new_state)
+                        state_map[(x, y, cost, hc_objectives, label_num)] = new_state
 
-    def get_state(key):
-        if key in state_map:
-            return state_map[key]
-        else:
-            x, y, cost, hc_objectives, label_num = key
-            new_state = "State_(" + str(x) + "," + str(y) + ")_" + str(cost) + "_" + str(hc_objectives) + "_" + str(label_num)
-            state_map[key] = new_state
-            return state_map[key]
-
-    start_state = get_state((start_loc[0], start_loc[1], 0, (0,0,0,0), 0))
+    start_state = state_map[(start_loc[0], start_loc[1], 0, (0,0,0,0), 0)]
 
     ## TRANSITION MAP CREATION ##
 
@@ -255,7 +246,7 @@ def make_dfa_wrapper(input_data):
                         for symbol in ["North", "East", "South", "West"]:
                             hc_1, hc_2, hc_3, hc_4 = hc_objectives
 
-                            origin_state = get_state((x, y, cost, hc_objectives, label_num))
+                            origin_state = state_map[(x, y, cost, hc_objectives, label_num)]
 
                             if symbol == "North":
                                 dest_x = x
@@ -304,7 +295,7 @@ def make_dfa_wrapper(input_data):
                                         # Not at a hard constraint, hc vals stay the same
                                         new_hc = (hc_1, hc_2, hc_3, hc_4)
 
-                                    destination_state = get_state((dest_x, dest_y, new_cost, new_hc, label_num))
+                                    destination_state = state_map[(dest_x, dest_y, new_cost, new_hc, label_num)]
 
                             transitions[(origin_state, symbol)] = destination_state
 
@@ -314,16 +305,16 @@ def make_dfa_wrapper(input_data):
             for cost in range(max_cost+1):
                 for hc_objectives in itertools.product([0,1], repeat=4):
                     for label_num in range(4):
-                        origin_state = get_state((x, y, cost, hc_objectives, label_num))
+                        origin_state = state_map[(x, y, cost, hc_objectives, label_num)]
 
                         if label_num == 0:
                             # Check if at charging point
                             if (x,y) == lc_1_loc:
-                                destination_state = get_state((x, y, cost, hc_objectives, 1))
+                                destination_state = state_map[(x, y, cost, hc_objectives, 1)]
                             elif (x,y) == lc_2_loc:
-                                destination_state = get_state((x, y, cost, hc_objectives, 2))
+                                destination_state = state_map[(x, y, cost, hc_objectives, 2)]
                             elif (x,y) == lc_3_loc:
-                                destination_state = get_state((x, y, cost, hc_objectives, 3))
+                                destination_state = state_map[(x, y, cost, hc_objectives, 3)]
                             else:
                                 # Can't charge if not at a charging point.
                                 destination_state = "Sink"
