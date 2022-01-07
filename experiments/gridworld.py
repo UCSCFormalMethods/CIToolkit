@@ -322,11 +322,16 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
     print("Total States:", len(states))
 
     class_keys = [(label_num, cost) for label_num in [1,2,3] for cost in range(max_cost+1)]
-    data = alphabet, states, start_state, transitions, state_map, end_loc
-    input_data = [(key, data) for key in class_keys]
+
+    dfa_map = {}
+
+    for key in class_keys:
+        accepting_states = {state_map[(end_loc[0], end_loc[1], cost, (1,1,1,1), label_num)]}
+        dfa_map[key] = Dfa(alphabet, states, accepting_states, start_state, transitions)
+        print("Made", key)
 
     with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
-        pool_output = p.map(make_dfa_wrapper, input_data)
+        pool_output = p.map(process_dfa_wrapper, dfa_map.items())
 
         p.close()
         p.join()
@@ -335,18 +340,13 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
 
     return direct_dfas
 
-def make_dfa_wrapper(input_data):
-    class_key, data = input_data
-    label_num, cost = class_key
-    alphabet, states, start_state, transitions, state_map, end_loc = input_data
+def process_dfa_wrapper(input_data):
+    key, dfa = input_data
 
-    accepting_states = {state_map[(end_loc[0], end_loc[1], cost, (1,1,1,1), label_num)]}
+    dfa.minimize()
+    print("Minimized", key)
 
-    new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
-
-    print(("Label" + str(label_num), cost), "States:", len(new_dfa.states))
-
-    return (("Label" + str(label_num), cost), new_dfa)
+    return(key, dfa)
 
 if __name__ == '__main__':
     direct_dfas = gridworld_to_dfa(SMALL_GRIDWORLD, SMALL_GRIDWORLD_COSTS, SMALL_LENGTH_BOUNDS)
