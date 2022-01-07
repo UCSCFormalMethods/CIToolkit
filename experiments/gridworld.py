@@ -318,11 +318,11 @@ def make_dfa_wrapper(input_data):
 
                         if label_num == 0:
                             # Check if at charging point
-                            if (dest_coords) == lc_1_loc:
+                            if (x,y) == lc_1_loc:
                                 destination_state = get_state((x, y, cost, hc_objectives, 1))
-                            elif (dest_coords) == lc_2_loc:
+                            elif (x,y) == lc_2_loc:
                                 destination_state = get_state((x, y, cost, hc_objectives, 2))
-                            elif (dest_coords) == lc_3_loc:
+                            elif (x,y) == lc_3_loc:
                                 destination_state = get_state((x, y, cost, hc_objectives, 3))
                             else:
                                 # Can't charge if not at a charging point.
