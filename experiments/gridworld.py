@@ -10,7 +10,7 @@ from matplotlib import collections  as mc
 from matplotlib.textpath import TextPath
 from matplotlib.patches import PathPatch
 
-import multiprocess
+import multiprocessing
 
 from citoolkit.specifications.dfa import Dfa
 
@@ -317,31 +317,33 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
                         transitions[(origin_state, "Charge")] = destination_state
 
     ## DFA CREATION AND MINIMIZATION ##
-    print(list(state_map.values())[0])
     states = states | set(state_map.values())
 
     print("Total States:", len(states))
 
     class_keys = [(label_num, cost) for label_num in [1,2,3] for cost in range(max_cost+1)]
+    data = alphabet, states, start_state, transitions, state_map, end_loc
+    input_data = [(key, data) for key in class_keys]
 
-    def make_dfa_wrapper(class_key):
-        label_num, cost = class_key
-
-        accepting_states = {state_map[(end_loc[0], end_loc[1], cost, (1,1,1,1), label_num)]}
-
-        new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
-
-        print(("Label" + str(label_num), cost), "States:", len(new_dfa.states))
-
-        return (("Label" + str(label_num), cost), new_dfa)
-
-
-    with multiprocess.Pool(60) as p:
-        pool_output = p.map(make_dfa_wrapper, class_keys, chunksize=1)
+    with multiprocessing.Pool(60) as p:
+        pool_output = p.map(make_dfa_wrapper, input_data)
 
     direct_dfas = {class_key:dfa for class_key, dfa in pool_output}
 
     return direct_dfas
+
+def make_dfa_wrapper(input_data):
+    class_key, data = input_data
+    label_num, cost = class_key
+    alphabet, states, start_state, transitions, state_map, end_loc = input_data
+
+    accepting_states = {state_map[(end_loc[0], end_loc[1], cost, (1,1,1,1), label_num)]}
+
+    new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
+
+    print(("Label" + str(label_num), cost), "States:", len(new_dfa.states))
+
+    return (("Label" + str(label_num), cost), new_dfa)
 
 if __name__ == '__main__':
     direct_dfas = gridworld_to_dfa(SMALL_GRIDWORLD, SMALL_GRIDWORLD_COSTS, SMALL_LENGTH_BOUNDS)
