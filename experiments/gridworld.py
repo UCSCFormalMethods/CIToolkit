@@ -168,7 +168,7 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
 def make_dfa_wrapper(input_data):
     class_key, gridworld, gridworld_costs, length_bounds = input_data
 
-    alphabet = ["North", "East", "South", "West", "Charge"]
+    alphabet = ["North", "East", "South", "West"]
 
     max_y = len(gridworld) - 1
     max_x = len(gridworld[0]) - 1
@@ -309,29 +309,29 @@ def make_dfa_wrapper(input_data):
                             transitions[(origin_state, symbol)] = destination_state
 
     # Add Charge Transitions
-    for y in range(len(gridworld)):
-        for x in range(len(gridworld[0])):
-            for cost in range(max_cost+1):
-                for hc_objectives in itertools.product([0,1], repeat=4):
-                    for label_num in range(4):
-                        origin_state = get_state((x, y, cost, hc_objectives, label_num))
+    # for y in range(len(gridworld)):
+    #     for x in range(len(gridworld[0])):
+    #         for cost in range(max_cost+1):
+    #             for hc_objectives in itertools.product([0,1], repeat=4):
+    #                 for label_num in range(4):
+    #                     origin_state = get_state((x, y, cost, hc_objectives, label_num))
 
-                        if label_num != 0:
-                            # Check if already charged
-                            destination_state = "Sink"
-                        else:
-                            # Check if at charging point
-                            if (dest_coords) == lc_1_loc:
-                                destination_state = get_state((x, y, cost, hc_objectives, 1))
-                            elif (dest_coords) == lc_2_loc:
-                                destination_state = get_state((x, y, cost, hc_objectives, 2))
-                            elif (dest_coords) == lc_3_loc:
-                                destination_state = get_state((x, y, cost, hc_objectives, 3))
-                            else:
-                                # Can't charge if not at a charging point.
-                                destination_state = "Sink"
+    #                     if label_num != 0:
+    #                         # Check if already charged
+    #                         destination_state = "Sink"
+    #                     else:
+    #                         # Check if at charging point
+    #                         if (dest_coords) == lc_1_loc:
+    #                             destination_state = get_state((x, y, cost, hc_objectives, 1))
+    #                         elif (dest_coords) == lc_2_loc:
+    #                             destination_state = get_state((x, y, cost, hc_objectives, 2))
+    #                         elif (dest_coords) == lc_3_loc:
+    #                             destination_state = get_state((x, y, cost, hc_objectives, 3))
+    #                         else:
+    #                             # Can't charge if not at a charging point.
+    #                             destination_state = "Sink"
 
-                        transitions[(origin_state, "Charge")] = destination_state
+    #                     transitions[(origin_state, "Charge")] = destination_state
 
     ## DFA CREATION AND MINIMIZATION ##
     states = states | set(state_map.values())
