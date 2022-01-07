@@ -325,8 +325,11 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
     data = alphabet, states, start_state, transitions, state_map, end_loc
     input_data = [(key, data) for key in class_keys]
 
-    with multiprocessing.Pool(60) as p:
+    with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
         pool_output = p.map(make_dfa_wrapper, input_data)
+
+        p.close()
+        p.join()
 
     direct_dfas = {class_key:dfa for class_key, dfa in pool_output}
 
