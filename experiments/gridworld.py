@@ -337,7 +337,7 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
 
 
     with multiprocess.Pool(60) as p:
-        pool_output = p.map(make_dfa_wrapper, class_keys)
+        pool_output = p.map(make_dfa_wrapper, class_keys, chunksize=1)
 
     direct_dfas = {class_key:dfa for class_key, dfa in pool_output}
 
