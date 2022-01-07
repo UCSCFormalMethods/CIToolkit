@@ -5,7 +5,7 @@ from typing import Optional
 
 from abc import ABC, abstractmethod
 
-from citoolkit.specifications.spec import ExactSpec, ApproximateSpec, UniverseSpec
+from citoolkit.specifications.spec import ExactSpec, ApproxSpec, UniverseSpec
 
 class ExactLabellingFunc(ABC):
     """ The LabelFunc class is a parent class to all labelling functions.
@@ -34,16 +34,17 @@ class ExactLabellingFunc(ABC):
             accepts only words labelled with that label by this labelling function.
         """
 
-class ApproximateLabelFunc(ABC):
+class ApproxLabelFunc(ABC):
     """ The ApproximateCostFunc class is a parent class to all approximate cost functions.
 
     :param alphabet: The alphabet this specification is defined over.
     """
-    def __init__(self, alphabet: set[str]) -> None:
+    def __init__(self, alphabet: set[str], labels) -> None:
         self.alphabet = frozenset(alphabet)
+        self.labels = labels
 
     @abstractmethod
-    def realize(self, min_cost, max_cost) -> ApproximateSpec:
+    def realize(self, label) -> ApproxSpec:
         """ Realize this cost function into an ApproximateSpec object that accepts
         only words with cost in the range [min_cost, max_cost].
 

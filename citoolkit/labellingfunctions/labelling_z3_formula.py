@@ -1,31 +1,33 @@
 import z3
 
-from citoolkit.specifications.spec import ApproximateSpec
 from citoolkit.specifications.z3_formula import Z3Formula
-from citoolkit.labellingfunctions.labelling_func import ApproximateLabelFunc
+from citoolkit.labellingfunctions.labelling_func import ApproxLabelFunc
 
-class Z3LabelFormula(ApproximateLabelFunc):
+class Z3LabelFormula(ApproxLabelFunc):
     """ A Z3 Formula encoding cost.
 
-    :param var_name: The name for a Z3 BitVec variable encoding cost.
-    :param num_bits: The number of bits in the Z3 BitVec variable encoding cost.
+    :param label_map: A mapping from label names to a unique integer expressable
+        by a bitvector of size num_bits.
+    :param var_name: The name for a Z3 BitVec variable encoding the label.
+    :param num_bits: The number of bits in the Z3 BitVec variable encoding label.
     """
-    def __init__(self, var_name, num_bits) -> None:
+    def __init__(self, label_map, var_name, num_bits) -> None:
+        self.label_map = label_map
         self.var_name = var_name
         self.num_bits = num_bits
 
-        super().__init__(None)
+        labels = frozenset(self.label_map.values())
 
-    def realize(self, min_cost, max_cost) -> ApproximateSpec:
+        super().__init__(None, labels)
+
+    def realize(self, label) -> Z3Formula:
         """ Realize this cost function into a Z3Formula object that accepts
-        only words with cost in the range [min_cost, max_cost].
+        only words with the label .
 
-        :param min_cost: The minimum cost accepted by the realized cost function.
-        :param max_cost: The maximum cost accepted by the realized cost function.
+        :param label: The name of the label to be required.
         :returns: An ApproximateSpec object that accepts only words with cost
             in the range [min_cost, max_cost].
         """
-        min_bound = z3.UGT(z3.BitVec(self.var_name, self.num_bits), min_cost)
-        max_bound = z3.ULT(z3.BitVec(self.var_name, self.num_bits), max_cost)
+        label_num = self.label_map[label]
 
-        return z3.And(min_bound, max_bound)
+        return z3.BitVec(self.var_name, self.num_bits) == label_num

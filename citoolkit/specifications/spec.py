@@ -90,7 +90,7 @@ class ExactSpec(Spec):
         :returns: A uniformly sampled word from the language of this Spec.
         """
 
-class ApproximateSpec(Spec):
+class ApproxSpec(Spec):
     """ The ApproximateSpec class is the parent class to all classes that support
     approximate language size counting and sampling.
     """
@@ -287,6 +287,7 @@ class AbstractSpec(Spec):
 
         # Import explicit specification classes. (Done here to avoid circular import)
         from citoolkit.specifications.dfa import Dfa
+        from citoolkit.specifications.z3_formula import Z3Formula
 
         # Ensures that children are in explicit form and assign them to shorthand variables.
         if isinstance(self.spec_1, AbstractSpec):
@@ -357,6 +358,19 @@ class AbstractSpec(Spec):
                                       "' and '" + spec_2_explicit.__class__.__name__ + "' with operation '" + \
                                       str(self.operation) + "' is not supported.")
 
+        elif isinstance(spec_1_explicit, Z3Formula) and (spec_2_explicit is None or isinstance(spec_2_explicit, Z3Formula)):
+            ## All specifications are Z3 Forumlas.
+
+            if self.operation == SpecOp.UNION:
+                self.explicit_form = Dfa.union_construction(spec_1_explicit, spec_2_explicit)
+            elif self.operation == SpecOp.INTERSECTION:
+                self.explicit_form = Dfa.intersection_construction(spec_1_explicit, spec_2_explicit)
+            elif self.operation == SpecOp.NEGATION:
+                self.explicit_form = spec_1_explicit.negation()
+            else:
+                raise NotImplementedError("Explict construction for '" + spec_1_explicit.__class__.__name__ + \
+                                      "' and '" + spec_2_explicit.__class__.__name__ + "' with operation '" + \
+                                      str(self.operation) + "' is not supported.")
         else:
             raise NotImplementedError("Explict constructions for '" + spec_1_explicit.__class__.__name__ + \
                                       "' and '" + spec_2_explicit.__class__.__name__ + " are not supported.")

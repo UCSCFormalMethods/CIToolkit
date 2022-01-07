@@ -7,7 +7,7 @@ from numbers import Rational
 
 from abc import ABC, abstractmethod
 
-from citoolkit.specifications.spec import ExactSpec, ApproximateSpec
+from citoolkit.specifications.spec import ExactSpec, ApproxSpec
 
 class ExactCostFunc(ABC):
     """ The CostFunc class is a parent class to all cost functions.
@@ -43,7 +43,7 @@ class ExactCostFunc(ABC):
             accepts only words assigned that cost by this cost function.
         """
 
-class ApproximateCostFunc(ABC):
+class ApproxCostFunc(ABC):
     """ The ApproximateCostFunc class is a parent class to all approximate cost functions.
 
     :param alphabet: The alphabet this specification is defined over.
@@ -52,7 +52,7 @@ class ApproximateCostFunc(ABC):
         self.alphabet = frozenset(alphabet)
 
     @abstractmethod
-    def realize(self, min_cost, max_cost) -> ApproximateSpec:
+    def realize(self, min_cost, max_cost) -> ApproxSpec:
         """ Realize this cost function into an ApproximateSpec object that accepts
         only words with cost in the range [min_cost, max_cost].
 

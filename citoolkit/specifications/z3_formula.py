@@ -7,10 +7,10 @@ import math
 
 import z3
 
-from citoolkit.specifications.spec import ApproximateSpec
+from citoolkit.specifications.spec import ApproxSpec
 from citoolkit.specifications.bool_formula import BoolFormula, UnsatBoolFormula
 
-class Z3Formula(ApproximateSpec):
+class Z3Formula(ApproxSpec):
     """ The Z3Formula class encodes a Z3 formula specification. The Z3Formula must support
     the bitblasting tactic as all the language_size() and sample() computations are performed
     by transforming the Z3Formula spec into an equivalent BoolFormula Spec. All main_vars must
@@ -27,6 +27,8 @@ class Z3Formula(ApproximateSpec):
         or "BitVec", and Length is 1 if a Bool and the length of the BitVec if a BitVec.
     """
     def __init__(self, formula, main_variables):
+        super().__init__([])
+
         # Check validity of parameters.
         if (not isinstance(main_variables, Iterable)) or (len(main_variables) == 0):
             raise ValueError("main_variables must be a non empty iterator (See docstring for details).")
@@ -51,6 +53,7 @@ class Z3Formula(ApproximateSpec):
 
         # Store parameters.
         self.formula = formula
+        self.orig_formula = formula
         self.main_variables = list(main_variables)
 
         # Create equivalent BoolFormulaSpec and the mapping between them.
@@ -247,7 +250,23 @@ class Z3Formula(ApproximateSpec):
         return main_var_values
 
     def accepts(self, word) -> bool:
+        """ Returns true if and only if the formula is valid when the assumptions in word are added.
+            word is assumed to be a Z3Formula.
+        """
         raise NotImplementedError()
+
+        valid_formula = z3.And(z3.Not(self.orig_formula), word)
+
+        print(valid_formula)
+
+        solver = z3.Solver()
+        solver.add(valid_formula)
+
+        if solver.check() == z3.sat:
+            print(solver.model())
+            return False
+        else:
+            return True
 
     def language_size(self, tolerance=0.8, confidence=0.2, seed=1, min_length: int = None, max_length: int = None) -> int:
         """ Approximately computes the number of solutions to this formula.
@@ -260,7 +279,7 @@ class Z3Formula(ApproximateSpec):
         :param max_length: Not applicable to boolean formula so ignored.
         :returns: The approximate number of solutions to this formula.
         """
-        return self.bool_formula_spec.language_size(tolerance, confidence, seed=seed)
+        return self.bool_formula_spec.language_size(tolerance=tolerance, confidence=confidence, seed=seed)
 
     def sample(self, tolerance=15, seed=1, min_length: int = None, max_length: int = None):
         """ Generate a solution to this boolean formula approximately uniformly.
@@ -276,4 +295,25 @@ class Z3Formula(ApproximateSpec):
         :param max_length: Not applicable to boolean formula so ignored.
         :returns: An approximately uniformly sampled solution to this formula.
         """
-        return self.extract_main_vars(self.bool_formula_spec.sample(tolerance, seed=seed))
+        return self.extract_main_vars(self.bool_formula_spec.sample(tolerance=tolerance, seed=seed))
+
+    @staticmethod
+    def union_construction(formula_a, formula_b):
+        main_variables = set(formula_a.main_variables) | set(formula_b.main_variables)
+        union_formula = z3.Or(formula_a.formula, formula_b.formula)
+
+        return Z3Formula(union_formula, main_variables)
+
+    @staticmethod
+    def intersection_construction(formula_a, formula_b):
+        main_variables = set(formula_a.main_variables) | set(formula_b.main_variables)
+        intersection_formula = z3.And(formula_a.formula, formula_b.formula)
+
+        return Z3Formula(intersection_formula, main_variables)
+
+    @staticmethod
+    def negation_construction(formula_a):
+        main_variables = formula_a.main_variables
+        negation_formula = z3.Not(formula_a.formula)
+
+        return Z3Formula(negation_formula, main_variables)

@@ -6,10 +6,10 @@ from collections.abc import Iterable
 import pyapproxmc
 import pyunigen
 
-from citoolkit.specifications.spec import ApproximateSpec
+from citoolkit.specifications.spec import ApproxSpec
 
 
-class BoolFormula(ApproximateSpec):
+class BoolFormula(ApproxSpec):
     """ The BoolFormula class encodes a boolean formula specification in CNF form.
 
     :param clauses: An iterable of CNF clause. Each CNF clause should be composed
@@ -93,7 +93,6 @@ class BoolFormula(ApproximateSpec):
             language_size() must be called before sample().
 
         :param tolerance: The tolerance of the count.
-        :param confidence: The confidence in the count.
         :param min_length: Not applicable to boolean formula so ignored.
         :param max_length: Not applicable to boolean formula so ignored.
         :returns: An approximately uniformly sampled solution to this formula.

@@ -1,19 +1,22 @@
-from citoolkit.specs.spec import ApproximateSpec
 from citoolkit.specifications.z3_formula import Z3Formula
-from citoolkit.costfunctions.cost_func import ApproximateCostFunc
+from citoolkit.costfunctions.cost_func import ApproxCostFunc
 
-class Z3CostFormula(ApproximateCostFunc):
+import z3
+
+class Z3CostFormula(ApproxCostFunc):
     """ A Z3 Formula encoding cost.
 
-    :param formula: A Z3 formula which is assumed to fix a Z3 bitvector
-        named cost.
+    :param var_name: The name for a Z3 BitVec variable encoding cost.
+    :param num_bits: The number of bits in the Z3 BitVec variable encoding cost.
     """
-    def __init__(self, formula, num_bits) -> None:
+    def __init__(self, var_name, num_bits) -> None:
+        self.var_name = var_name
         self.num_bits = num_bits
+        self.max_cost = 2**num_bits - 1
 
         super().__init__(None)
 
-    def realize(self, min_cost, max_cost) -> ApproximateSpec:
+    def realize(self, min_cost, max_cost) -> Z3Formula:
         """ Realize this cost function into a Z3Formula object that accepts
         only words with cost in the range [min_cost, max_cost].
 
@@ -22,4 +25,7 @@ class Z3CostFormula(ApproximateCostFunc):
         :returns: An ApproximateSpec object that accepts only words with cost
             in the range [min_cost, max_cost].
         """
-        raise NotImplementedError()
+        min_bound = z3.UGT(z3.BitVec(self.var_name, self.num_bits), min_cost)
+        max_bound = z3.ULT(z3.BitVec(self.var_name, self.num_bits), max_cost)
+
+        return z3.And(min_bound, max_bound)
