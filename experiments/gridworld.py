@@ -324,24 +324,24 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
 
     class_keys = [(label_num, cost) for label_num in [1,2,3] for cost in range(max_cost+1)]
 
+    def make_dfa_wrapper(class_key):
+        label_num, cost = class_key
+
+        accepting_states = {state_map[(end_loc[0], end_loc[1], cost, (1,1,1,1), label_num)]}
+
+        new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
+
+        print(("Label" + str(label_num), cost), "States:", len(new_dfa.states))
+
+        return (("Label" + str(label_num), cost), new_dfa)
+
+
     with multiprocess.Pool(60) as p:
-        pool_output = p.map(make_dfa_wrapper, (class_keys, alphabet, states, start_state, transitions, state_map, end_loc), chunksize=1)
+        pool_output = p.map(make_dfa_wrapper, class_keys, chunksize=1)
 
     direct_dfas = {class_key:dfa for class_key, dfa in pool_output}
 
     return direct_dfas
-
-def make_dfa_wrapper(data):
-    class_key, alphabet, states, start_state, transitions, state_map, end_loc = data
-    label_num, cost = class_key
-
-    accepting_states = {state_map[(end_loc[0], end_loc[1], cost, (1,1,1,1), label_num)]}
-
-    new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
-
-    print(("Label" + str(label_num), cost), "States:", len(new_dfa.states))
-
-    return (("Label" + str(label_num), cost), new_dfa)
 
 if __name__ == '__main__':
     direct_dfas = gridworld_to_dfa(SMALL_GRIDWORLD, SMALL_GRIDWORLD_COSTS, SMALL_LENGTH_BOUNDS)
