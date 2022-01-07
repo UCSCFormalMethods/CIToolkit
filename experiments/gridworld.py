@@ -338,7 +338,7 @@ def make_dfa_wrapper(input_data):
 
     label_num, cost_val = class_key
 
-    accepting_states = {state_map[(end_loc[0], end_loc[1], cost_val, (0,0,0,0), 0)] for cost_val in range(0, max_cost+1)}
+    accepting_states = {state_map[(end_loc[0], end_loc[1], cost_val, (0,0,0,0), 0)]}
 
     new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
 
