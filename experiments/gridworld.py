@@ -150,13 +150,30 @@ def get_gridworld_max_cost(gridworld, gridworld_costs, length_bounds):
 
 
 def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
+    max_cost = get_gridworld_max_cost(gridworld, gridworld_costs, length_bounds)
+    
+    class_keys = [(label_num, cost) for label_num in [1,2,3] for cost in range(max_cost+1)]
+    input_data = [(key, gridworld, gridworld_costs, length_bounds) for key in class_keys]
+
+    with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
+        pool_output = p.map(make_dfa_wrapper, input_data)
+
+        p.close()
+        p.join()
+
+    direct_dfas = {class_key:dfa for class_key, dfa in pool_output}
+
+    return direct_dfas
+
+def make_dfa_wrapper(input_data):
+    class_key, gridworld, gridworld_costs, length_bounds = input_data
+
     alphabet = ["North", "East", "South", "West", "Charge"]
 
     max_y = len(gridworld) - 1
     max_x = len(gridworld[0]) - 1
 
     max_cost = get_gridworld_max_cost(gridworld, gridworld_costs, length_bounds)
-
 
     start_loc = np.where(np.array(gridworld) == 2)
     end_loc = np.where(np.array(gridworld) == 3)
@@ -319,34 +336,15 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
     ## DFA CREATION AND MINIMIZATION ##
     states = states | set(state_map.values())
 
-    print("Total States:", len(states))
+    label_num, cost_val = class_key
 
-    class_keys = [(label_num, cost) for label_num in [1,2,3] for cost in range(max_cost+1)]
-    data = alphabet, states, start_state, transitions, state_map, end_loc
-    input_data = [(key, data) for key in class_keys]
-
-    with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
-        pool_output = p.map(make_dfa_wrapper, input_data)
-
-        p.close()
-        p.join()
-
-    direct_dfas = {class_key:dfa for class_key, dfa in pool_output}
-
-    return direct_dfas
-
-def make_dfa_wrapper(input_data):
-    class_key, data = input_data
-    label_num, cost = class_key
-    alphabet, states, start_state, transitions, state_map, end_loc = input_data
-
-    accepting_states = {state_map[(end_loc[0], end_loc[1], cost, (1,1,1,1), label_num)]}
+    accepting_states = {state_map[(start_loc[0], start_loc[1], cost_val, (1,1,1,1), label_num)]}
 
     new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
 
     print(("Label" + str(label_num), cost), "States:", len(new_dfa.states))
 
-    return (("Label" + str(label_num), cost), new_dfa)
+    return (class_key, new_dfa)
 
 if __name__ == '__main__':
     direct_dfas = gridworld_to_dfa(SMALL_GRIDWORLD, SMALL_GRIDWORLD_COSTS, SMALL_LENGTH_BOUNDS)
