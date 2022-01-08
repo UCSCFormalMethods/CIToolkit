@@ -375,7 +375,7 @@ def count_dimacs_wrapper(x):
     label_num, curr_r, left_cost, right_cost = x
 
     if not feasibility_map[(label_num, curr_r)]:
-        return ((label_num, curr_r), 0, 0)
+        return ((label_num, curr_r), (0, 0, 0), 0)
 
     formula_name = "RP_Label_" + str(label_num) + "_Cost_" + str(curr_r) + ".cnf"
     count = count_dimacs_formula(APPROX_BASE_DIRECTORY + "formulas/" + formula_name, EPSILON, DELTA)
