@@ -573,8 +573,6 @@ def count_dimacs_formula(file_path, EPSILON, DELTA):
 
     output = process.stdout.decode("utf-8")
 
-    print(output)
-
     for line in output.split("\n"):
         if line[:34] == 'c [appmc] Number of solutions is: ':
             stripped_line = line[34:]
