@@ -186,7 +186,7 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     start = time.time()
     print("Counting solutions for DIMACS Fomulas...")
 
-    class_count_map = compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA)
+    class_count_map = compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA, feasibility_map)
 
     print("Counting solutions for DIMACS Formulas in " + str(time.time() - start))
     print()
@@ -342,7 +342,7 @@ def sample_improviser(label_choice, cost_choice, formula_var_map, class_count_ma
 ###################################################################################################
 # Experiment Funcs
 ###################################################################################################
-def compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA):
+def compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA, feasibility_map):
     if os.path.exists(APPROX_BASE_DIRECTORY + "/class_counts.pickle"):
         print("Loading class sizes dictionary from pickle...\n")
         class_counts = pickle.load(open(APPROX_BASE_DIRECTORY + "/class_counts.pickle", 'rb'))
@@ -352,7 +352,7 @@ def compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA):
 
     formula_data = get_formula_data_list(lo_locs, max_r, R)
 
-    formula_data = [(x, EPSILON, DELTA) for x in formula_data]
+    formula_data = [(x, EPSILON, DELTA, feasibility_map) for x in formula_data]
 
     with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
         formula_count_data = p.map(count_dimacs_wrapper, formula_data, chunksize=1)
@@ -371,8 +371,12 @@ def compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA):
 
 def count_dimacs_wrapper(x):
     start_time = time.time()
-    x, EPSILON, DELTA = x
+    x, EPSILON, DELTA, feasibility_map = x
     label_num, curr_r, left_cost, right_cost = x
+
+    if not feasibility_map[(label_num, curr_r)]:
+        return ((label_num, curr_r), 0, 0)
+
     formula_name = "RP_Label_" + str(label_num) + "_Cost_" + str(curr_r) + ".cnf"
     count = count_dimacs_formula(APPROX_BASE_DIRECTORY + "formulas/" + formula_name, EPSILON, DELTA)
     return ((label_num, curr_r), count, time.time() - start_time)
