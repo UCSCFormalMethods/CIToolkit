@@ -155,7 +155,7 @@ def gridworld_to_dfa(gridworld, gridworld_costs, length_bounds):
     class_keys = [(label_num, cost) for label_num in [1,2,3] for cost in range(max_cost+1)]
     input_data = [(key, gridworld, gridworld_costs, length_bounds) for key in class_keys]
 
-    with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as p:
         pool_output = p.map(make_dfa_wrapper, input_data)
 
         p.close()
@@ -334,6 +334,8 @@ def make_dfa_wrapper(input_data):
     new_dfa = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
 
     print(("Label" + str(label_num), cost_val), "States:", len(new_dfa.states))
+
+    print(("Label" + str(label_num), cost_val), "Words:", len(new_dfa.language_size(*length_bounds)))
 
     return (class_key, new_dfa)
 

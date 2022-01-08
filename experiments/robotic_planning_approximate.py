@@ -31,7 +31,7 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     else:
         APPROX_BASE_DIRECTORY += "small_map_"
 
-    APPROX_BASE_DIRECTORY += str(int(GAMMA*100)) + "/"
+    APPROX_BASE_DIRECTORY += str(int(GAMMA)) + "/"
 
     # Top left corner is (0,0)
     # 0 denotes normal passable terrain
@@ -142,13 +142,13 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
 
     num_buckets = len(lo_locs) * max_r
 
-    OUT_DELTA = 0.05
+    OUT_DELTA = 0.2
     OUT_GAMMA = GAMMA
     DELTA = None # 1 - math.pow((1- OUT_DELTA), 1/num_buckets)
-    EPSILON = math.pow(1 + OUT_GAMMA, 1/3) - 1
+    EPSILON = math.pow((1 + OUT_GAMMA)/17, 1/2) - 1
     LAMBDA = .3
     RHO = .4
-    NUM_SAMPLES = 1000
+    NUM_SAMPLES = 500
 
     print()
     print("------------------------------------------------------------------------------------------")

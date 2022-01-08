@@ -12,7 +12,7 @@ def kill_proc_tree(pid, including_parent=False):
     if including_parent:
         parent.kill()
 
-def func_timeout(func, args, timeout=(48*60*60)):
+def func_timeout(func, args, timeout=(24*60*60)):
     p = multiprocessing.Process(target=func, args=args)
     p.start()
 
@@ -26,12 +26,12 @@ def func_timeout(func, args, timeout=(48*60*60)):
         print("Experiment completed without exceeding timeout...")
 
 if __name__ == '__main__':
-    # func_timeout(run_approximate_experiments, (True, 0.2))
-    # func_timeout(run_approximate_experiments, (True, 0.5))
-    # func_timeout(run_approximate_experiments, (True, 1))
-    # func_timeout(run_approximate_experiments, (False, 0.2))
-    # func_timeout(run_approximate_experiments, (False, 0.5))
-    # func_timeout(run_approximate_experiments, (False, 1))
-    #func_timeout(run_exact_experiments, (False,))
+    func_timeout(run_approximate_experiments, (True, 100))
+    func_timeout(run_approximate_experiments, (True, 1000))
+    func_timeout(run_approximate_experiments, (True, 10000))
+    func_timeout(run_approximate_experiments, (False, 100))
+    func_timeout(run_approximate_experiments, (False, 1000))
+    func_timeout(run_approximate_experiments, (False, 10000))
+    # func_timeout(run_exact_experiments, (False,))
     # func_timeout(run_exact_experiments, (True,))
-    run_exact_experiments(False)
+    # run_exact_experiments(False)
