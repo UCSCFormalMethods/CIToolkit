@@ -270,6 +270,9 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     print("Sorted Label Weights:", sorted_label_weights)
     print("Sorted Cost Weights:", sorted_cost_weights)
 
+    # Skipping sampling.
+    return
+
     start = time.time()
     if os.path.isfile(APPROX_BASE_DIRECTORY + "samples.pickle"):
         print("Loading samples from pickle...\n")
@@ -567,7 +570,7 @@ def get_symbolic_problem_instance(p1, p2, min_cost = None, max_cost = None, targ
 
 def count_dimacs_formula(file_path, EPSILON, DELTA):
     # Returns (total_count, cell_count, hash_count)
-    arguments = ["./approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), file_path]
+    arguments = ["./approxmc", "--verb", "0", "--epsilon", str(EPSILON), "--delta", str(DELTA), "--seed", str(random.randint(1,1000000000)), file_path]
 
     process = subprocess.run(args=arguments, capture_output=True)
 
