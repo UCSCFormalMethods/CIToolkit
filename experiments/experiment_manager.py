@@ -26,12 +26,13 @@ def func_timeout(func, args, timeout=(24*60*60)):
         print("Experiment completed without exceeding timeout...")
 
 if __name__ == '__main__':
-    func_timeout(run_approximate_experiments, (True, 100))
-    func_timeout(run_approximate_experiments, (True, 1000))
-    func_timeout(run_approximate_experiments, (True, 10000))
-    func_timeout(run_approximate_experiments, (False, 100))
-    func_timeout(run_approximate_experiments, (False, 1000))
-    func_timeout(run_approximate_experiments, (False, 10000))
+    for i in range(10):
+        func_timeout(run_approximate_experiments, (True, 100))
+        func_timeout(run_approximate_experiments, (True, 1000))
+        func_timeout(run_approximate_experiments, (True, 10000))
+        func_timeout(run_approximate_experiments, (False, 100))
+        func_timeout(run_approximate_experiments, (False, 1000))
+        func_timeout(run_approximate_experiments, (False, 10000))
     # func_timeout(run_exact_experiments, (False,))
     # func_timeout(run_exact_experiments, (True,))
     # run_exact_experiments(False)
