@@ -177,11 +177,11 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
 
     DELTA = 1 - math.pow((1- OUT_DELTA), 1/num_nontriv_buckets)
 
-    print("R Value:", R)
-    print("Delta:", OUT_DELTA)
-    print("Gamma:", OUT_GAMMA)
-    print("Counting/Sampling Delta:", DELTA)
-    print("Counting/Sampling Epsilon:", EPSILON)
+    # print("R Value:", R)
+    # print("Delta:", OUT_DELTA)
+    # print("Gamma:", OUT_GAMMA)
+    # print("Counting/Sampling Delta:", DELTA)
+    # print("Counting/Sampling Epsilon:", EPSILON)
 
     start = time.time()
     print("Counting solutions for DIMACS Fomulas...")
@@ -193,9 +193,9 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
 
     class_size_map = {key:val[0] for key,val in class_count_map.items()}
 
-    print("Counts:", class_count_map)
-    print("Sizes:", class_size_map)
-    print()
+    # print("Counts:", class_count_map)
+    # print("Sizes:", class_size_map)
+    # print()
 
     for label_iter in range(len(lo_locs)):
         label_count = 0
@@ -209,8 +209,8 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
 
             curr_lo_cost = math.ceil(curr_lo_cost * R)
 
-        print("Label#" + str(label_iter) + "  Size: " + str(label_count))
-        print("Label#" + str(label_iter) + "  Mean Lo Cost: " + str(label_total_lo_cost/label_count))
+        # print("Label#" + str(label_iter) + "  Size: " + str(label_count))
+        # print("Label#" + str(label_iter) + "  Mean Lo Cost: " + str(label_total_lo_cost/label_count))
 
     # Initialize alpha probabilities
     conditional_weights = {(label_iter, cost_iter):class_size_map[(label_iter, cost_iter)]*(ALPHA_LIST[label_iter]/(1+EPSILON)) for label_iter, cost_iter, _, _ in get_formula_data_list(lo_locs, max_r, R)}
@@ -237,8 +237,8 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     # Calculate conditional exptected costs
     conditional_costs = {label_iter:sum([conditional_weights[(l,c)]*Lo for l, c, Lo, _ in get_formula_data_list(lo_locs, max_r, R) if l == label_iter]) for label_iter in range(len(lo_locs))}
 
-    print("Conditional Weights:", conditional_weights)
-    print("Conditional Costs", conditional_costs)
+    # print("Conditional Weights:", conditional_weights)
+    # print("Conditional Costs", conditional_costs)
 
     # Now calculate marginal costs.
     marginal_weights = []
@@ -257,9 +257,9 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
 
     expected_cost = sum([marginal_weights[label_iter] * conditional_costs[label_iter] for label_iter in range(len(lo_locs))])
 
-    print("Marginal Weights:", marginal_weights)
-    print("Expected Cost:", expected_cost)
-    print()
+    # print("Marginal Weights:", marginal_weights)
+    # print("Expected Cost:", expected_cost)
+    # print()
 
     sorted_label_weights = marginal_weights
     sorted_labels = range(len(lo_locs))
@@ -267,8 +267,8 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     sorted_cost_weights = {label_iter:[conditional_weights[(label_iter, cost_iter)] for cost_iter in range(max_r)] for label_iter in range(len(lo_locs))}
     sorted_costs = range(max_r)
 
-    print("Sorted Label Weights:", sorted_label_weights)
-    print("Sorted Cost Weights:", sorted_cost_weights)
+    # print("Sorted Label Weights:", sorted_label_weights)
+    # print("Sorted Cost Weights:", sorted_cost_weights)
 
     # Skipping sampling.
     return
