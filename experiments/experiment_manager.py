@@ -33,6 +33,7 @@ if __name__ == '__main__':
         func_timeout(run_approximate_experiments, (False, 100))
         func_timeout(run_approximate_experiments, (False, 1000))
         func_timeout(run_approximate_experiments, (False, 10000))
+        os.system("rm -rf approx_data")
     # func_timeout(run_exact_experiments, (False,))
     # func_timeout(run_exact_experiments, (True,))
     # run_exact_experiments(False)
