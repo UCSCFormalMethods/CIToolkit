@@ -27,7 +27,7 @@ def func_timeout(func, args, timeout=(24*60*60)):
 
 if __name__ == '__main__':
     for map_size in [False, True]:
-        for gamma in [100, 1000, 10000]:
+        for gamma in [500]:
             for i in range(10):
                 func_timeout(run_approximate_experiments, (map_size, gamma))
                 os.system("rm -rf approx_data")
