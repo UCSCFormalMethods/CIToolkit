@@ -270,9 +270,6 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     # print("Sorted Label Weights:", sorted_label_weights)
     # print("Sorted Cost Weights:", sorted_cost_weights)
 
-    # Skipping sampling.
-    return
-
     start = time.time()
     if os.path.isfile(APPROX_BASE_DIRECTORY + "samples.pickle"):
         print("Loading samples from pickle...\n")
@@ -282,7 +279,7 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
         samples = []
 
         for sample_iter in range(NUM_SAMPLES):
-            print("Sample#", sample_iter)
+            #print("Sample#", sample_iter)
             label_choice = random.choices(population=sorted_labels, weights=sorted_label_weights, k=1)[0]
             cost_choice = random.choices(population=sorted_costs, weights=sorted_cost_weights[label_choice], k=1)[0]
 
