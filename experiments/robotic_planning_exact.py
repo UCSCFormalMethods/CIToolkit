@@ -369,7 +369,11 @@ def create_hard_constraint(GRIDWORLD, alphabet):
 
                     transitions[(origin_state, symbol)] = destination_state
 
-    hard_constraint = Dfa(alphabet, states, accepting_states, start_state, transitions).minimize()
+    hard_constraint = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    print(len(hard_constraint.states))
+
+    hard_constraint = hard_constraint.minimize()
 
     return hard_constraint
 
