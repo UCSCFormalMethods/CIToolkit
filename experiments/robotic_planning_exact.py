@@ -125,15 +125,15 @@ def run_exact_experiments(LARGE_MAP):
 
     hard_constraint = create_hard_constraint(GRIDWORLD, alphabet)
 
-    print("Hard States:", hard_constraint.states)
+    print("Hard States:", len(hard_constraint.states))
 
-    label_function = create_hard_constraint(GRIDWORLD, alphabet)
+    label_function = create_label_constraint(GRIDWORLD, alphabet)
 
-    print("Label States:", label_function.states)
+    print("Label States:", len(label_function.dfa.states))
 
     cost_function = create_cost_function(GRIDWORLD, GRIDWORLD_COSTS, alphabet, length_bounds)
 
-    print("Cost States:", cost_function.states)
+    print("Cost States:", len(cost_function.dfa.states))
 
     print([(cost,len(dfa.states)) for cost, dfa in cost_function.decompose().items()])
 
