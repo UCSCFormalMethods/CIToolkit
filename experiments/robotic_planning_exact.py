@@ -123,7 +123,21 @@ def run_exact_experiments(LARGE_MAP):
 
     # print("Hard Constraint States:", len(hard_constraint.states))
 
-    hard_constraint = Dfa.min_length_dfa(alphabet, 0)
+    hard_constraint = create_hard_constraint(GRIDWORLD, alphabet)
+
+    print("Hard States:", hard_constraint.states)
+
+    label_function = create_hard_constraint(GRIDWORLD, alphabet)
+
+    print("Label States:", label_function.states)
+
+    cost_function = create_cost_function(GRIDWORLD, GRIDWORLD_COSTS, alphabet, length_bounds)
+
+    print("Cost States:", cost_function.states)
+
+    print([(cost,len(dfa.states)) for cost, dfa in cost_function.decompose().items()])
+
+    return
 
     start = time.time()
 
@@ -153,6 +167,7 @@ def run_exact_experiments(LARGE_MAP):
         print("Done creating Cost Function. Total time taken: " + str(time.time() - start))
 
     print("Cost Function States:", len(cost_function.dfa.states))
+
 
     if os.path.isfile(EXACT_BASE_DIRECTORY + "lqci_improviser.pickle"):
         print("Loading Labelled Quantitative CI improviser from pickle...\n")
