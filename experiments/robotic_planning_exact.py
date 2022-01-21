@@ -127,7 +127,7 @@ def run_exact_experiments(LARGE_MAP):
 
     print("Hard States:", len(hard_constraint.states))
 
-    label_function = create_label_constraint(GRIDWORLD, alphabet)
+    label_function = create_label_function(GRIDWORLD, alphabet)
 
     print("Label States:", len(label_function.dfa.states))
 
