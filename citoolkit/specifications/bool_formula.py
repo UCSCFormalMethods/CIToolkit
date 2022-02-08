@@ -68,7 +68,7 @@ class BoolFormula(ApproxSpec):
         """
         # Check if count has already been computed
         if self._counts is not None:
-            return self._counts
+            return self._counts[0] * 2**self._counts[1]
 
         # Create a new ApproxMC counter and approximately count the number of solutions.
         counter = pyapproxmc.Counter(epsilon=tolerance, delta=confidence, sampling_set=self.main_vars, seed=seed)
@@ -81,7 +81,7 @@ class BoolFormula(ApproxSpec):
         # Cache counts and return total count.
         self._counts = counts
 
-        return counts[0] * 2**counts[1]
+        return self._counts[0] * 2**self._counts[1]
 
 
     def sample(self, tolerance=15, seed=1 , min_length: int=None, max_length: int=None) -> tuple[int,...]:
@@ -150,8 +150,8 @@ class UnsatBoolFormula(BoolFormula):
     def accepts(self, word):
         return False
 
-    def language_size(self, tolerance, confidence, min_length: int = None, max_length: int = None) -> int:
+    def language_size(self, tolerance, confidence, seed, min_length: int = None, max_length: int = None) -> int:
         return 0
 
-    def sample(self, tolerance, confidence, min_length: int = None, max_length: int = None) -> tuple[int,...]:
+    def sample(self, tolerance, seed, min_length: int = None, max_length: int = None) -> tuple[int,...]:
         raise ValueError("Cannot sample from an unsatisfiable boolean formula.")

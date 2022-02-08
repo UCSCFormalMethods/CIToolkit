@@ -14,7 +14,7 @@ class Z3CostFormula(ApproxCostFunc):
         self.num_bits = num_bits
         self.max_cost = 2**num_bits - 1
 
-        super().__init__(None)
+        super().__init__([0,1])
 
     def realize(self, min_cost, max_cost) -> Z3Formula:
         """ Realize this cost function into a Z3Formula object that accepts
@@ -25,7 +25,9 @@ class Z3CostFormula(ApproxCostFunc):
         :returns: An ApproximateSpec object that accepts only words with cost
             in the range [min_cost, max_cost].
         """
-        min_bound = z3.UGT(z3.BitVec(self.var_name, self.num_bits), min_cost)
-        max_bound = z3.ULT(z3.BitVec(self.var_name, self.num_bits), max_cost)
+        min_bound = z3.UGE(z3.BitVec(self.var_name, self.num_bits), min_cost)
+        max_bound = z3.ULE(z3.BitVec(self.var_name, self.num_bits), max_cost)
 
-        return z3.And(min_bound, max_bound)
+        formula = z3.And(min_bound, max_bound)
+
+        return Z3Formula(formula, [(self.var_name, "BitVec", self.num_bits)])

@@ -23,14 +23,17 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
         self.verbose = verbose
         self.num_threads = num_threads
 
+        # Save counting tolerance
+        self.sampling_tol = sampling_tol
+
         self.class_specs = {}
         self.class_keys = None
         self.class_probabilities = None
         self.length_bounds = length_bounds
 
         # Compute bucket dimensions and total number of buckets.
-        last_bucket_max_cost = 1
-        self.bucket_bounds_list = []
+        last_bucket_max_cost = 0
+        self.bucket_bounds_list = [(0,0)]
         while last_bucket_max_cost < cost_func.max_cost:
             min_bucket_cost = last_bucket_max_cost+1
             max_bucket_cost = min(math.floor(min_bucket_cost*bucket_ratio), cost_func.max_cost)
@@ -46,7 +49,8 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
 
         for label in label_func.labels:
             for bucket_iter, bucket_bounds in enumerate(self.bucket_bounds_list):
-                self.class_specs[(label, bucket_iter)] = hard_constraint & label_func.realize(label) & cost_func.realize(*bucket_bounds)
+                # TODO: Remove immediate make explicit once no longer needed.
+                self.class_specs[(label, bucket_iter)] = (hard_constraint & label_func.realize(label) & cost_func.realize(*bucket_bounds)).explicit()
 
         if self.verbose:
             cit_log("Compound Spec construction completed.")
@@ -59,9 +63,8 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
         if num_threads <= 1:
             cpu_time = "N/A"
             # 1 thread, so compute all sizes iteratively.
-            for label in label_func.labels:
-                for cost in cost_func.costs:
-                    self.class_specs[(label, cost)].language_size(tolerance=counting_tol, confidence=counting_conf, seed=random.getrandbits(32))
+            for spec in self.class_specs.values():
+                spec.language_size(tolerance=counting_tol, confidence=counting_conf, seed=random.getrandbits(32))
         else:
             # Multiple threads, so create wrapper and thread pool and map specs before
             # resaving specs containing cached language sizes.
@@ -94,7 +97,7 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
             wall_time = "{:.4f}".format(time.time() - start_time)
             cit_log("Language size counting completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
 
-    def improvise(self) -> tuple[str,...]:
+    def improvise(self, seed=None) -> tuple[str,...]:
         """ Improvise a single word. Base class must populate self.class_probabilities
         before this method is called.
 
@@ -103,15 +106,18 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
         if (self.class_probabilities is None) or (self.class_keys is None):
             raise Exception("Improvise function was called without first computing self.class_probabilities or self.class_keys.")
 
+        if seed is None:
+            seed = random.getrandbits(32)
+
         target_class = random.choices(population=self.class_keys, weights=self.class_probabilities, k=1)[0]
 
-        return self.class_specs[target_class].sample(*self.length_bounds)
+        return self.class_specs[target_class].sample(tolerance=self.sampling_tol, seed=seed)
 
 class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
     def __init__(self, hard_constraint: ApproxSpec, cost_func: ApproxCostFunc, \
                  label_func: ApproxLabelFunc, cost_bound, label_prob_bounds, word_prob_bounds, \
                  bucket_ratio, counting_tol, counting_conf, sampling_tol, \
-                 num_threads: int, verbose: bool) -> None:
+                 num_threads: int =1, verbose: bool =False) -> None:
         # Checks that parameters are well formed.
         if not isinstance(hard_constraint, ApproxSpec):
             raise ValueError("The hard_constraint parameter must be a member of the ApproxSpec class.")
@@ -140,11 +146,8 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
         if len(label_func.labels) == 0:
             raise InfeasibleImproviserError("This problem has no labels and therefore no improvisations.")
 
-        if len(cost_func.costs) == 0:
-            raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
-
         # Initialize LQCI base class.
-        super().__init__(self, hard_constraint, cost_func, label_func, \
+        super().__init__(hard_constraint, cost_func, label_func, \
                          bucket_ratio, counting_tol, counting_conf, sampling_tol, \
                          num_threads, verbose)
 
@@ -175,12 +178,12 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
 
         for class_id in self.class_specs.keys():
             label, bucket_iter = class_id
-            conditional_weights[class_id] = cost_class_sizes[class_id] * (word_prob_bounds[label][0]/1+counting_tol)
+            conditional_weights[class_id] = cost_class_sizes[class_id] * (word_prob_bounds[label][0]/(1+counting_tol))
 
         label_sum_probs = {label:sum([prob for ((l, _), prob) in conditional_weights.items() if l == label]) for label, bucket_iter in self.class_specs.keys()}
 
         # Check if we've already broken probability bounds.
-        for label_prob, label in label_sum_probs:
+        for label, label_prob in label_sum_probs.items():
             assert label_prob <= 1
             #TODO Change this to exception with appropriate error message.
 
@@ -188,7 +191,7 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
         for label in label_func.labels:
             for bucket_iter in range(self.num_buckets):
                 class_id = (label, bucket_iter)
-                new_cost = min((1 + conditional_weights) * word_prob_bounds[label][0] * cost_class_sizes[class_id], 1 - label_sum_probs[label])
+                new_cost = min((1 + counting_tol) * word_prob_bounds[label][1] * cost_class_sizes[class_id], 1 - label_sum_probs[label])
 
                 conditional_weights[class_id] = new_cost
 
@@ -206,70 +209,55 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
             conditional_costs[label] = sum([conditional_weights[(label,bucket_iter)]*self.bucket_bounds_list[bucket_iter][0] for bucket_iter in range(self.num_buckets)])
 
         # Now calculate marginal weights.
-        marginal_weights = []
+        marginal_weights = {}
 
         u = math.floor((1 - len(label_func.labels)*label_prob_bounds[0])/(label_prob_bounds[1] - label_prob_bounds[0]))
 
-        for label_iter in sorted(range(len(label_func.labels)), key=lambda x: conditional_costs[label_iter]):
+        for label_iter, label in enumerate(sorted(label_func.labels, key=lambda x: conditional_costs[x])):
             if label_iter < u:
-                marginal_weights.append(label_prob_bounds[1])
+                marginal_weights[label] = (label_prob_bounds[1])
             elif label_iter == u:
-                marginal_weights.append(1 - label_prob_bounds[1]*u - label_prob_bounds[0]*(len(label_func.labels) - u - 1))
+                marginal_weights[label] = (1 - label_prob_bounds[1]*u - label_prob_bounds[0]*(len(label_func.labels) - u - 1))
             else:
-                marginal_weights.append(label_prob_bounds[0])
+                marginal_weights[label] = (label_prob_bounds[0])
 
-        assert sum(marginal_weights) == 1
+        assert sum(marginal_weights.values()) == 1
         #TODO Change this to exception with appropriate error message.
 
-        expected_cost = sum([marginal_weights[label] * conditional_costs[label] for label in label_func.labels])
-
-        print("Marginal Weights:", marginal_weights)
-        print("Expected Cost:", expected_cost)
-        print()
-
-        # sorted_label_weights = marginal_weights
-        # sorted_labels = range(len(lo_locs))
-
-        # sorted_cost_weights = {label_iter:[conditional_weights[(label_iter, cost_iter)] for cost_iter in range(max_r)] for label_iter in range(len(lo_locs))}
-        # sorted_costs = range(max_r)
-
-        # print("Sorted Label Weights:", sorted_label_weights)
-        # print("Sorted Cost Weights:", sorted_cost_weights)
+        min_expected_cost = sum([marginal_weights[label] * conditional_costs[label] for label in label_func.labels])
 
         # Store improvisation values.
         self.class_keys = [(label, bucket) for label in sorted(label_func.labels) for bucket in range(self.num_buckets)]
-        self.class_probabilities = [marginal_weights[label]*conditional_weights[label][cost] for label,cost in self.class_keys]
+        self.class_probabilities = [marginal_weights[label]*conditional_weights[(label,cost)] for label,cost in self.class_keys]
 
-        # # Checks that this improviser is feasible. If not raise an InfeasibleImproviserError.
-        # if len(feasible_labels) < (1/label_prob_bounds[1]) or (label_prob_bounds[0] != 0 and len(feasible_labels) > (1/label_prob_bounds[0])):
-        #     if label_prob_bounds[0] == 0:
-        #         inv_min_label_prob = float("inf")
-        #     else:
-        #         inv_min_label_prob = 1/label_prob_bounds[0]
+        # Checks that this improviser is feasible. If not raise an InfeasibleImproviserError.
+        if len(feasible_labels) < (1/label_prob_bounds[1]) or (label_prob_bounds[0] != 0 and len(feasible_labels) > (1/label_prob_bounds[0])):
+            if label_prob_bounds[0] == 0:
+                inv_min_label_prob = float("inf")
+            else:
+                inv_min_label_prob = 1/label_prob_bounds[0]
 
-        #     raise InfeasibleLabelRandomnessError("Violation of condition 1/label_prob_bounds[1] <= len(feasible_labels) <= 1/label_prob_bounds[0]. Instead, " \
-        #                                     + str(1/label_prob_bounds[1]) + " <= " + str(len(feasible_labels)) + " <= " + str(inv_min_label_prob), len(feasible_labels))
+            raise InfeasibleLabelRandomnessError("Violation of condition 1/label_prob_bounds[1] <= len(feasible_labels) <= 1/label_prob_bounds[0]. Instead, " \
+                                            + str(1/label_prob_bounds[1]) + " <= " + str(len(feasible_labels)) + " <= " + str(inv_min_label_prob), len(feasible_labels))
 
-        # for label in feasible_labels:
-        #     label_class_size = label_class_sizes[label]
-        #     min_word_prob, max_word_prob = word_prob_bounds[label]
+        for label in feasible_labels:
+            label_class_size = label_class_sizes[label]
+            min_word_prob, max_word_prob = word_prob_bounds[label]
 
-        #     if label_class_size < (1/max_word_prob) or (min_word_prob != 0 and label_class_size > (1/min_word_prob)):
-        #         if min_word_prob == 0:
-        #             inv_min_word_prob = float("inf")
-        #         else:
-        #             inv_min_word_prob = 1/min_word_prob
+            if label_class_size < (1/max_word_prob) or (min_word_prob != 0 and label_class_size > (1/min_word_prob)):
+                if min_word_prob == 0:
+                    inv_min_word_prob = float("inf")
+                else:
+                    inv_min_word_prob = 1/min_word_prob
 
-        #         raise InfeasibleWordRandomnessError("Violation for label '" + label + "' " +
-        #                                         "of condition 1/word_prob_bounds[" + label + "][1] <= label_class_size <= 1/word_prob_bounds[" + label + "][0]." +
-        #                                         " Instead, " + str(1/max_word_prob) + " <= " + str(label_class_size) + " <= " + str(inv_min_word_prob), label_class_size)
+                raise InfeasibleWordRandomnessError("Violation for label '" + label + "' " +
+                                                "of condition 1/word_prob_bounds[" + label + "][1] <= label_class_size <= 1/word_prob_bounds[" + label + "][0]." +
+                                                " Instead, " + str(1/max_word_prob) + " <= " + str(label_class_size) + " <= " + str(inv_min_word_prob), label_class_size)
 
-        # expected_cost = sum(marginal_distribution[label]*conditional_costs[label] for label in feasible_labels)
+        if min_expected_cost > cost_bound:
+            raise InfeasibleCostError("Greedy construction does not satisfy cost_bound, meaning no improviser can."\
+                                      + " Minimum expected cost was " + str(min_expected_cost) + ".", min_expected_cost)
 
-        # if expected_cost > cost_bound:
-        #     raise InfeasibleCostError("Greedy construction does not satisfy cost_bound, meaning no improviser can."\
-        #                               + " Minimum expected cost was " + str(expected_cost) + ".", expected_cost)
-
-        # if self.verbose:
-        #     wall_time = "{:.4f}".format(time.time() - start_time)
-        #     cit_log("LQCI distribution calculation completed. Wallclock Runtime: " + wall_time)
+        if self.verbose:
+            wall_time = "{:.4f}".format(time.time() - start_time)
+            cit_log("ApproxLQCI distribution calculation completed. Wallclock Runtime: " + wall_time)

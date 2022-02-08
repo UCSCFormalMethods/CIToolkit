@@ -362,9 +362,9 @@ class AbstractSpec(Spec):
             ## All specifications are Z3 Forumlas.
 
             if self.operation == SpecOp.UNION:
-                self.explicit_form = Dfa.union_construction(spec_1_explicit, spec_2_explicit)
+                self.explicit_form = Z3Formula.union_construction(spec_1_explicit, spec_2_explicit)
             elif self.operation == SpecOp.INTERSECTION:
-                self.explicit_form = Dfa.intersection_construction(spec_1_explicit, spec_2_explicit)
+                self.explicit_form = Z3Formula.intersection_construction(spec_1_explicit, spec_2_explicit)
             elif self.operation == SpecOp.NEGATION:
                 self.explicit_form = spec_1_explicit.negation()
             else:

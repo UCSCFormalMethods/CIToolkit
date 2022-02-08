@@ -36,13 +36,9 @@ def test_z3_formula_basic():
 
     spec.language_size()
 
-    return #TODO Unigen bug
-
-    for i in range(1000):
-        i = 227
-        print(i)
+    #TODO Unigen bug, fix and set num iterations back to 1000
+    for i in range(200):
         sample = spec.sample(seed=i)
-        print(sample)
 
         assert (sample["x"] > 64) == sample["x_big"]
         assert (sample["y"] > 64) == sample["y_big"]

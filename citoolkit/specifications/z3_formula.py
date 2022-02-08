@@ -27,7 +27,7 @@ class Z3Formula(ApproxSpec):
         or "BitVec", and Length is 1 if a Bool and the length of the BitVec if a BitVec.
     """
     def __init__(self, formula, main_variables):
-        super().__init__([])
+        super().__init__([0,1])
 
         # Check validity of parameters.
         if (not isinstance(main_variables, Iterable)) or (len(main_variables) == 0):

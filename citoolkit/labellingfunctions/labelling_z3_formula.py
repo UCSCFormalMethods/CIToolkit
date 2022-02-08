@@ -16,9 +16,9 @@ class Z3LabelFormula(ApproxLabelFunc):
         self.var_name = var_name
         self.num_bits = num_bits
 
-        labels = frozenset(self.label_map.values())
+        labels = frozenset(self.label_map.keys())
 
-        super().__init__(None, labels)
+        super().__init__([0,1], labels)
 
     def realize(self, label) -> Z3Formula:
         """ Realize this cost function into a Z3Formula object that accepts
@@ -30,4 +30,6 @@ class Z3LabelFormula(ApproxLabelFunc):
         """
         label_num = self.label_map[label]
 
-        return z3.BitVec(self.var_name, self.num_bits) == label_num
+        formula = z3.BitVec(self.var_name, self.num_bits) == label_num
+
+        return Z3Formula(formula, [(self.var_name, "BitVec", self.num_bits)])
