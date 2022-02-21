@@ -9,10 +9,10 @@ class Z3CostFormula(ApproxCostFunc):
     :param var_name: The name for a Z3 BitVec variable encoding cost.
     :param num_bits: The number of bits in the Z3 BitVec variable encoding cost.
     """
-    def __init__(self, var_name, num_bits) -> None:
-        self.var_name = var_name
-        self.num_bits = num_bits
-        self.max_cost = 2**num_bits - 1
+    def __init__(self, cost_var) -> None:
+        self.var_name = str(cost_var)
+        self.var_size = cost_var.size()
+        self.max_cost = 2**cost_var.size() - 1
 
         super().__init__([0,1])
 
@@ -25,9 +25,11 @@ class Z3CostFormula(ApproxCostFunc):
         :returns: An ApproximateSpec object that accepts only words with cost
             in the range [min_cost, max_cost].
         """
-        min_bound = z3.UGE(z3.BitVec(self.var_name, self.num_bits), min_cost)
-        max_bound = z3.ULE(z3.BitVec(self.var_name, self.num_bits), max_cost)
+        cost_var = z3.BitVec(self.var_name, self.var_size, ctx=z3.Context())
+
+        min_bound = z3.UGE(cost_var, min_cost)
+        max_bound = z3.ULE(cost_var, max_cost)
 
         formula = z3.And(min_bound, max_bound)
 
-        return Z3Formula(formula, [(self.var_name, "BitVec", self.num_bits)])
+        return Z3Formula(formula, [cost_var])

@@ -121,7 +121,7 @@ class _LabelledQuantitativeCIBase(Improviser):
             wall_time = "{:.4f}".format(time.time() - start_time)
             cit_log("Language size counting completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
 
-    def improvise(self) -> tuple[str,...]:
+    def improvise(self, seed=None) -> tuple[str,...]:
         """ Improvise a single word. Base class must populate self.class_probabilities
         before this method is called.
 
@@ -130,9 +130,17 @@ class _LabelledQuantitativeCIBase(Improviser):
         if (self.class_probabilities is None) or (self.class_keys is None):
             raise Exception("Improvise function was called without first computing self.class_probabilities or self.class_keys.")
 
+        # Cache the random state, set it to the seed, pick a target class, sample, and finally restore the random state.
+        old_state = random.getstate()
+        random.seed(seed)
+
         target_class = random.choices(population=self.class_keys, weights=self.class_probabilities, k=1)[0]
 
-        return self.class_specs[target_class].sample(*self.length_bounds)
+        sample = self.class_specs[target_class].sample(*self.length_bounds, seed=random.getrandbits(32))
+
+        random.setstate(old_state)
+
+        return sample
 
 class LabelledQuantitativeCI(_LabelledQuantitativeCIBase):
     """ An improviser for the Labelled Quantitative Control Improvisation problem.

@@ -114,7 +114,7 @@ class Dfa(ExactSpec):
 
             return accepting_path_counts[self.start_state]
 
-    def sample(self, min_length: int = None, max_length: int = None) -> tuple[str,...]:
+    def sample(self, min_length: int = None, max_length: int = None, seed=None) -> tuple[str,...]:
         """ Samples a word uniformly at random from the language of
         this Dfa and returns the sampled word.
 
@@ -127,6 +127,14 @@ class Dfa(ExactSpec):
             of this Dfa, considering only words of length between min_length
             and max_length inclusive if defined.
         """
+        # If seed is None, get random seed from internal random state.
+        if seed is None:
+            seed = random.getrandbits(32)
+
+        # Cache the random state and set it to random seed.
+        old_state = random.getstate()
+        random.seed(seed)
+
         # Check if we need to recurse to a length bounded DFA or if we can
         # simply use this DFA
         if min_length == 0:
@@ -146,7 +154,7 @@ class Dfa(ExactSpec):
                 self._bounded_dfas[(min_length, max_length)] = bounded_dfa.explicit()
 
             # Get the language_size of the appropriate bounded Dfa.
-            return self._bounded_dfas[(min_length, max_length)].sample()
+            sample = self._bounded_dfas[(min_length, max_length)].sample()
         else:
             # No length requirement, so simply sample this Dfa
 
@@ -176,7 +184,8 @@ class Dfa(ExactSpec):
                 if current_state in self.accepting_states:
                     if remaining_count == 0:
                         # Word generation complete, return the current word
-                        return tuple(generated_word)
+                        sample = tuple(generated_word)
+                        break
 
                     # Word generation is not complete, but we must adjust
                     # the count to account for the possible word we are skipping.
@@ -200,6 +209,11 @@ class Dfa(ExactSpec):
                     # Do not transition to destination state. Update
                     # remaining count and check next symbol.
                     remaining_count -= destination_count
+
+        # Restore old random state
+        random.setstate(old_state)
+
+        return sample
 
     ####################################################################################################
     # DFA Property Functions
@@ -539,9 +553,10 @@ class Dfa(ExactSpec):
         """
         # Performs checks to make sure that the product construction
         # is being used correctly.
-        alphabet = dfa_a.alphabet | dfa_b.alphabet
-        if alphabet != dfa_a.alphabet or alphabet != dfa_b.alphabet:
+        if dfa_a.alphabet != dfa_b.alphabet:
             raise ValueError("Cannot perform operations on specifications with different alphabets.")
+
+        alphabet = dfa_a.alphabet & dfa_b.alphabet
 
         if not isinstance(dfa_a, Dfa) or not isinstance(dfa_b, Dfa):
             raise ValueError("The product construction can only be performed on DFAs.")

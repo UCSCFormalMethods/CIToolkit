@@ -9,7 +9,7 @@ class Improviser(ABC):
     """ The Improviser class is a parent class to all CI improvisers. """
 
     @abstractmethod
-    def improvise(self) -> tuple[str,...]:
+    def improvise(self, seed=None) -> tuple[str,...]:
         """ Improvise a single word.
 
         :returns: A single improvised word.

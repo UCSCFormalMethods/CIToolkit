@@ -3,10 +3,12 @@
 from __future__ import annotations
 from collections.abc import Iterable
 
+import random
+
 import pyapproxmc
 import pyunigen
 
-from citoolkit.specifications.spec import ApproxSpec
+from citoolkit.specifications.spec import ApproxSpec, Alphabet
 
 
 class BoolFormula(ApproxSpec):
@@ -21,7 +23,7 @@ class BoolFormula(ApproxSpec):
     """
     def __init__(self, clauses, main_vars = None):
         # Initialize superclass
-        super().__init__([0,1])
+        super().__init__(BoolFormulaAlphabet())
 
         # Check that parameters are well formed.
         variables = set()
@@ -55,48 +57,53 @@ class BoolFormula(ApproxSpec):
     def accepts(self, word) -> bool:
         raise NotImplementedError()
 
-    def language_size(self, tolerance=0.8, confidence=0.2, seed=1, min_length: int=None, max_length: int=None) -> int:
+    def language_size(self, tolerance=0.8, confidence=0.2, seed=None) -> int:
         """ Approximately computes the number of solutions to this formula.
             With probability 1 - confidence, the following holds true,
             true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.
-        :param min_length: Not applicable to boolean formula so ignored.
-        :param max_length: Not applicable to boolean formula so ignored.
+        :param seed: The randomized seed. By default this is equal to None, which means the
+            internal random state will be used.
         :returns: The approximate number of solutions to this formula.
         """
-        # Check if count has already been computed
-        if self._counts is not None:
-            return self._counts[0] * 2**self._counts[1]
+        # Compute count if not already computed
+        if self._counts is None:
+            # If seed is None, get random seed from internal random state.
+            if seed is None:
+                seed = random.getrandbits(32)
 
-        # Create a new ApproxMC counter and approximately count the number of solutions.
-        counter = pyapproxmc.Counter(epsilon=tolerance, delta=confidence, sampling_set=self.main_vars, seed=seed)
+            # Create a new ApproxMC counter and approximately count the number of solutions.
+            counter = pyapproxmc.Counter(epsilon=tolerance, delta=confidence, sampling_set=self.main_vars, seed=seed)
 
-        for clause in self.clauses:
-            counter.add_clause(clause)
+            for clause in self.clauses:
+                counter.add_clause(clause)
 
-        counts = counter.count()
+            self._counts = counter.count()
 
-        # Cache counts and return total count.
-        self._counts = counts
 
         return self._counts[0] * 2**self._counts[1]
 
 
-    def sample(self, tolerance=15, seed=1 , min_length: int=None, max_length: int=None) -> tuple[int,...]:
+    def sample(self, tolerance=15, seed=None):
         """ Generate a solution to this boolean formula approximately uniformly.
             Let true_prob be 1/true_count and returned_prob be the probability of sampling
             any particular solution. With probability 1 - confidence, the following holds true,
             1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
 
-            language_size() must be called before sample().
+            language_size() must be called before sample(), as the confidence of sampling
+            depends on the confidence of the count.
 
         :param tolerance: The tolerance of the count.
-        :param min_length: Not applicable to boolean formula so ignored.
-        :param max_length: Not applicable to boolean formula so ignored.
+        :param seed: The randomized seed. By default this is equal to None, which means the
+            internal random state will be used.
         :returns: An approximately uniformly sampled solution to this formula.
         """
+        # If seed is None, get random seed from internal random state.
+        if seed is None:
+            seed = random.getrandbits(32)
+
         # Check that tolerance isn't too small for UniGen and that count has already
         # been computed.
         if tolerance < 6.84:
@@ -150,8 +157,18 @@ class UnsatBoolFormula(BoolFormula):
     def accepts(self, word):
         return False
 
-    def language_size(self, tolerance, confidence, seed, min_length: int = None, max_length: int = None) -> int:
+    def language_size(self, tolerance, confidence, seed) -> int:
         return 0
 
-    def sample(self, tolerance, seed, min_length: int = None, max_length: int = None) -> tuple[int,...]:
+    def sample(self, tolerance, seed):
         raise ValueError("Cannot sample from an unsatisfiable boolean formula.")
+
+class BoolFormulaAlphabet(Alphabet):
+    """ Alphabet class representing the abstract alphabet of CNF formulas,
+        which is a mapping from each variable number to a truth assignment.
+    """
+    def __eq__(self, other):
+        if isinstance(other, BoolFormulaAlphabet):
+            return True
+
+        return NotImplemented

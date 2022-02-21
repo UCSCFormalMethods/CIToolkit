@@ -4,11 +4,13 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 import math
+import random
 
 import z3
 
-from citoolkit.specifications.spec import ApproxSpec
+from citoolkit.specifications.spec import ApproxSpec, Alphabet
 from citoolkit.specifications.bool_formula import BoolFormula, UnsatBoolFormula
+from citoolkit.util.logging import cit_log
 
 class Z3Formula(ApproxSpec):
     """ The Z3Formula class encodes a Z3 formula specification. The Z3Formula must support
@@ -20,47 +22,34 @@ class Z3Formula(ApproxSpec):
     "CI_Internal_(*)_(*)" where * is any sequence of characters. These variables names are used
     internally and so if they are present in the formula parameter, behaviour is undefined.
 
+    It is important to note that each Z3Formula maintains it's own context and all formulas
+    will be translated into that context.
+
     :param formula: A Z3 Formula object.
-    :param main_vars: Only variables in this iterator will be counted and sampled over. Each
-        element in this iterator should be a tuple of the form (VariableName, Type, Length)
-        where VariableName is the name used when creating the variable, Type is either "Bool"
-        or "BitVec", and Length is 1 if a Bool and the length of the BitVec if a BitVec.
+    :param main_vars: Only variables in this iterator will be counted and sampled over.
     """
-    def __init__(self, formula, main_variables):
+    def __init__(self, formula, main_variables, lazy_bool_spec=False):
         super().__init__([0,1])
 
         # Check validity of parameters.
         if (not isinstance(main_variables, Iterable)) or (len(main_variables) == 0):
             raise ValueError("main_variables must be a non empty iterator (See docstring for details).")
 
-        for var_tuple in main_variables:
-            var_name, var_type, var_length = var_tuple
+        # Create a new context for this formula
+        self.context = z3.Context()
 
-            if not isinstance(var_name, str):
-                raise ValueError("The first element of every tuple in main_variables must be the " +
-                                 "string name of the variable.")
-
-            if var_type == "Bool":
-                if not var_length == 1:
-                    raise ValueError("A tuple with the variable type Bool must have length 1.")
-            elif var_type == "BitVec":
-                if not isinstance(var_length, int):
-                    raise ValueError("The length portion of tuple in main_variables must " +
-                                     "be an integer.")
-            else:
-                raise ValueError("The second element of every tuple in main_variables must be " +
-                                 "the type of the variable in string form. (\"Bool\" or \"BitVec\")")
-
-        # Store parameters.
-        self.formula = formula
-        self.orig_formula = formula
-        self.main_variables = list(main_variables)
+        # Store parameters in our new context.
+        self.formula = formula.translate(self.context)
+        self.orig_formula = formula.translate(self.context)
+        self.main_variables = [var.translate(self.context) for var in main_variables]
 
         # Create equivalent BoolFormulaSpec and the mapping between them.
         self.bool_formula_spec = None
         self.main_variables_map = None
 
-        self._create_bool_formula_spec()
+        # If not lazy, compute the bool formula spec now
+        if not lazy_bool_spec:
+            self._create_bool_formula_spec()
 
     def _create_bool_formula_spec(self):
         """ Augments the formula with Bool variables needed to track the
@@ -68,9 +57,12 @@ class Z3Formula(ApproxSpec):
         equivalent BoolFormulaSpec while creating a mapping to convert CNF
         solutions back to the main_variables.
         """
+        if self.bool_formula_spec is not None:
+            return
+
         # Check if Z3 formula is UNSAT. If so, set self.bool_formula_spec
         # to an unsat spec.
-        solver = z3.Solver()
+        solver = z3.Solver(ctx=self.context)
         solver.add(self.formula)
 
         if solver.check() != z3.sat:
@@ -83,141 +75,95 @@ class Z3Formula(ApproxSpec):
         internal_vars = []
 
         for main_var in self.main_variables:
-            var_name, var_type, var_length = main_var
-
-            if var_type == "Bool":
-                internal_var = Z3Formula._create_internal_var(var_name, 0)
-                target_var = z3.Bool(var_name)
+            if isinstance(main_var, z3.z3.BoolRef):
+                internal_var = self._create_internal_var(str(main_var), 0)
+                target_var = z3.Bool(str(main_var), ctx=self.context)
 
                 self.formula = z3.And(self.formula, (internal_var == target_var))
 
                 internal_vars.append(str(internal_var))
-            else: # Bitvector case
-                target_var = z3.BitVec(var_name, var_length)
+            elif isinstance(main_var, z3.z3.BitVecRef):
+                target_var = z3.BitVec(str(main_var), main_var.size(), ctx=self.context)
 
                 # For each bit in the Bitvector, create a boolean equal to that bits value.
-                for index in range(var_length):
-                    internal_var = Z3Formula._create_internal_var(var_name, index)
-                    bitmask = z3.BitVecSort(var_length).cast(math.pow(2,index))
+                for index in range(main_var.size()):
+                    internal_var = self._create_internal_var(str(main_var), index)
+                    bitmask = z3.BitVecSort(main_var.size(), ctx=self.context).cast(math.pow(2,index))
 
                     self.formula = z3.And(self.formula, (internal_var == ((target_var & bitmask) == bitmask)))
 
                     internal_vars.append(str(internal_var))
+            else:
+                raise ValueError(str(type(main_var)) + " is not a supported Z3 variable type and so cannot be a main variable.")
 
-        # Bitblast Z3 expression and convert to CNF form.
-        tactic = z3.Then('simplify', 'bit-blast', 'tseitin-cnf')
+        # Bitblast Z3 expression and convert to DIMACS format.
+        tactic = z3.Then('simplify', 'bit-blast', 'tseitin-cnf', ctx=self.context)
         goal = tactic(self.formula)
 
         assert len(goal) == 1
 
-        clauses = goal[0]
+        dimacs_output = goal[0].dimacs(include_names=True)
+        raw_clauses = [line.split() for line in dimacs_output.split("\n")]
 
-        # Create a mapping between Z3 variables and positive integers
-        # in line with DIMACS format.
-        mapping_context = ({}, 1)
+        # Pop header clause
+        raw_clauses.pop(0)
 
-        # Safe function that adds variable to mapping if it is not
-        # already present and returns updated context.
-        def update_context(var_name, context):
-            mapping = context[0]
-            next_var = context[1]
+        # Parse raw clauses
+        clauses = []
+        var_mapping = {}
 
-            if var_name not in mapping.keys():
-                mapping[var_name] = next_var
-                next_var += 1
-
-            return (mapping, next_var)
-
-        # Map all internal variables first.
-        for var in internal_vars:
-            mapping_context = update_context(var, mapping_context)
-
-        # Map all remaining variables
-        for clause in clauses:
-            if z3.is_or(clause):
-                # Compound clause
-                for literal in clause.children():
-                    if z3.is_not(literal):
-                        # Negated literal
-                        mapping_context = update_context(str(literal.children()[0]), mapping_context)
-                    else:
-                        # Positive literal
-                        mapping_context = update_context(str(literal), mapping_context)
-            elif z3.is_not(clause):
-                # Negated unit clause
-                mapping_context = update_context(str(clause.children()[0]), mapping_context)
+        for raw_clause in raw_clauses:
+            if raw_clause[0] == "c":
+                # Comment clause for a var mapping
+                var_mapping[raw_clause[2]] = int(raw_clause[1])
             else:
-                # Positive unit clause
-                mapping_context = update_context(str(clause), mapping_context)
-
-        # Convert Z3 CNF to DIMACS format CNF
-        var_mapping = mapping_context[0]
-
-        dimacs_clauses = []
-
-        for clause in clauses:
-            new_clause = []
-
-            if z3.is_or(clause):
-                # Compound clause
-                for literal in clause.children():
-                    if z3.is_not(literal):
-                        # Negated literal
-                        var_num = var_mapping[str(literal.children()[0])]
-                        new_clause.append(-var_num)
-                    else:
-                        # Positive literal
-                        var_num = var_mapping[str(literal)]
-                        new_clause.append(var_num)
-            elif z3.is_not(clause):
-                # Negative unit clause
-                var_num = var_mapping[str(clause.children()[0])]
-                new_clause.append(-var_num)
-            else:
-                # Positive unit clause
-                var_num = var_mapping[str(clause)]
-                new_clause.append(var_num)
-
-            dimacs_clauses.append(tuple(new_clause))
-
-        dimacs_clauses = tuple(dimacs_clauses)
+                # Formula clause
+                clauses.append([int(var) for var in raw_clause[:-1]])
 
         # Create BoolFormulaSpec using DIMACS format CNF
         dimacs_internal_vars = {var_mapping[internal_var] for internal_var in internal_vars}
 
-        self.bool_formula_spec = BoolFormula(dimacs_clauses, dimacs_internal_vars)
+        self.bool_formula_spec = BoolFormula(clauses, dimacs_internal_vars)
 
         # Create a mapping the name for each main variable to one or a list of
         # dimacs variables, encoding a boolean or bitvector respectively.
         self.main_variables_map = {}
 
         for main_var in self.main_variables:
-            var_name, var_type, var_length = main_var
-
-            if var_type == "Bool":
-                internal_var_name = str(Z3Formula._create_internal_var(var_name, 0))
+            if isinstance(main_var, z3.z3.BoolRef):
+                internal_var_name = str(self._create_internal_var(str(main_var), 0))
                 dimacs_var = var_mapping[internal_var_name]
 
-                self.main_variables_map[var_name] = dimacs_var
+                self.main_variables_map[str(main_var)] = dimacs_var
             else: # Bitvector case
                 dimacs_var_list = []
 
                 # For each bit in the Bitvector, create a boolean equal to that bits value.
-                for index in range(var_length):
-                    internal_var_name = str(Z3Formula._create_internal_var(var_name, index))
+                for index in range(main_var.size()):
+                    internal_var_name = str(self._create_internal_var(str(main_var), index))
 
                     dimacs_var_list.append(var_mapping[internal_var_name])
 
 
-                self.main_variables_map[var_name] = tuple(dimacs_var_list)
+                self.main_variables_map[str(main_var)] = tuple(dimacs_var_list)
 
-    @staticmethod
-    def _create_internal_var(name, index):
-        return z3.Bool("CI_Internal_(" + name + ")_(" + str(index) + ")")
+    def _create_internal_var(self, name, index):
+        """ Given a name and an index, returns a Z3 Boolean variable corresponding to it.
+            Primarily used in _create_bool_formula_spec.
+
+        :param name: The name of the original Z3 variable.
+        :param index: The index in that Z3 variable.
+        :returns: A Z3 Boolean variable corresponding to the name and index.
+        """
+        return z3.Bool("CI_Internal_(" + name + ")_(" + str(index) + ")", ctx=self.context)
 
     def extract_main_vars(self, dimacs_sample):
         """ Given a sampled solution in DIMACS format, extracts the main variables of this Z3 formula
         from it.
+
+        :param dimacs_sample: A sampled value from the internal boolean formula corresponding to this
+            Z3 formula.
+        :returns: A dictionary mapping each variable in main_variables to properly encoded sampled value.
         """
         # Ensure that we have computed the main variables mapping
         assert self.main_variables_map is not None
@@ -230,14 +176,12 @@ class Z3Formula(ApproxSpec):
         main_var_values = dict()
 
         for main_var in self.main_variables:
-            var_name, var_type, _ = main_var
-
-            if var_type == "Bool":
-                main_var_values[var_name] = bool(sample_dict[self.main_variables_map[var_name]])
+            if isinstance(main_var, z3.z3.BoolRef):
+                main_var_values[str(main_var)] = bool(sample_dict[self.main_variables_map[str(main_var)]])
             else: # Bitvector case
-                bitvector = [sample_dict[dimacs_var] for dimacs_var in self.main_variables_map[var_name]]
+                bitvector = [sample_dict[dimacs_var] for dimacs_var in self.main_variables_map[str(main_var)]]
 
-                # Convert endian
+                # Convert endianess
                 bitvector.reverse()
 
                 bitvector_val = 0
@@ -245,43 +189,30 @@ class Z3Formula(ApproxSpec):
                 for bit in bitvector:
                     bitvector_val = bit | (bitvector_val << 1)
 
-                main_var_values[var_name] = bitvector_val
+                main_var_values[str(main_var)] = bitvector_val
 
         return main_var_values
 
     def accepts(self, word) -> bool:
-        """ Returns true if and only if the formula is valid when the assumptions in word are added.
-            word is assumed to be a Z3Formula.
-        """
         raise NotImplementedError()
 
-        valid_formula = z3.And(z3.Not(self.orig_formula), word)
-
-        print(valid_formula)
-
-        solver = z3.Solver()
-        solver.add(valid_formula)
-
-        if solver.check() == z3.sat:
-            print(solver.model())
-            return False
-        else:
-            return True
-
-    def language_size(self, tolerance=0.8, confidence=0.2, seed=1, min_length: int = None, max_length: int = None) -> int:
+    def language_size(self, tolerance=0.8, confidence=0.2, seed=None) -> int:
         """ Approximately computes the number of solutions to this formula.
             With probability 1 - confidence, the following holds true,
             true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.
-        :param min_length: Not applicable to boolean formula so ignored.
-        :param max_length: Not applicable to boolean formula so ignored.
+        :param seed: The randomized seed. By default this is equal to None, which means the
+            internal random state will be used.
         :returns: The approximate number of solutions to this formula.
         """
+        # Ensure the internal bool spec has been created
+        self._create_bool_formula_spec()
+
         return self.bool_formula_spec.language_size(tolerance=tolerance, confidence=confidence, seed=seed)
 
-    def sample(self, tolerance=15, seed=1, min_length: int = None, max_length: int = None):
+    def sample(self, tolerance=15, seed=None):
         """ Generate a solution to this boolean formula approximately uniformly.
             Let true_prob be 1/true_count and returned_prob be the probability of sampling
             any particular solution. With probability 1 - confidence, the following holds true,
@@ -291,29 +222,131 @@ class Z3Formula(ApproxSpec):
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.
-        :param min_length: Not applicable to boolean formula so ignored.
-        :param max_length: Not applicable to boolean formula so ignored.
+        :param seed: The randomized seed. By default this is equal to None, which means the
+            internal random state will be used.
         :returns: An approximately uniformly sampled solution to this formula.
         """
+        # Ensure the internal bool spec has been created
+        self._create_bool_formula_spec()
+
         return self.extract_main_vars(self.bool_formula_spec.sample(tolerance=tolerance, seed=seed))
+
+    def __getstate__(self):
+        # Initialize state_dict
+        state_dict = {}
+
+        # Get the smt2 encoding of the actual formula
+        solver = z3.Solver(ctx=self.context)
+        solver.add(self.formula)
+        state_dict["formula"] = solver.to_smt2()
+
+        # Get the smt2 encoding of the original formula
+        solver = z3.Solver(ctx=self.context)
+        solver.add(self.orig_formula)
+        state_dict["orig_formula"] = solver.to_smt2()
+
+        # Encode the main variables to tuple representations
+        packed_vars = []
+
+        for main_var in self.main_variables:
+            if isinstance(main_var, z3.z3.BoolRef):
+                packed_vars.append((str(main_var), "Bool", 0))
+            elif isinstance(main_var, z3.z3.BitVecRef):
+                packed_vars.append((str(main_var), "BitVec", main_var.size()))
+
+        state_dict["main_variables"] = packed_vars
+
+        # Store the internal boolean formula spec, and main variables map.
+        state_dict["bool_formula_spec"] = self.bool_formula_spec
+        state_dict["main_variables_map"] = self.main_variables_map
+
+        return state_dict
+
+    def __setstate__(self, state):
+        # Initialize super class
+        super().__init__([0,1])
+
+        # Create new context for this Z3Formula
+        self.context = z3.Context()
+
+        # Unpack actual and original formula
+        self.formula = z3.parse_smt2_string(state["formula"], ctx=self.context)[0]
+        self.orig_formula = z3.parse_smt2_string(state["orig_formula"], ctx=self.context)[0]
+
+        # Unpack main variables
+        unpacked_vars = []
+
+        for packed_vars in state["main_variables"]:
+            if packed_vars[1] == "Bool":
+                unpacked_vars.append(z3.Bool(packed_vars[0], ctx=self.context))
+            else:
+                unpacked_vars.append(z3.BitVec(packed_vars[0], packed_vars[2], ctx=self.context))
+
+        self.main_variables = frozenset(unpacked_vars)
+
+        # Unpack internal variables
+        self.bool_formula_spec = state["bool_formula_spec"]
+        self.main_variables_map = state["main_variables_map"]
 
     @staticmethod
     def union_construction(formula_a, formula_b):
-        main_variables = set(formula_a.main_variables) | set(formula_b.main_variables)
-        union_formula = z3.Or(formula_a.formula, formula_b.formula)
+        """ Create a Z3 Formula that is the union of two other Z3 formulas.
+        The new main_variables is the set of main variables in either formula.
+
+        :param formula_a: The first input formula
+        :param formula_b: The second input formula
+        :returns: A Z3 formula that accepts models that satisfy either input formula.
+        """
+        new_context = z3.Context()
+
+        t_variables_a = [var.translate(new_context) for var in formula_a.main_variables]
+        t_variables_b = [var.translate(new_context) for var in formula_b.main_variables]
+
+        t_formula_a = formula_a.formula.translate(new_context)
+        t_formula_b = formula_b.formula.translate(new_context)
+
+        main_variables = set(t_variables_a) | set(t_variables_b)
+        union_formula = z3.Or(t_formula_a, t_formula_b)
 
         return Z3Formula(union_formula, main_variables)
 
     @staticmethod
     def intersection_construction(formula_a, formula_b):
-        main_variables = set(formula_a.main_variables) | set(formula_b.main_variables)
-        intersection_formula = z3.And(formula_a.formula, formula_b.formula)
+        """ Create a Z3 Formula that is the intersection of two other Z3 formulas.
+        The new main_variables is the set of main variables in either formula.
+
+        :param formula_a: The first input formula
+        :param formula_b: The second input formula
+        :returns: A Z3 formula that accepts models that satisfy both input formulas.
+        """
+        new_context = z3.Context()
+
+        t_variables_a = [var.translate(new_context) for var in formula_a.main_variables]
+        t_variables_b = [var.translate(new_context) for var in formula_b.main_variables]
+
+        t_formula_a = formula_a.formula.translate(new_context)
+        t_formula_b = formula_b.formula.translate(new_context)
+
+        main_variables = set(t_variables_a) | set(t_variables_b)
+        intersection_formula = z3.And(t_formula_a, t_formula_b)
 
         return Z3Formula(intersection_formula, main_variables)
 
     @staticmethod
-    def negation_construction(formula_a):
-        main_variables = formula_a.main_variables
-        negation_formula = z3.Not(formula_a.formula)
+    def negation_construction(formula):
+        """ Create a Z3 Formula that is the negation if the input Z3 formula.
+        The main variables are the same as the main variables in the input formula.
+
+        :param formula: The input formula
+        :returns: A Z3 formula that accepts models that do not satisfy the input formulas.
+        """
+        new_context = z3.Context()
+
+        t_variables = [var.translate(new_context) for var in formula.main_variables]
+
+        t_formula = formula.formula.translate(new_context)
+
+        main_variables = set(t_variables)
+        negation_formula = z3.Not(t_formula)
 
         return Z3Formula(negation_formula, main_variables)

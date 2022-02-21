@@ -11,10 +11,10 @@ class Z3LabelFormula(ApproxLabelFunc):
     :param var_name: The name for a Z3 BitVec variable encoding the label.
     :param num_bits: The number of bits in the Z3 BitVec variable encoding label.
     """
-    def __init__(self, label_map, var_name, num_bits) -> None:
+    def __init__(self, label_map, label_var) -> None:
         self.label_map = label_map
-        self.var_name = var_name
-        self.num_bits = num_bits
+        self.var_name = str(label_var)
+        self.var_size = label_var.size()
 
         labels = frozenset(self.label_map.keys())
 
@@ -29,7 +29,8 @@ class Z3LabelFormula(ApproxLabelFunc):
             in the range [min_cost, max_cost].
         """
         label_num = self.label_map[label]
+        label_var = z3.BitVec(self.var_name, self.var_size, ctx=z3.Context())
 
-        formula = z3.BitVec(self.var_name, self.num_bits) == label_num
+        formula = label_var == label_num
 
-        return Z3Formula(formula, [(self.var_name, "BitVec", self.num_bits)])
+        return Z3Formula(formula, [label_var])
