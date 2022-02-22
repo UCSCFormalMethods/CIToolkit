@@ -32,4 +32,4 @@ class Z3CostFormula(ApproxCostFunc):
 
         formula = z3.And(min_bound, max_bound)
 
-        return Z3Formula(formula, [cost_var])
+        return Z3Formula(formula, [])

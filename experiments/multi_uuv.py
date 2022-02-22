@@ -392,8 +392,8 @@ def test_encoding():
 def test_LQCI(vehicles, pois):
     OPT_RANGE = 1.05 # How close we want to be when calculating optimal time
     TIME_UPPER_BOUND = 1e6 # Highest value at which to start our optimal time search
-    TIME_RANGE = 1.5 # We consider all plans with time at most TIME_RANGE * optimal_time
-    EXP_TIME_RANGE = 1.2 # We want the expected time of our plans to be within 1.2 of optimal_time
+    TIME_RANGE = 5 # We consider all plans with time at most TIME_RANGE * optimal_time
+    EXP_TIME_RANGE = 2.5 # We want the expected time of our plans to be within 1.2 of optimal_time
 
     lo_time = 0
     hi_time = TIME_UPPER_BOUND
@@ -425,26 +425,28 @@ def test_LQCI(vehicles, pois):
     cost_bound = opt_encoded_time * EXP_TIME_RANGE
     word_prob_bounds = {label:(0,1e-6) for label in label_func.labels}
 
-    ApproxLabelledQuantitativeCI(hard_constraint, cost_func, label_func, \
+    improviser = ApproxLabelledQuantitativeCI(hard_constraint, cost_func, label_func, \
                  cost_bound, (0.25,0.5), word_prob_bounds, \
-                 1.05, 100, 0.2, 15, \
+                 1.25, 6.7, 0.2, 15, \
                  num_threads=10, lazy_counting=True, verbose=True)
+
+    print({key:val for key,val in improviser.improvise().items() if val != 0})
 
 if __name__ == "__main__":
     random.seed("foobarbar")
+    for _ in range(5):
+        # Create vehicles and POIs
+        NUM_POIS = 10
+        NUM_VEH = 30
 
-    # Create vehicles and POIs
-    NUM_POIS = 10
-    NUM_VEH = 30
+        pois = []
+        for i in range(0, NUM_POIS):
+            pois.append(OMTPoi(f"poi{i}", i, random.randrange(1e3,1e4), random.randrange(1e3,1e4)))
 
-    pois = []
-    for i in range(0, NUM_POIS):
-        pois.append(OMTPoi(f"poi{i}", i, random.randrange(1e3,1e4), random.randrange(1e3,1e4)))
+        vehicles = []
+        for i in range(0, NUM_VEH):
+            vehicles.append(OMTVehicle(f'veh{i}', i, 1, random.randrange(100, 500), random.randrange(1e3, 2e4),
+                                    {poi.id: random.randrange(1e3,5e3) for poi in pois},
+                                    {poi.id: random.randrange(100,5000) for poi in pois}))
 
-    vehicles = []
-    for i in range(0, NUM_VEH):
-        vehicles.append(OMTVehicle(f'veh{i}', i, 1, random.randrange(100, 500), 1e5,
-                                {poi.id: random.randrange(1e3,1e5) for poi in pois},
-                                {poi.id: random.randrange(100,5000) for poi in pois}))
-
-    test_LQCI(vehicles, pois)
+        test_LQCI(vehicles, pois)

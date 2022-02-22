@@ -32,8 +32,8 @@ class Z3Formula(ApproxSpec):
         super().__init__([0,1])
 
         # Check validity of parameters.
-        if (not isinstance(main_variables, Iterable)) or (len(main_variables) == 0):
-            raise ValueError("main_variables must be a non empty iterator (See docstring for details).")
+        if not isinstance(main_variables, Iterable):
+            raise ValueError("main_variables must be an iterator (See docstring for details).")
 
         # Create a new context for this formula
         self.context = z3.Context()
@@ -46,6 +46,8 @@ class Z3Formula(ApproxSpec):
         # Create equivalent BoolFormulaSpec and the mapping between them.
         self.bool_formula_spec = None
         self.main_variables_map = None
+
+        self.feasible = None
 
         # If not lazy, compute the bool formula spec now
         if not lazy_bool_spec:
@@ -66,9 +68,12 @@ class Z3Formula(ApproxSpec):
         solver.add(self.formula)
 
         if solver.check() != z3.sat:
+            self.feasible = False
             self.bool_formula_spec = UnsatBoolFormula()
             self.main_variables_map = None
             return
+
+        self.feasible = True
 
         # Expression is SAT, add additional variables to ensure we can
         # extract values properly.
@@ -259,6 +264,7 @@ class Z3Formula(ApproxSpec):
         # Store the internal boolean formula spec, and main variables map.
         state_dict["bool_formula_spec"] = self.bool_formula_spec
         state_dict["main_variables_map"] = self.main_variables_map
+        state_dict["feasible"] = self.feasible
 
         return state_dict
 
@@ -287,6 +293,7 @@ class Z3Formula(ApproxSpec):
         # Unpack internal variables
         self.bool_formula_spec = state["bool_formula_spec"]
         self.main_variables_map = state["main_variables_map"]
+        self.feasible = state["feasible"]
 
     @staticmethod
     def union_construction(formula_a, formula_b):

@@ -33,4 +33,4 @@ class Z3LabelFormula(ApproxLabelFunc):
 
         formula = label_var == label_num
 
-        return Z3Formula(formula, [label_var])
+        return Z3Formula(formula, [])

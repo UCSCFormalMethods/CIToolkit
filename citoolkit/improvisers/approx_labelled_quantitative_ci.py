@@ -17,7 +17,7 @@ from citoolkit.util.logging import cit_log
 
 class _ApproxLabelledQuantitativeCIBase(Improviser):
     def __init__(self, hard_constraint: ApproxSpec, cost_func: ApproxCostFunc, \
-                 label_func: ApproxLabelFunc, bucket_ratio, counting_tol, counting_conf, sampling_tol, \
+                 label_func: ApproxLabelFunc, bucket_ratio, counting_tol, conf, sampling_tol, \
                  seed, num_threads: int, verbose: bool, lazy_counting=False) -> None:
         # Save random state and seed new state.
         old_state = random.getstate()
@@ -49,7 +49,6 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
 
         # Compute spec for each label/cost class.
         if self.verbose:
-            cit_log("Total buckets over all labels: " + str(len(label_func.labels) * self.num_buckets))
             start_time = time.time()
             cit_log("Beginning compound Spec construction. Using " + str(num_threads) + " thread(s).")
 
@@ -96,6 +95,16 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
             wall_time = "{:.4f}".format(time.time() - start_time)
             cit_log("Compound Spec construction completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
 
+        # Determine counting confidence needed
+        feasible_buckets = sum([spec.feasible for spec in self.class_specs.values()])
+
+        self.counting_conf = 1 - math.pow((1-conf), 1/feasible_buckets)
+
+        if self.verbose:
+            cit_log("Total Buckets: " + str(len(self.class_specs)))
+            cit_log("Feasible Buckets: " + str(feasible_buckets))
+            cit_log("Desired Confidence " + str(conf) + " requires counting confidence of " + str(self.counting_conf))
+
         if not lazy_counting:
             # Count the language size for each spec if precount is enabled.
             if self.verbose:
@@ -106,7 +115,7 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
                 cpu_time = "N/A"
                 # 1 thread, so compute all sizes iteratively.
                 for spec in self.class_specs.values():
-                    spec.language_size(tolerance=counting_tol, confidence=counting_conf, seed=random.getrandbits(32))
+                    spec.language_size(tolerance=counting_tol, confidence=self.counting_conf, seed=random.getrandbits(32))
             else:
                 # Multiple threads, so create wrapper and thread pool and map specs before
                 # resaving specs containing cached language sizes.
@@ -126,7 +135,7 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
                         process_start_time = time.process_time()
                         spec = self.class_specs[class_id]
 
-                        spec.language_size(tolerance=counting_tol, confidence=counting_conf, seed=random_seeds[class_id])
+                        spec.language_size(tolerance=counting_tol, confidence=self.counting_conf, seed=random_seeds[class_id])
 
                         return (class_id, spec, time.process_time() - process_start_time)
 
@@ -171,7 +180,7 @@ class _ApproxLabelledQuantitativeCIBase(Improviser):
 class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
     def __init__(self, hard_constraint: ApproxSpec, cost_func: ApproxCostFunc, \
                  label_func: ApproxLabelFunc, cost_bound, label_prob_bounds, word_prob_bounds, \
-                 bucket_ratio, counting_tol, counting_conf, sampling_tol, \
+                 bucket_ratio, counting_tol, conf, sampling_tol, \
                  seed=None, lazy_counting=False, num_threads: int =1, verbose: bool =False) -> None:
         # Checks that parameters are well formed.
         if not isinstance(hard_constraint, ApproxSpec):
@@ -210,7 +219,7 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
 
         # Initialize LQCI base class.
         super().__init__(hard_constraint, cost_func, label_func, \
-                         bucket_ratio, counting_tol, counting_conf, sampling_tol, \
+                         bucket_ratio, counting_tol, conf, sampling_tol, \
                          seed, num_threads, verbose, lazy_counting=lazy_counting)
 
         if self.verbose:
@@ -247,11 +256,11 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
 
         for class_id in self.class_specs:
             label, bucket_iter = class_id
-            # If alpha is 0, we can just set everything to 0. Otherwise compute everything.
+            # If alpha is 0, we can just set everything to 0. Otherwise determine probability based on class count.
             if word_prob_bounds[label][0] == 0:
                 conditional_weights[class_id] = 0
             else:
-                class_count = self.class_specs[class_id].language_size(tolerance=counting_tol, confidence=counting_conf, seed=random.getrandbits(32))
+                class_count = self.class_specs[class_id].language_size(tolerance=counting_tol, confidence=self.counting_conf, seed=random.getrandbits(32))
                 conditional_weights[class_id] = class_count * (word_prob_bounds[label][0]/(1+counting_tol))
 
         label_sum_probs = {label:sum([prob for ((l, _), prob) in conditional_weights.items() if l == label]) for label, bucket_iter in self.class_specs}
@@ -261,32 +270,70 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
             if label_prob > 1:
                 raise InfeasibleWordRandomnessError("Assigning minimum probability (" + str(word_prob_bounds[label][0]) + ") to all words with label \""
                     + label + "\" rresults in a probability of " + str(label_prob) + ", which is greater than 1.",
-                    None) #TODO Make proper count
+                    None)
 
         # Add probabilites to appropriate classes (up to beta per word) without assigning more than 1 over each label.
-        for label in label_func.labels:
-            print(label)
-            for bucket_iter in range(self.num_buckets):
-                class_id = (label, bucket_iter)
-                class_count = self.class_specs[class_id].language_size(tolerance=counting_tol, confidence=counting_conf, seed=random.getrandbits(32))
-                print(class_count)
-                new_cost = min((1 + counting_tol) * word_prob_bounds[label][1] * class_count, 1 - label_sum_probs[label])
+        if False and lazy_counting and self.num_threads > 1 and len(label_func.labels) > 1:
+            # Probabilities are not computed and we have several threads available and several labels to compute. Advantageous to multithread.
+            with Pool(self.num_threads) as pool:
+                def assign_beta(func_input):
+                    label, label_specs, cond_label_weights, seed = func_input
 
-                conditional_weights[class_id] = new_cost
+                    for bucket_iter in range(self.num_buckets):
+                        print(label, bucket_iter)
+                        class_count = label_specs[bucket_iter].language_size(tolerance=counting_tol, confidence=self.counting_conf, seed=seed)
+                        new_cost = min((1 + counting_tol) * word_prob_bounds[label][1] * class_count, 1 - label_sum_probs[label])
 
-                # Update label sum probability
-                label_sum_probs[label] = sum([prob for ((l, _), prob) in conditional_weights.items() if l == label])
+                        cond_label_weights[bucket_iter] = new_cost
 
-                # If we assigned all probability, terminate early
-                if label_sum_probs[label] == 1:
-                    break
+                        # If we assigned all probability, terminate early
+                        if sum(cond_label_weights.values()) == 1:
+                            print("Done with", label)
+                            break
+
+                    return (label, label_specs, cond_label_weights)
+
+                # Create helper function inputs
+                func_inputs = []
+                for label in label_func.labels:
+                    label_specs = {b:(spec.bool_formula_spec) for (l, b), spec in self.class_specs.items() if l == label}
+                    cond_label_weights = {b:weight for (l, b), weight in conditional_weights.items() if l == label}
+                    seed = random.getrandbits(32)
+                    func_inputs.append((label, label_specs, cond_label_weights, seed))
+
+                pool_output = pool.map(assign_beta, func_inputs)
+                pool_dict = {label:(specs, weights) for label, specs, weights in pool_output}
+
+                # Parse pool outputs back into appropriate variables
+                for class_id, spec in self.class_specs.items():
+                    l,b = class_id
+                    spec.bool_formula_spec = pool_dict[l][0][b]
+
+                conditional_weights = {(l,b):pool_dict[l][1][b] for l,b in self.class_specs}
+
+        else:
+            # Probabilities already computed or only one thread, so no optimizations.
+            for label in label_func.labels:
+                for bucket_iter in range(self.num_buckets):
+                    class_id = (label, bucket_iter)
+                    class_count = self.class_specs[class_id].language_size(tolerance=counting_tol, confidence=self.counting_conf, seed=random.getrandbits(32))
+                    new_cost = min((1 + counting_tol) * word_prob_bounds[label][1] * class_count, 1 - label_sum_probs[label])
+
+                    conditional_weights[class_id] = new_cost
+
+                    # Update label sum probability
+                    label_sum_probs[label] = sum([prob for ((l, _), prob) in conditional_weights.items() if l == label])
+
+                    # If we assigned all probability, terminate early
+                    if label_sum_probs[label] == 1:
+                        break
 
         # Check if we've now broken probability bounds
         for label, label_prob in label_sum_probs.items():
             if label_prob != 1:
                 raise InfeasibleWordRandomnessError("Assigning maximum probability (" + str(word_prob_bounds[label][1]) + ") to all words with label \""
                     + label + "\" results in a probability of " + str(label_prob) + ", which is less than 1.",
-                    None) #TODO Make proper count
+                    None)
 
         # Calculate conditional expected costs
         conditional_costs = {}
