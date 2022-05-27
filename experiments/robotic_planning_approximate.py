@@ -382,7 +382,7 @@ def compute_class_counts(lo_locs, max_r, R, EPSILON, DELTA, feasibility_map):
 
     formula_data = [(x, EPSILON, DELTA, feasibility_map) for x in formula_data]
 
-    with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
+    with multiprocessing.Pool(multiprocessing.cpu_count() - 5) as p:
         formula_count_data = p.map(count_dimacs_wrapper, formula_data, chunksize=1)
 
         p.close()
@@ -422,7 +422,7 @@ def compute_dimacs_formulas(lo_locs, max_r, R, length_bounds, num_cell_vars, p1,
     formula_data = [(x, length_bounds, num_cell_vars) for x in formula_data]
     formula_data = [(x, p1, p2) for x in formula_data]
 
-    with multiprocessing.Pool(multiprocessing.cpu_count() - 2) as p:
+    with multiprocessing.Pool(multiprocessing.cpu_count() - 5) as p:
         var_map_list = p.map(convert_dimacs_wrapper, formula_data, chunksize=1)
 
         p.close()
