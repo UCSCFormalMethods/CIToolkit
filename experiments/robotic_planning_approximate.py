@@ -22,7 +22,7 @@ from matplotlib.patches import PathPatch
 # Main Experiment
 ###################################################################################################
 
-def run_approximate_experiments(LARGE_MAP, GAMMA):
+def run_approximate_experiments(LARGE_MAP, GAMMA,  EXTRA_LARGE_MAP=False):
     global APPROX_BASE_DIRECTORY
     APPROX_BASE_DIRECTORY = "approx_data/"
 
@@ -45,7 +45,33 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     # 8 denotes label objective 0. The selected label objective must be visited first.
     # 9 denotes label objective 1. The selected label objective must be visited first.
     # 10 denotes label objective 2. The selected label objective must be visited first.
-    if LARGE_MAP:
+    if EXTRA_LARGE_MAP:
+        GRIDWORLD =         (
+                            (8, 0, 0, 3, 0, 0, 0,  0),
+                            (0, 0, 0, 0, 0, 0, 5,  0),
+                            (0, 0, 0, 0, 0, 0, 0,  0),
+                            (1, 0, 1, 0, 1, 1, 0,  1),
+                            (7, 0, 0, 0, 0, 0, 0,  10),
+                            (0, 0, 9, 0, 0, 4, 0,  0),
+                            (6, 0, 0, 2, 0, 0, 0,  0)
+                            )
+
+        GRIDWORLD_COSTS =   (
+                            ( 9,  6,  3,  0,  4, 2,  4,  4),
+                            ( 6,  3,  2,  1,  4, 2,  2,  4),
+                            ( 3,  2,  2,  1,  2, 2,  2,  2),
+                            ( 0, 10,  0,  1,  0, 0, 10,  0),
+                            ( 2,  2,  2,  1,  4,  4, 2,  2),
+                            ( 2,  4,  1,  1,  2,  4, 2,  4),
+                            ( 2,  2,  2,  0,  2,  2, 2,  2)
+                            )
+
+        length_bounds = (1,35)
+        COST_BOUND = 70
+        ALPHA_LIST = [0,0,0]
+        BETA_LIST = [1e-5,1e-5,1e-5]
+
+    elif LARGE_MAP:
         GRIDWORLD =         (
                             (8, 0, 0, 3, 0, 0,  0),
                             (0, 0, 0, 0, 0, 5,  0),
@@ -153,7 +179,9 @@ def run_approximate_experiments(LARGE_MAP, GAMMA):
     print()
     print("------------------------------------------------------------------------------------------")
     print("Starting Approximate LQCI Robotic Planning Experiment...")
-    if LARGE_MAP:
+    if EXTRA_LARGE_MAP:
+        print("Using Extra Large Map...")
+    elif LARGE_MAP:
         print("Using Large Map...")
     else:
         print("Using Small Map...")
@@ -927,30 +955,53 @@ def draw_improvisation(improvisation, GRIDWORLD, GRIDWORLD_COSTS):
     start_loc = np.where(np.array(GRIDWORLD) == 2)
 
     point_a = None
-    point_b = (improvisation[0][0] + 0.5,  len(GRIDWORLD) - 1 - improvisation[0][1] + 0.5)
+    if len(improvisation) > 0:    
+        point_b = (improvisation[0][0] + 0.5,  len(GRIDWORLD) - 1 - improvisation[0][1] + 0.5)
 
-    lines = []
+        lines = []
 
-    print(improvisation)
+        print(improvisation)
 
-    for coords in improvisation[1:]:
-        point_a = point_b
+        for coords in improvisation[1:]:
+            point_a = point_b
 
-        if coords is None:
-            break
+            if coords is None:
+                break
 
-        point_b = (coords[0] + 0.5,  len(GRIDWORLD) - 1 - coords[1] + 0.5)
+            point_b = (coords[0] + 0.5,  len(GRIDWORLD) - 1 - coords[1] + 0.5)
 
-        lines.append([point_a, point_b])
+            lines.append([point_a, point_b])
 
-    lc = mc.LineCollection(lines, color="red", linewidths=2)
-    ax.add_collection(lc)
+        lc = mc.LineCollection(lines, color="red", linewidths=2)
+        ax.add_collection(lc)
 
     plt.axis('off')
 
-    #plt.savefig("RP_LargeMap.png", bbox_inches="tight", pad_inches=0, dpi=1024)
+    plt.savefig("RP_ExtraLargeMap.png", bbox_inches="tight", pad_inches=0, dpi=1024)
     plt.show()
 
 
 if __name__ == '__main__':
-    run_approximate_experiments(False)
+    GRIDWORLD =         (
+                        (8, 0, 0, 3, 0, 0, 0,  0),
+                        (0, 0, 0, 0, 0, 0, 5,  0),
+                        (0, 0, 0, 0, 0, 0, 0,  0),
+                        (1, 0, 1, 0, 1, 1, 0,  1),
+                        (7, 0, 0, 0, 0, 0, 0,  10),
+                        (0, 0, 9, 0, 0, 4, 0,  0),
+                        (0, 0, 0, 0, 0, 0, 0,  0),
+                        (6, 0, 0, 2, 0, 0, 0,  0)
+                        )
+
+    GRIDWORLD_COSTS =   (
+                        ( 9,  6,  3,  0,  2, 4,  4,  4),
+                        ( 6,  3,  2,  1,  2, 4,  2,  4),
+                        ( 3,  2,  2,  1,  2, 2,  2,  2),
+                        ( 0, 10,  0,  1,  0, 0, 10,  0),
+                        ( 2,  2,  2,  1,  4, 4,  2,  2),
+                        ( 2,  4,  1,  1,  2, 4,  4,  4),
+                        ( 2,  4,  2,  1,  2, 2,  4,  4),
+                        ( 2,  2,  2,  0,  2, 2,  2,  2)
+                        )
+
+    draw_improvisation([], GRIDWORLD, GRIDWORLD_COSTS)

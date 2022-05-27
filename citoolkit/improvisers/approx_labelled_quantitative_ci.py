@@ -252,8 +252,6 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
         # Initialize conditional weights to alpha for each word and sum up current marginal label probabilities.
         conditional_weights = {}
 
-        print(word_prob_bounds)
-
         for class_id in self.class_specs:
             label, bucket_iter = class_id
             # If alpha is 0, we can just set everything to 0. Otherwise determine probability based on class count.
@@ -354,6 +352,9 @@ class ApproxLabelledQuantitativeCI(_ApproxLabelledQuantitativeCIBase):
                 marginal_weights[label] = (label_prob_bounds[0])
 
         min_expected_cost = sum([marginal_weights[label] * conditional_costs[label] for label in label_func.labels])
+
+        if self.verbose:
+            cit_log("Lower Bound on Calculated Distribution Cost: " + str(min_expected_cost))
 
         # Restore old state
         random.setstate(old_state)

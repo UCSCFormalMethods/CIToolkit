@@ -436,8 +436,8 @@ if __name__ == "__main__":
     random.seed("foobarbar")
     for _ in range(5):
         # Create vehicles and POIs
-        NUM_POIS = 10
-        NUM_VEH = 30
+        NUM_POIS = 9
+        NUM_VEH = 10
 
         pois = []
         for i in range(0, NUM_POIS):
