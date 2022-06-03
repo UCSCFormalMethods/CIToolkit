@@ -21,7 +21,7 @@ from fractions import Fraction
 from citoolkit.labellingfunctions.labelling_dfa import LabellingDfa
 from citoolkit.costfunctions.accumulated_cost_dfa import AccumulatedCostDfa
 
-def run_exact_experiments(LARGE_MAP, SMALL_MAP=False, num_threads=2):
+def run_exact_experiments(LARGE_MAP, SMALL_MAP=False, num_threads=16):
     EXACT_BASE_DIRECTORY = "exact_data/"
 
     if LARGE_MAP:
