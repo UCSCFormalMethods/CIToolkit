@@ -22,7 +22,7 @@ from matplotlib.patches import PathPatch
 # Main Experiment
 ###################################################################################################
 
-def run_approximate_experiments(LARGE_MAP, GAMMA,  EXTRA_LARGE_MAP=False):
+def run_approximate_experiments(LARGE_MAP, GAMMA,  SMALL_MAP=False):
     global APPROX_BASE_DIRECTORY
     APPROX_BASE_DIRECTORY = "approx_data/"
 
@@ -45,31 +45,27 @@ def run_approximate_experiments(LARGE_MAP, GAMMA,  EXTRA_LARGE_MAP=False):
     # 8 denotes label objective 0. The selected label objective must be visited first.
     # 9 denotes label objective 1. The selected label objective must be visited first.
     # 10 denotes label objective 2. The selected label objective must be visited first.
-    if EXTRA_LARGE_MAP:
+    if SMALL_MAP:
         GRIDWORLD =         (
-                            (8, 0, 0, 3, 0, 0, 0,  0),
-                            (0, 0, 0, 0, 0, 0, 5,  0),
-                            (0, 0, 0, 0, 0, 0, 0,  0),
-                            (1, 0, 1, 0, 1, 1, 0,  1),
-                            (7, 0, 0, 0, 0, 0, 0,  10),
-                            (0, 0, 9, 0, 0, 4, 0,  0),
-                            (6, 0, 0, 2, 0, 0, 0,  0)
+                            (8, 0, 3, 0, 5),
+                            (0, 1, 0, 1, 0),
+                            (7, 0, 0, 0, 10),
+                            (0, 9, 0, 4,  0),
+                            (6, 0, 2, 0,  0)
                             )
 
         GRIDWORLD_COSTS =   (
-                            ( 9,  6,  3,  0,  4, 2,  4,  4),
-                            ( 6,  3,  2,  1,  4, 2,  2,  4),
-                            ( 3,  2,  2,  1,  2, 2,  2,  2),
-                            ( 0, 10,  0,  1,  0, 0, 10,  0),
-                            ( 2,  2,  2,  1,  4,  4, 2,  2),
-                            ( 2,  4,  1,  1,  2,  4, 2,  4),
-                            ( 2,  2,  2,  0,  2,  2, 2,  2)
+                            (3, 2, 0, 2, 0),
+                            (3, 0, 0, 0, 3),
+                            (0, 1, 0, 2, 1),
+                            (2, 0, 0, 0, 2),
+                            (0, 1, 0, 1, 1)
                             )
 
-        length_bounds = (1,35)
-        COST_BOUND = 70
+        length_bounds = (1,25)
+        COST_BOUND = 50
         ALPHA_LIST = [0,0,0]
-        BETA_LIST = [1e-5,1e-5,1e-5]
+        BETA_LIST = [1e-4,1e-4,1e-4]
 
     elif LARGE_MAP:
         GRIDWORLD =         (
@@ -179,7 +175,7 @@ def run_approximate_experiments(LARGE_MAP, GAMMA,  EXTRA_LARGE_MAP=False):
     print()
     print("------------------------------------------------------------------------------------------")
     print("Starting Approximate LQCI Robotic Planning Experiment...")
-    if EXTRA_LARGE_MAP:
+    if SMALL_MAP:
         print("Using Extra Large Map...")
     elif LARGE_MAP:
         print("Using Large Map...")
@@ -983,25 +979,19 @@ def draw_improvisation(improvisation, GRIDWORLD, GRIDWORLD_COSTS):
 
 if __name__ == '__main__':
     GRIDWORLD =         (
-                        (8, 0, 0, 3, 0, 0, 0,  0),
-                        (0, 0, 0, 0, 0, 0, 5,  0),
-                        (0, 0, 0, 0, 0, 0, 0,  0),
-                        (1, 0, 1, 0, 1, 1, 0,  1),
-                        (7, 0, 0, 0, 0, 0, 0,  10),
-                        (0, 0, 9, 0, 0, 4, 0,  0),
-                        (0, 0, 0, 0, 0, 0, 0,  0),
-                        (6, 0, 0, 2, 0, 0, 0,  0)
+                        (8, 0, 3, 0, 5),
+                        (0, 1, 0, 1, 0),
+                        (7, 0, 0, 0, 10),
+                        (0, 9, 0, 4,  0),
+                        (6, 0, 2, 0,  0)
                         )
 
     GRIDWORLD_COSTS =   (
-                        ( 9,  6,  3,  0,  2, 4,  4,  4),
-                        ( 6,  3,  2,  1,  2, 4,  2,  4),
-                        ( 3,  2,  2,  1,  2, 2,  2,  2),
-                        ( 0, 10,  0,  1,  0, 0, 10,  0),
-                        ( 2,  2,  2,  1,  4, 4,  2,  2),
-                        ( 2,  4,  1,  1,  2, 4,  4,  4),
-                        ( 2,  4,  2,  1,  2, 2,  4,  4),
-                        ( 2,  2,  2,  0,  2, 2,  2,  2)
+                        (3, 2, 0, 2, 0),
+                        (3, 0, 0, 0, 3),
+                        (0, 1, 0, 2, 1),
+                        (2, 0, 0, 0, 2),
+                        (0, 1, 0, 1, 1)
                         )
 
     draw_improvisation([], GRIDWORLD, GRIDWORLD_COSTS)

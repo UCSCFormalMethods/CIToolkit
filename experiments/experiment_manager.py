@@ -26,9 +26,7 @@ def func_timeout(func, args, timeout=(24*60*60)):
         print("Experiment completed without exceeding timeout...")
 
 if __name__ == '__main__':
-    for map_size in [True]:
-        for gamma in [100, 1000, 1000]:
-            func_timeout(run_approximate_experiments, (map_size, gamma, map_size))
-    # func_timeout(run_exact_experiments, (False,))
-    # func_timeout(run_exact_experiments, (True,))
-    # run_exact_experiments(False)
+    func_timeout(run_exact_experiments, (False, True))
+
+    for gamma in [100, 1000, 1000]:
+        func_timeout(run_approximate_experiments, (False, gamma, True))
