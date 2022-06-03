@@ -42,6 +42,7 @@ def run_exact_experiments(LARGE_MAP, SMALL_MAP=False, num_threads=16):
     # 9 denotes label objective 1. The selected label objective must be visited first.
     # 10 denotes label objective 2. The selected label objective must be visited first.
     if SMALL_MAP:
+        print("SMALL HERE")
         GRIDWORLD =         (
                             (8, 0, 3, 0, 5),
                             (0, 1, 0, 1, 0),
@@ -60,7 +61,7 @@ def run_exact_experiments(LARGE_MAP, SMALL_MAP=False, num_threads=16):
 
         length_bounds = (1,20)
         COST_BOUND = 30
-        word_prob_bounds = (0, 1/3e4)
+        word_prob_bounds = (0, 1e-4)
 
     elif LARGE_MAP:
         GRIDWORLD =         (

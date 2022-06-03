@@ -28,5 +28,5 @@ def func_timeout(func, args, timeout=(24*60*60)):
 if __name__ == '__main__':
     run_exact_experiments(False, True)
 
-    for gamma in [100, 1000, 1000]:
+    for gamma in [100, 1000, 10000]:
         run_approximate_experiments(False, gamma, True)
