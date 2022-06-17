@@ -361,7 +361,7 @@ def test_dfa_sample():
     accepting_states = {"Start", "Top", "Bottom1", "Bottom2"}
     start_state = "Start"
 
-    transitions = dict()
+    transitions = {}
 
     transitions[("Start", "A")] = "Bottom1"
     transitions[("Start", "B")] = "Top"
@@ -380,7 +380,7 @@ def test_dfa_sample():
     # how many of each are sampled.
     dfa_language = [tuple(), tuple("A"), ("A", "A"), tuple("B")]
 
-    sample_counts = dict()
+    sample_counts = {}
 
     for word in dfa_language:
         sample_counts[word] = 0
@@ -415,7 +415,7 @@ def test_dfa_sample_abstract():
     accepting_states = {"Start", "Top", "Bottom1", "Bottom2"}
     start_state = "Start"
 
-    transitions = dict()
+    transitions = {}
 
     transitions[("Start", "A")] = "Bottom1"
     transitions[("Start", "B")] = "Top"
@@ -437,7 +437,7 @@ def test_dfa_sample_abstract():
     # how many of each are sampled.
     dfa_language = [tuple("A"), tuple("B")]
 
-    sample_counts = dict()
+    sample_counts = {}
 
     for word in dfa_language:
         sample_counts[word] = 0
@@ -473,7 +473,7 @@ def test_dfa_sample_param():
     accepting_states = {"Start", "Top", "Bottom1", "Bottom2", "Bottom3", "Bottom4"}
     start_state = "Start"
 
-    transitions = dict()
+    transitions = {}
 
     transitions[("Start", "A")] = "Bottom1"
     transitions[("Start", "B")] = "Top"
@@ -496,7 +496,7 @@ def test_dfa_sample_param():
     # how many of each are sampled.
     dfa_language = [tuple("A"), tuple("B"), ("A", "A"), ("A", "A", "A")]
 
-    sample_counts = dict()
+    sample_counts = {}
 
     for word in dfa_language:
         sample_counts[word] = 0

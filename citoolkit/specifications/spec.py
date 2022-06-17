@@ -44,6 +44,9 @@ class SymbolAlphabet(Alphabet):
     def __iter__(self):
         return self.symbols.__iter__()
 
+    def __len__(self):
+        return len(self.symbols)
+
 class UniversalAlphabet(Alphabet):
     """ A class representing an alphabet compatible with any other alphabet"""
     def __eq__(self, other):

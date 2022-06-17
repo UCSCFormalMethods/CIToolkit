@@ -208,7 +208,7 @@ def test_accumulated_cost_dfa_no_costs():
     static_cost_dfa = AccumulatedCostDfa(dfa, cost_map, 10)
 
     # Checks select strings against the Accumulated Cost DFA
-    assert static_cost_dfa.decompose() == dict()
+    assert static_cost_dfa.decompose() == {}
 
     assert static_cost_dfa.cost(list("")) is None
     assert static_cost_dfa.cost(list("0")) is None

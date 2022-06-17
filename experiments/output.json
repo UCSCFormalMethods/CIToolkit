@@ -1,0 +1,1346 @@
+{
+    "1": {
+        "0": {
+            "distanceToTarget": 1.8738738782384565,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.6637750630577419,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.9559205154267728,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 0.883553523772315,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.6469518805388393,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "2": {
+        "0": {
+            "distanceToTarget": 0.24841539116367586,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 44.69
+        },
+        "1": {
+            "distanceToTarget": 0.24959305621474825,
+            "consumedEnergy": 941.6946395311377,
+            "elapsedTime": 40.31
+        },
+        "2": {
+            "distanceToTarget": 0.24997567644999077,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 43.28
+        },
+        "3": {
+            "distanceToTarget": 0.3371905460132991,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 1.0067393815887065,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "3": {
+        "0": {
+            "distanceToTarget": 0.24958577150667496,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 44.89
+        },
+        "1": {
+            "distanceToTarget": 1.403398179479,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.24968935766385536,
+            "consumedEnergy": 844.1412705948188,
+            "elapsedTime": 38.74
+        },
+        "3": {
+            "distanceToTarget": 0.2493860418621296,
+            "consumedEnergy": 942.8690210080547,
+            "elapsedTime": 40.44
+        },
+        "4": {
+            "distanceToTarget": 0.5997048139364183,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "4": {
+        "0": {
+            "distanceToTarget": 0.2648731460392997,
+            "consumedEnergy": 927.6524862331293,
+            "elapsedTime": 44.9
+        },
+        "1": {
+            "distanceToTarget": 0.2640323834025292,
+            "consumedEnergy": 842.9404038928664,
+            "elapsedTime": 41.74
+        },
+        "2": {
+            "distanceToTarget": 0.2644378806338878,
+            "consumedEnergy": 821.0972367803777,
+            "elapsedTime": 39.97
+        },
+        "3": {
+            "distanceToTarget": 0.264399234156366,
+            "consumedEnergy": 835.8409805913095,
+            "elapsedTime": 40.300000000000004
+        },
+        "4": {
+            "distanceToTarget": 0.2649748573881295,
+            "consumedEnergy": 980.5784226277409,
+            "elapsedTime": 48.84
+        },
+        "error": null
+    },
+    "5": {
+        "0": {
+            "distanceToTarget": 1.6790315369772126,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.6091094659853,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.3903426393265028,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 1.9760120382068642,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 1.7578924078271672,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "6": {
+        "0": {
+            "distanceToTarget": 0.24867174192415928,
+            "consumedEnergy": 899.8581321178121,
+            "elapsedTime": 31.0
+        },
+        "1": {
+            "distanceToTarget": 0.6016799884581159,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.7248053380468324,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.241472401080397,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 1.4164595681895535,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "7": {
+        "0": {
+            "distanceToTarget": 3.357415208501485,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.982933077692387,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.9034012208153712,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.257684416458787,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.24891162315918,
+            "consumedEnergy": 748.73431724116,
+            "elapsedTime": 29.060000000000002
+        },
+        "error": null
+    },
+    "8": {
+        "0": {
+            "distanceToTarget": 3.6276930152392386,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.2648861894348226,
+            "consumedEnergy": 589.6362408223822,
+            "elapsedTime": 25.6
+        },
+        "2": {
+            "distanceToTarget": 0.2647654546239322,
+            "consumedEnergy": 550.1610998276242,
+            "elapsedTime": 25.04
+        },
+        "3": {
+            "distanceToTarget": 2.385430570629077,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.473168812431831,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "9": {
+        "0": {
+            "distanceToTarget": 3.6082295161330067,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.2499388898698507,
+            "consumedEnergy": 904.8995213660746,
+            "elapsedTime": 25.43
+        },
+        "2": {
+            "distanceToTarget": 3.274018157829859,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 3.240052014998355,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 3.4071520698148214,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "10": {
+        "0": {
+            "distanceToTarget": 1.7883442821598177,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 3.3003292844606986,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 3.1267849851727783,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 1.4635928529572315,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.178433873373598,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "11": {
+        "0": {
+            "distanceToTarget": 0.24991873753585925,
+            "consumedEnergy": 894.0989910756141,
+            "elapsedTime": 30.09
+        },
+        "1": {
+            "distanceToTarget": 2.860336811402978,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 2.5976791741083423,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.8002035327164014,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.42323604002101,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "12": {
+        "0": {
+            "distanceToTarget": 0.2633797868486834,
+            "consumedEnergy": 616.995005043108,
+            "elapsedTime": 21.740000000000002
+        },
+        "1": {
+            "distanceToTarget": 2.569629366942807,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 2.7056823556966743,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.317856075272066,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.1968748871734447,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "13": {
+        "0": {
+            "distanceToTarget": 2.3295528307896816,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.4362427681729186,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.3263594923290611,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.796934547096423,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 4.317399039551935,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "14": {
+        "0": {
+            "distanceToTarget": 1.7610841347793005,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 3.1806648386395144,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 2.7842173676134423,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.649749942462584,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 3.1993353268972125,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "15": {
+        "0": {
+            "distanceToTarget": 3.4626460542463304,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 3.4020566476349234,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 2.9795334535745766,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 3.8491827901016005,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.4471329561336135,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "16": {
+        "0": {
+            "distanceToTarget": 0.2649045421762891,
+            "consumedEnergy": 621.1386082019567,
+            "elapsedTime": 16.81
+        },
+        "1": {
+            "distanceToTarget": 2.4921081278770756,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 3.203756588208075,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 1.267268251838445,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.306290490303132,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "17": {
+        "0": {
+            "distanceToTarget": 3.567535596205862,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.518486554123184,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.623557378689915,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.334613770840111,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.833733254371893,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "18": {
+        "0": {
+            "distanceToTarget": 1.3371899162690548,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.44898198396845324,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 38.18
+        },
+        "2": {
+            "distanceToTarget": 0.8004762553603905,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.068509306946033,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.7011881849327263,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "19": {
+        "0": {
+            "distanceToTarget": 0.8690339275596496,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.44898818888674363,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 38.64
+        },
+        "2": {
+            "distanceToTarget": 0.4492224375071529,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 39.82
+        },
+        "3": {
+            "distanceToTarget": 0.44920575867416523,
+            "consumedEnergy": 964.8807187483185,
+            "elapsedTime": 38.46
+        },
+        "4": {
+            "distanceToTarget": 0.9557209212304532,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "20": {
+        "0": {
+            "distanceToTarget": 0.6591485125739142,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.4489980208601217,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 40.76
+        },
+        "2": {
+            "distanceToTarget": 0.44953740200462367,
+            "consumedEnergy": 927.1310929839269,
+            "elapsedTime": 37.64
+        },
+        "3": {
+            "distanceToTarget": 0.4492332206592487,
+            "consumedEnergy": 958.2535266474912,
+            "elapsedTime": 38.47
+        },
+        "4": {
+            "distanceToTarget": 1.0261738338465731,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "21": {
+        "0": {
+            "distanceToTarget": 2.8545622461653375,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.3942735061800517,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.46092846380559377,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 1.146642325558003,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.4811914340289065,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "22": {
+        "0": {
+            "distanceToTarget": 0.44895467655136573,
+            "consumedEnergy": 939.7626916456152,
+            "elapsedTime": 29.47
+        },
+        "1": {
+            "distanceToTarget": 0.4494430686360998,
+            "consumedEnergy": 774.504042849783,
+            "elapsedTime": 24.42
+        },
+        "2": {
+            "distanceToTarget": 0.44856417505079027,
+            "consumedEnergy": 752.8869197941261,
+            "elapsedTime": 24.71
+        },
+        "3": {
+            "distanceToTarget": 0.4488446002808001,
+            "consumedEnergy": 835.042736495147,
+            "elapsedTime": 26.71
+        },
+        "4": {
+            "distanceToTarget": 1.196356547059931,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "23": {
+        "0": {
+            "distanceToTarget": 0.7174998361131995,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.44854729026908974,
+            "consumedEnergy": 705.3760820721191,
+            "elapsedTime": 24.2
+        },
+        "2": {
+            "distanceToTarget": 1.7320154456230592,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 0.7748329489991213,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.4493127557325782,
+            "consumedEnergy": 834.9168808327761,
+            "elapsedTime": 28.98
+        },
+        "error": null
+    },
+    "24": {
+        "0": {
+            "distanceToTarget": 0.44946084118754365,
+            "consumedEnergy": 811.2305943697847,
+            "elapsedTime": 28.07
+        },
+        "1": {
+            "distanceToTarget": 0.44966592906202274,
+            "consumedEnergy": 645.5538199868986,
+            "elapsedTime": 24.16
+        },
+        "2": {
+            "distanceToTarget": 0.6456902806570165,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 0.4490630845868188,
+            "consumedEnergy": 641.1384820472,
+            "elapsedTime": 22.36
+        },
+        "4": {
+            "distanceToTarget": 0.44844315838344573,
+            "consumedEnergy": 787.3251875236208,
+            "elapsedTime": 27.96
+        },
+        "error": null
+    },
+    "25": {
+        "0": {
+            "distanceToTarget": 2.0460214969363233,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 1.2988319512482924,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.2719951420271023,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.6319551281188946,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 1.7572588551339656,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "26": {
+        "0": {
+            "distanceToTarget": 0.4491800932297315,
+            "consumedEnergy": 834.5344448116508,
+            "elapsedTime": 22.580000000000002
+        },
+        "1": {
+            "distanceToTarget": 1.8716469059238312,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.9319174390020724,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.2867273034804456,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.4484066273184148,
+            "consumedEnergy": 686.5718713432343,
+            "elapsedTime": 23.87
+        },
+        "error": null
+    },
+    "27": {
+        "0": {
+            "distanceToTarget": 0.44975745357834085,
+            "consumedEnergy": 750.952365226952,
+            "elapsedTime": 22.37
+        },
+        "1": {
+            "distanceToTarget": 0.44911599607495933,
+            "consumedEnergy": 706.0368698129772,
+            "elapsedTime": 20.41
+        },
+        "2": {
+            "distanceToTarget": 1.4330275637594143,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 0.44849911230533684,
+            "consumedEnergy": 697.3797420366291,
+            "elapsedTime": 19.97
+        },
+        "4": {
+            "distanceToTarget": 0.9323625785897824,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "28": {
+        "0": {
+            "distanceToTarget": 3.6917281490469653,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 3.2113015240675944,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.4493770595242489,
+            "consumedEnergy": 963.751190859513,
+            "elapsedTime": 30.22
+        },
+        "3": {
+            "distanceToTarget": 0.44766594773473656,
+            "consumedEnergy": 749.6507969252708,
+            "elapsedTime": 21.87
+        },
+        "4": {
+            "distanceToTarget": 0.44800117169028536,
+            "consumedEnergy": 652.6755503566574,
+            "elapsedTime": 21.490000000000002
+        },
+        "error": null
+    },
+    "29": {
+        "0": {
+            "distanceToTarget": 3.516175978219531,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 3.2339350095285386,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.9776144771296038,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.208719707751869,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 3.111332085044745,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "30": {
+        "0": {
+            "distanceToTarget": 0.4473071490399844,
+            "consumedEnergy": 762.1311072251549,
+            "elapsedTime": 17.1
+        },
+        "1": {
+            "distanceToTarget": 2.2261465334648225,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.44731452450920195,
+            "consumedEnergy": 945.2661291370749,
+            "elapsedTime": 26.02
+        },
+        "3": {
+            "distanceToTarget": 1.8248032691829266,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.151885250738762,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "31": {
+        "0": {
+            "distanceToTarget": 0.4487869757704381,
+            "consumedEnergy": 987.5781043450532,
+            "elapsedTime": 21.01
+        },
+        "1": {
+            "distanceToTarget": 1.408553649751964,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.652036247072865,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 3.2510749205632727,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 1.7061209273885398,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "32": {
+        "0": {
+            "distanceToTarget": 2.4974244318220347,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.4491268185646976,
+            "consumedEnergy": 485.6092776583738,
+            "elapsedTime": 14.040000000000001
+        },
+        "2": {
+            "distanceToTarget": 3.1487506149488462,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 0.448203971482611,
+            "consumedEnergy": 732.6151121078866,
+            "elapsedTime": 18.29
+        },
+        "4": {
+            "distanceToTarget": 2.1296007359040483,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "33": {
+        "0": {
+            "distanceToTarget": 4.429725753358346,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.766358009437439,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.550538440908109,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 3.8265131985878735,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 4.466466158940584,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "34": {
+        "0": {
+            "distanceToTarget": 2.488627501215711,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.291805538995099,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.6871673320303295,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.4671961911504634,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.9160983501951634,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "35": {
+        "0": {
+            "distanceToTarget": 1.6880042511200632,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.7047611830088024,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.9762018696368,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 0.8375933701536113,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 1.219207628475183,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "36": {
+        "0": {
+            "distanceToTarget": 1.4512717169156961,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.6496713949864735,
+            "consumedEnergy": 992.2269784107798,
+            "elapsedTime": 36.43
+        },
+        "2": {
+            "distanceToTarget": 2.188396890447421,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.1166199198875395,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.9984288144226843,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "37": {
+        "0": {
+            "distanceToTarget": 1.3834597517697873,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 4.10173017357691,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 2.4100281452046284,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.2612341302448113,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 4.58593718725262,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "38": {
+        "0": {
+            "distanceToTarget": 1.887704745526695,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 1.474174485303033,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.588349199400807,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.516070772645446,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.6482764935745373,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 30.62
+        },
+        "error": null
+    },
+    "39": {
+        "0": {
+            "distanceToTarget": 1.2631745515643629,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.6492307100827913,
+            "consumedEnergy": 826.156476044505,
+            "elapsedTime": 24.47
+        },
+        "2": {
+            "distanceToTarget": 0.649143443978273,
+            "consumedEnergy": 990.6594120519464,
+            "elapsedTime": 27.3
+        },
+        "3": {
+            "distanceToTarget": 0.6489442747312826,
+            "consumedEnergy": 912.0987813198263,
+            "elapsedTime": 28.740000000000002
+        },
+        "4": {
+            "distanceToTarget": 0.648793903472173,
+            "consumedEnergy": 847.2392648490031,
+            "elapsedTime": 27.61
+        },
+        "error": null
+    },
+    "40": {
+        "0": {
+            "distanceToTarget": 0.6490803760239727,
+            "consumedEnergy": 876.8242594375716,
+            "elapsedTime": 26.88
+        },
+        "1": {
+            "distanceToTarget": 0.6498801306220172,
+            "consumedEnergy": 803.4970044707494,
+            "elapsedTime": 23.59
+        },
+        "2": {
+            "distanceToTarget": 0.6486722825683332,
+            "consumedEnergy": 799.841450364097,
+            "elapsedTime": 24.29
+        },
+        "3": {
+            "distanceToTarget": 0.648778186285841,
+            "consumedEnergy": 733.8000260731039,
+            "elapsedTime": 23.03
+        },
+        "4": {
+            "distanceToTarget": 0.6488336364726152,
+            "consumedEnergy": 887.5365090835343,
+            "elapsedTime": 28.14
+        },
+        "error": null
+    },
+    "41": {
+        "0": {
+            "distanceToTarget": 4.144918242797251,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 2.296790622322203,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.6493665495204083,
+            "consumedEnergy": 790.4583004609831,
+            "elapsedTime": 21.67
+        },
+        "3": {
+            "distanceToTarget": 4.328133662831429,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 16.28
+        },
+        "4": {
+            "distanceToTarget": 3.937758506368509,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "42": {
+        "0": {
+            "distanceToTarget": 1.0852656096468265,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 1.713511190016204,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.777589384537743,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 2.189735691730178,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 2.063802483026395,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "43": {
+        "0": {
+            "distanceToTarget": 0.7364434361570517,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.6485123847512282,
+            "consumedEnergy": 676.9211850770685,
+            "elapsedTime": 19.07
+        },
+        "2": {
+            "distanceToTarget": 0.6489899094155768,
+            "consumedEnergy": 539.1386003194746,
+            "elapsedTime": 15.73
+        },
+        "3": {
+            "distanceToTarget": 0.6483955607098861,
+            "consumedEnergy": 814.5458226972094,
+            "elapsedTime": 20.52
+        },
+        "4": {
+            "distanceToTarget": 1.7609297943640152,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "44": {
+        "0": {
+            "distanceToTarget": 0.6486055413977333,
+            "consumedEnergy": 973.3349378372668,
+            "elapsedTime": 25.82
+        },
+        "1": {
+            "distanceToTarget": 0.6496061281823138,
+            "consumedEnergy": 623.4161950414991,
+            "elapsedTime": 17.37
+        },
+        "2": {
+            "distanceToTarget": 0.6483460927594018,
+            "consumedEnergy": 564.9588687374707,
+            "elapsedTime": 15.700000000000001
+        },
+        "3": {
+            "distanceToTarget": 2.185207485016883,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 0.6483094049758229,
+            "consumedEnergy": 960.7814030858952,
+            "elapsedTime": 26.78
+        },
+        "error": null
+    },
+    "45": {
+        "0": {
+            "distanceToTarget": 4.3408553758332244,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 3.268118489144844,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 1.708053818857071,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 1.7767839892260782,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 4.539513350100155,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "46": {
+        "0": {
+            "distanceToTarget": 2.881004093765134,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "1": {
+            "distanceToTarget": 0.6496055801200488,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 24.03
+        },
+        "2": {
+            "distanceToTarget": 1.6087306126438459,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "3": {
+            "distanceToTarget": 1.9746672537024395,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "4": {
+            "distanceToTarget": 1.9420697967317682,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "47": {
+        "0": {
+            "distanceToTarget": 0.6476068445430172,
+            "consumedEnergy": 830.8772847645206,
+            "elapsedTime": 16.580000000000002
+        },
+        "1": {
+            "distanceToTarget": 1.633240457598771,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "2": {
+            "distanceToTarget": 0.6489252286503703,
+            "consumedEnergy": 622.8113614253325,
+            "elapsedTime": 15.44
+        },
+        "3": {
+            "distanceToTarget": 0.6494991409257341,
+            "consumedEnergy": 635.2700700990845,
+            "elapsedTime": 16.09
+        },
+        "4": {
+            "distanceToTarget": 1.5663627928506556,
+            "consumedEnergy": 1000.0,
+            "elapsedTime": 120.0
+        },
+        "error": null
+    },
+    "48": {
+        "0": {
+            "distanceToTarget": 0.6491944994788099,
+            "consumedEnergy": 627.3716368234914,
+            "elapsedTime": 15.47
+        },
+        "1": {
+            "distanceToTarget": 0.6484003739943618,
+            "consumedEnergy": 614.5447899612082,
+            "elapsedTime": 15.6
+        },
+        "2": {
+            "distanceToTarget": 0.6487725350166823,
+            "consumedEnergy": 473.0232669351152,
+            "elapsedTime": 13.38
+        },
+        "3": {
+            "distanceToTarget": 0.6499041359333172,
+            "consumedEnergy": 627.6662772697844,
+            "elapsedTime": 15.68
+        },
+        "4": {
+            "distanceToTarget": 0.6474394586508848,
+            "consumedEnergy": 874.0366709221266,
+            "elapsedTime": 23.080000000000002
+        },
+        "error": null
+    }
+}

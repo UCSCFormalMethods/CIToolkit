@@ -18,7 +18,7 @@ class AccumulatedCostDfa(ExactCostFunc):
     be specified to ensure that the set of costs is always finite.
 
     :param dfa: A Dfa specification, which accepts words that have a cost.
-    :param cost_map: A dictionary mapping each state in dfa ta cost.
+    :param cost_map: A dictionary mapping each state in dfa to a cost.
     :param max_word_length: The maximum length of a word that has a cost.
         Any word with length longer than this will not have a cost associated
         with it.

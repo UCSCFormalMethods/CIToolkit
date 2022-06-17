@@ -1,0 +1,541 @@
+{
+    "experiments": {
+        "1": {
+            "veh_id": 1,
+            "env_id": 1
+        },
+        "2": {
+            "veh_id": 2,
+            "env_id": 1
+        },
+        "3": {
+            "veh_id": 3,
+            "env_id": 1
+        },
+        "4": {
+            "veh_id": 4,
+            "env_id": 1
+        },
+        "5": {
+            "veh_id": 5,
+            "env_id": 1
+        },
+        "6": {
+            "veh_id": 6,
+            "env_id": 1
+        },
+        "7": {
+            "veh_id": 7,
+            "env_id": 1
+        },
+        "8": {
+            "veh_id": 8,
+            "env_id": 1
+        },
+        "9": {
+            "veh_id": 9,
+            "env_id": 1
+        },
+        "10": {
+            "veh_id": 10,
+            "env_id": 1
+        },
+        "11": {
+            "veh_id": 11,
+            "env_id": 1
+        },
+        "12": {
+            "veh_id": 12,
+            "env_id": 1
+        },
+        "13": {
+            "veh_id": 13,
+            "env_id": 1
+        },
+        "14": {
+            "veh_id": 14,
+            "env_id": 1
+        },
+        "15": {
+            "veh_id": 15,
+            "env_id": 1
+        },
+        "16": {
+            "veh_id": 16,
+            "env_id": 1
+        },
+        "17": {
+            "veh_id": 17,
+            "env_id": 1
+        },
+        "18": {
+            "veh_id": 18,
+            "env_id": 1
+        },
+        "19": {
+            "veh_id": 19,
+            "env_id": 1
+        },
+        "20": {
+            "veh_id": 20,
+            "env_id": 1
+        },
+        "21": {
+            "veh_id": 21,
+            "env_id": 1
+        },
+        "22": {
+            "veh_id": 22,
+            "env_id": 1
+        },
+        "23": {
+            "veh_id": 23,
+            "env_id": 1
+        },
+        "24": {
+            "veh_id": 24,
+            "env_id": 1
+        },
+        "25": {
+            "veh_id": 25,
+            "env_id": 1
+        },
+        "26": {
+            "veh_id": 26,
+            "env_id": 1
+        },
+        "27": {
+            "veh_id": 27,
+            "env_id": 1
+        },
+        "28": {
+            "veh_id": 28,
+            "env_id": 1
+        },
+        "29": {
+            "veh_id": 29,
+            "env_id": 1
+        },
+        "30": {
+            "veh_id": 30,
+            "env_id": 1
+        },
+        "31": {
+            "veh_id": 31,
+            "env_id": 1
+        },
+        "32": {
+            "veh_id": 32,
+            "env_id": 1
+        },
+        "33": {
+            "veh_id": 33,
+            "env_id": 1
+        },
+        "34": {
+            "veh_id": 34,
+            "env_id": 1
+        },
+        "35": {
+            "veh_id": 35,
+            "env_id": 1
+        },
+        "36": {
+            "veh_id": 36,
+            "env_id": 1
+        },
+        "37": {
+            "veh_id": 37,
+            "env_id": 1
+        },
+        "38": {
+            "veh_id": 38,
+            "env_id": 1
+        },
+        "39": {
+            "veh_id": 39,
+            "env_id": 1
+        },
+        "40": {
+            "veh_id": 40,
+            "env_id": 1
+        },
+        "41": {
+            "veh_id": 41,
+            "env_id": 1
+        },
+        "42": {
+            "veh_id": 42,
+            "env_id": 1
+        },
+        "43": {
+            "veh_id": 43,
+            "env_id": 1
+        },
+        "44": {
+            "veh_id": 44,
+            "env_id": 1
+        },
+        "45": {
+            "veh_id": 45,
+            "env_id": 1
+        },
+        "46": {
+            "veh_id": 46,
+            "env_id": 1
+        },
+        "47": {
+            "veh_id": 47,
+            "env_id": 1
+        },
+        "48": {
+            "veh_id": 48,
+            "env_id": 1
+        }
+    },
+    "vehicles": {
+        "1": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 50,
+            "width": 65
+        },
+        "2": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 50,
+            "width": 115
+        },
+        "3": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 50,
+            "width": 165
+        },
+        "4": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 50,
+            "width": 215
+        },
+        "5": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 80,
+            "width": 65
+        },
+        "6": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 80,
+            "width": 115
+        },
+        "7": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 80,
+            "width": 165
+        },
+        "8": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 80,
+            "width": 215
+        },
+        "9": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 110,
+            "width": 65
+        },
+        "10": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 110,
+            "width": 115
+        },
+        "11": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 110,
+            "width": 165
+        },
+        "12": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 110,
+            "width": 215
+        },
+        "13": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 140,
+            "width": 65
+        },
+        "14": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 140,
+            "width": 115
+        },
+        "15": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 140,
+            "width": 165
+        },
+        "16": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 100,
+            "radius": 140,
+            "width": 215
+        },
+        "17": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 50,
+            "width": 65
+        },
+        "18": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 50,
+            "width": 115
+        },
+        "19": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 50,
+            "width": 165
+        },
+        "20": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 50,
+            "width": 215
+        },
+        "21": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 80,
+            "width": 65
+        },
+        "22": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 80,
+            "width": 115
+        },
+        "23": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 80,
+            "width": 165
+        },
+        "24": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 80,
+            "width": 215
+        },
+        "25": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 110,
+            "width": 65
+        },
+        "26": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 110,
+            "width": 115
+        },
+        "27": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 110,
+            "width": 165
+        },
+        "28": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 110,
+            "width": 215
+        },
+        "29": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 140,
+            "width": 65
+        },
+        "30": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 140,
+            "width": 115
+        },
+        "31": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 140,
+            "width": 165
+        },
+        "32": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 200,
+            "radius": 140,
+            "width": 215
+        },
+        "33": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 50,
+            "width": 65
+        },
+        "34": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 50,
+            "width": 115
+        },
+        "35": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 50,
+            "width": 165
+        },
+        "36": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 50,
+            "width": 215
+        },
+        "37": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 80,
+            "width": 65
+        },
+        "38": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 80,
+            "width": 115
+        },
+        "39": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 80,
+            "width": 165
+        },
+        "40": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 80,
+            "width": 215
+        },
+        "41": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 110,
+            "width": 65
+        },
+        "42": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 110,
+            "width": 115
+        },
+        "43": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 110,
+            "width": 165
+        },
+        "44": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 110,
+            "width": 215
+        },
+        "45": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 140,
+            "width": 65
+        },
+        "46": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 140,
+            "width": 115
+        },
+        "47": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 140,
+            "width": 165
+        },
+        "48": {
+            "type": "NWheeledCar",
+            "number_of_cars": 2,
+            "length": 300,
+            "radius": 140,
+            "width": 215
+        }
+    },
+    "environments": {
+        "1": {
+            "scenic_filename": "hill_field.scenic",
+            "wbt_filename": "LargeMap.wbt",
+            "seed": 1
+        }
+    }
+}
