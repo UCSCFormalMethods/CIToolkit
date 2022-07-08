@@ -23,7 +23,7 @@ class _ALQCIBase(Improviser):
     all (label,cost) tuples to the spec that recognizes words with that label
     and cost.
 
-    If lazy_counting is set to False, then all label/cost class specs are also
+    If lazy is set to False, then all label/cost class specs are also
     counted.
 
     All child classes must then initialize two list attributes: class_keys
@@ -45,12 +45,12 @@ class _ALQCIBase(Improviser):
     :param seed: Random seed for reproducible results.
     :param num_threads: Number of threads to be used when computing improviser.
     :param verbose: If verbose is enabled, information will be printed to STDOUT.
-    :param lazy_counting: Whether or not to count lazily. If true, all spec counts will
+    :param lazy: Whether or not to compute lazily. If true, all spec counts will
         be computed after spec construction.
     """
     def __init__(self, hard_constraint: ApproxSpec, cost_func: ApproxCostFunc, label_func: ApproxLabelFunc, \
                 bucket_ratio:float , counting_tol: float, sampling_tol: float, conf: float, \
-                seed: int, num_threads: int, verbose: bool, lazy_counting: bool) -> None:
+                seed: int, num_threads: int, verbose: bool, lazy: bool) -> None:
         ## Initialization ##
         # Save random state and seed new state.
         old_state = random.getstate()
@@ -151,7 +151,7 @@ class _ALQCIBase(Improviser):
             cit_log("Desired Confidence " + str(conf) + " requires counting confidence of " + str(self.counting_conf))
 
         ## Spec Counting ##
-        if not lazy_counting:
+        if not lazy:
             # Count the language size for each spec if precount is enabled.
             if self.verbose:
                 start_time = time.time()
@@ -231,7 +231,7 @@ class ALQCI(_ALQCIBase):
     all (label,cost) tuples to the spec that recognizes words with that label
     and cost.
 
-    If lazy_counting is set to False, then all label/cost class specs are also
+    If lazy is set to False, then all label/cost class specs are also
     counted.
 
     :param hard_constraint: A specification that must accept all improvisations.
@@ -262,14 +262,14 @@ class ALQCI(_ALQCIBase):
     :param seed: Random seed for reproducible results.
     :param num_threads: Number of threads to be used when computing improviser.
     :param verbose: If verbose is enabled, information will be printed to STDOUT.
-    :param lazy_counting: Whether or not to count lazily. If true, all spec counts will
+    :param lazy: Whether or not to count lazily. If true, all spec counts will
         be computed after spec construction. If false, all spec counts will be computed when needed.
         If None, the improviser will decide based on a heuristic.
     """
     def __init__(self, hard_constraint: ApproxSpec, cost_func: ApproxCostFunc, label_func: ApproxLabelFunc, \
                  cost_bound: float, label_prob_bounds: tuple[float, float], word_prob_bounds: dict[str, tuple[float, float]], \
                  bucket_ratio: float, counting_tol: float, sampling_tol: float, conf: float, \
-                 seed=None, num_threads: int =1, verbose: bool =False, lazy_counting: Optional[bool] =None) -> None:
+                 seed=None, num_threads: int =1, verbose: bool =False, lazy: Optional[bool] =None) -> None:
         ## Initialization ##
         # Checks that parameters are well formed.
         if not isinstance(hard_constraint, ApproxSpec):
@@ -311,14 +311,14 @@ class ALQCI(_ALQCIBase):
         if conf <= 0 or conf >= 1:
             raise ValueError("The conf parameter must be a number in the range (0,1).")
 
-        # If lazy_counting is set to the default None, set it to either True or False.
+        # If lazy is set to the default None, set it to either True or False.
         # The heuristic is simple, if all words have zero minimum probability then count
         # lazily.
-        if lazy_counting is None:
+        if lazy is None:
             if max([word_prob_bounds[label][0] for label in label_func.labels]) == 0:
-                lazy_counting = True
+                lazy = True
             else:
-                lazy_counting = False
+                lazy = False
 
         # Cache the random state and set seed.
         old_state = random.getstate()
@@ -327,7 +327,7 @@ class ALQCI(_ALQCIBase):
         # Initialize LQCI base class.
         super().__init__(hard_constraint, cost_func, label_func, \
                          bucket_ratio, counting_tol, sampling_tol, conf, \
-                         seed, num_threads, verbose, lazy_counting)
+                         seed, num_threads, verbose, lazy)
 
         if self.verbose:
             start_time = time.time()
@@ -366,7 +366,7 @@ class ALQCI(_ALQCIBase):
                     None)
 
         # Add probabilites to appropriate classes (up to beta per word) without assigning more than 1 over each label.
-        if lazy_counting and self.num_threads > 1 and len(label_func.labels) > 1:
+        if lazy and self.num_threads > 1 and len(label_func.labels) > 1:
             # Probabilities are not yet computed and we have several threads available and several labels to compute. Advantageous to multithread.
             with Pool(self.num_threads) as pool:
                 # Helper function that counts buckets for a label and assigns probability.

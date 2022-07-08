@@ -337,6 +337,68 @@ def test_accumulated_cost_dfa_decompose():
                     if t_cost != cost:
                         assert not decomposed_cost_func[t_cost].accepts(word)
 
+def test_accumulated_cost_dfa_decompose_multi():
+    """ Creates a simple AccumulatedCostDfa and ensures that the decompose function
+    works correctly, this time using multiple threads.
+    """
+    # Create a simple DFA and AccumulatedCostDfa
+    alphabet = {"0", "1"}
+    states = {"State1", "State2", "State3", "State4", "Sink"}
+    accepting_states = {"State4"}
+    start_state = "State1"
+
+    transitions = {}
+
+    transitions[("State1", "0")] = "State2"
+    transitions[("State1", "1")] = "State3"
+
+    transitions[("State2", "0")] = "State1"
+    transitions[("State2", "1")] = "State4"
+
+    transitions[("State3", "0")] = "Sink"
+    transitions[("State3", "1")] = "State2"
+
+    transitions[("State4", "0")] = "State4"
+    transitions[("State4", "1")] = "State4"
+
+    transitions[("Sink", "0")] = "Sink"
+    transitions[("Sink", "1")] = "Sink"
+
+    dfa = Dfa(alphabet, states, accepting_states, start_state, transitions)
+
+    cost_map = {}
+    cost_map["State1"] = 1
+    cost_map["State2"] = 2
+    cost_map["State3"] = 3
+    cost_map["State4"] = 4
+    cost_map["Sink"] = 999999
+
+    max_word_length = 6
+
+    accumulated_cost_dfa = AccumulatedCostDfa(dfa, cost_map, max_word_length)
+
+    # Decompose the AccumulatedCostDfa and ensure that an indicator function
+    # for each cost is present.
+    decomposed_cost_func = accumulated_cost_dfa.decompose(num_threads=4)
+
+    assert set(accumulated_cost_dfa.costs) == set(decomposed_cost_func.keys())
+
+    # Iterate through every possible word that has length <= the number
+    # of states in the new Dfa to ensure they are equivalent.
+    for word_length in range(max_word_length+1):
+        for word in itertools.product(alphabet, repeat=word_length):
+            cost = accumulated_cost_dfa.cost(word)
+
+            if cost is None:
+                for spec in decomposed_cost_func.values():
+                    assert not spec.accepts(word)
+            else:
+                assert decomposed_cost_func[cost].accepts(word)
+
+                for t_cost in accumulated_cost_dfa.costs:
+                    if t_cost != cost:
+                        assert not decomposed_cost_func[t_cost].accepts(word)
+
 ###################################################################################################
 # Randomized Tests
 ###################################################################################################

@@ -32,7 +32,7 @@ def test_z3_formula_basic():
     spec.language_size()
 
     #TODO Unigen bug, fix and set num iterations back to 1000
-    for i in range(100):
+    for i in range(1000):
         sample = spec.sample(seed=i)
 
         assert (sample["x"] > 64) == sample["x_big"]
@@ -74,7 +74,7 @@ def test_z3_formula_pickle():
     p_spec.language_size()
 
     #TODO Unigen bug, fix and set num iterations back to 1000
-    for i in range(100):
+    for i in range(1000):
         sample = p_spec.sample(seed=i)
 
         assert (sample["x"] > 64) == sample["x_big"]

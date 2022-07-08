@@ -8,6 +8,7 @@ from numbers import Rational
 from abc import ABC, abstractmethod
 
 from citoolkit.specifications.spec import ExactSpec, ApproxSpec
+from citoolkit.util.logging import cit_log
 
 class ExactCostFunc(ABC):
     """ The CostFunc class is a parent class to all cost functions.
@@ -35,7 +36,7 @@ class ExactCostFunc(ABC):
         """
 
     @abstractmethod
-    def decompose(self) -> dict[Rational, ExactSpec]:
+    def decompose(self, num_threads, verbose) -> dict[Rational, ExactSpec]:
         """ Decompose this cost function into an ExactSpec object for
         each cost that accepts only on words with that cost.
 
@@ -89,13 +90,16 @@ class SoftConstraintCostFunc(ExactCostFunc):
         else:
             return 1
 
-    def decompose(self) -> dict[Rational, ExactSpec]:
+    def decompose(self, num_threads=1, verbose=False) -> dict[Rational, ExactSpec]:
         """ Decompose this cost function into a ExactSpec object for
         each cost that accepts only on words with that cost.
 
         :returns: A dictionary mapping each cost to a ExactSpec object that
             accepts only words assigned that cost by this cost function.
         """
+        if verbose:
+            cit_log("Returning trivial SoftConstraintCostFunc decomposition.")
+
         decomposed_cost_func = {}
 
         decomposed_cost_func[0] = self.soft_constraint

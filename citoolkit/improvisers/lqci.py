@@ -45,7 +45,7 @@ class _LQCIBase(Improviser):
         of a generated word.
     """
     def __init__(self, hard_constraint: ExactSpec, cost_func: ExactCostFunc, label_func: ExactLabellingFunc, \
-                 length_bounds: tuple[int, int], num_threads: int, verbose: bool, lazy_counting: bool) -> None:
+                 length_bounds: tuple[int, int], num_threads: int, verbose: bool, lazy: bool) -> None:
         ## Initialization ##
         # Set verbosity level and num_threads.
         self.verbose = verbose
@@ -58,72 +58,77 @@ class _LQCIBase(Improviser):
 
         ## Function Decomposition ##
         if self.verbose:
-            cit_log("Beginning function decomposition.")
+            cit_log("Beginning function decomposition and abstract spec construction.")
 
         label_specs = label_func.decompose()
         cost_specs = cost_func.decompose()
 
-        if self.verbose:
-            cit_log("Function decomposition completed.")
-
-        ## Spec Construction ##
-        if self.verbose:
-            start_time = time.time()
-            cit_log("Beginning compound Spec construction. Using " + str(num_threads) + " thread(s).")
-
         class_ids = [(label, cost) for label in label_func.labels for cost in cost_func.costs]
 
-        # Compute spec for each label/cost class.
-        if num_threads <= 1:
-            cpu_time = "N/A"
+        for class_id in class_ids:
+            label, cost = class_id
 
-            for class_id in class_ids:
-                label, cost = class_id
+            # Create abstract spec
+            self.class_specs[class_id] = hard_constraint & label_specs[label] & cost_specs[cost]
 
-                # Create abstract spec
-                self.class_specs[class_id] = hard_constraint & label_specs[label] & cost_specs[cost]
+        if self.verbose:
+            cit_log("Function decomposition and abstract spec construction completed.")
 
-                # Try to make the spec explicit if possible
-                try:
-                    self.class_specs[class_id] = self.class_specs[class_id].explicit()
-                except NotImplementedError:
-                    pass
-        else:
-            # Multiple threads, so create wrapper and thread pool and map abstract specs before
-            # resaving explicit specs.
+        if not lazy:
+            ## Spec Construction ##
+            if self.verbose:
+                start_time = time.time()
+                cit_log("Beginning explicit compound Spec construction. Using " + str(num_threads) + " thread(s).")
 
-            with Pool(self.num_threads) as pool:
-                # Helper function for pool.map
-                def explicit_wrapper(class_id):
-                    process_start_time = time.process_time()
+            # Compute spec for each label/cost class.
+            if num_threads <= 1:
+                cpu_time = "N/A"
 
+                for class_id in class_ids:
                     label, cost = class_id
 
                     # Create abstract spec
-                    spec = hard_constraint & label_specs[label] & cost_specs[cost]
+                    self.class_specs[class_id] = hard_constraint & label_specs[label] & cost_specs[cost]
 
                     # Try to make the spec explicit if possible
                     try:
-                        spec = spec.explicit()
+                        self.class_specs[class_id] = self.class_specs[class_id].explicit()
                     except NotImplementedError:
                         pass
+            else:
+                # Multiple threads, so create wrapper and thread pool and map abstract specs before
+                # resaving explicit specs.
 
-                    return (class_id, spec, time.process_time() - process_start_time)
+                with Pool(self.num_threads) as pool:
+                    # Helper function for pool.map
+                    def explicit_wrapper(class_id):
+                        process_start_time = time.process_time()
 
-                pool_output = pool.map(explicit_wrapper, class_ids)
+                        label, cost = class_id
 
-                # Extract relevant info from pool_output
-                cpu_time = "{:.4f}".format(sum([runtime for _,_,runtime in pool_output]))
+                        # Create abstract spec
+                        spec = hard_constraint & label_specs[label] & cost_specs[cost]
 
-                self.class_specs = {class_id: class_spec for class_id, class_spec, _ in pool_output}
+                        # Try to make the spec explicit if possible
+                        try:
+                            spec = spec.explicit()
+                        except NotImplementedError:
+                            pass
 
-        if self.verbose:
-            wall_time = "{:.4f}".format(time.time() - start_time)
-            cit_log("Compound Spec construction completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
+                        return (class_id, spec, time.process_time() - process_start_time)
 
+                    pool_output = pool.map(explicit_wrapper, class_ids)
 
-        ## Spec Counting ##
-        if not lazy_counting:
+                    # Extract relevant info from pool_output
+                    cpu_time = "{:.4f}".format(sum([runtime for _,_,runtime in pool_output]))
+
+                    self.class_specs = {class_id: class_spec for class_id, class_spec, _ in pool_output}
+
+            if self.verbose:
+                wall_time = "{:.4f}".format(time.time() - start_time)
+                cit_log("Explicit compound Spec construction completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
+
+            ## Spec Counting ##
             # Count the language size for each spec if precount is enabled.
             if self.verbose:
                 start_time = time.time()
@@ -205,7 +210,7 @@ class LQCI(_LQCIBase):
     def __init__(self, hard_constraint: ExactSpec, cost_func: ExactCostFunc, label_func: ExactLabellingFunc, \
                  length_bounds: tuple[int, int], cost_bound: float, \
                  label_prob_bounds: tuple[float, float], word_prob_bounds: dict[str, tuple[float, float]], \
-                 seed: int =None, num_threads: int =1, verbose: bool =False, lazy_counting: Optional[bool] =None) -> None:
+                 seed: int =None, num_threads: int =1, verbose: bool =False, lazy: Optional[bool] =None) -> None:
         # Checks that parameters are well formed.
         if not isinstance(hard_constraint, ExactSpec):
             raise ValueError("The hard_constraint parameter must be a member of the ExactSpec class.")
@@ -240,21 +245,21 @@ class LQCI(_LQCIBase):
         if len(cost_func.costs) == 0:
             raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
 
-        # If lazy_counting is set to the default None, set it to either True or False.
+        # If lazy is set to the default None, set it to either True or False.
         # The heuristic is simple, if all words have zero minimum probability then count
         # lazily.
-        if lazy_counting is None:
+        if lazy is None:
             if max([word_prob_bounds[label][0] for label in label_func.labels]) == 0:
-                lazy_counting = True
+                lazy = True
             else:
-                lazy_counting = False
+                lazy = False
 
         # Cache the random state and set seed.
         old_state = random.getstate()
         random.seed(seed)
 
         # Initialize LQCI base class.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, verbose=verbose, lazy_counting=lazy_counting)
+        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, verbose=verbose, lazy=lazy)
 
         if self.verbose:
             start_time = time.time()
@@ -292,7 +297,7 @@ class LQCI(_LQCIBase):
                     + label + "\" results in a probability of " + str(label_prob) + ", which is greater than 1.", None)
 
         # Add probabilites to appropriate classes (up to beta per word) without assigning more than 1 over each label.
-        if lazy_counting and self.num_threads > 1 and len(label_func.labels) > 1:
+        if lazy and self.num_threads > 1 and len(label_func.labels) > 1:
             # Probabilities are not yet computed and we have several threads available and several labels to compute. Advantageous to multithread.
             with Pool(self.num_threads) as pool:
                 # Helper function that counts buckets for a label and assigns probability.
@@ -449,7 +454,7 @@ class MELQCI(_LQCIBase):
             raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
 
         # Initialize LQCI base class.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, verbose=verbose, lazy_counting=False)
+        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, verbose=verbose, lazy=False)
 
         if self.verbose:
             start_time = time.time()

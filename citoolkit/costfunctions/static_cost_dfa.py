@@ -3,10 +3,12 @@
 from __future__ import annotations
 from typing import Optional
 
+import time
 from numbers import Rational
 
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.costfunctions.cost_func import ExactCostFunc
+from citoolkit.util.logging import cit_log
 
 class StaticCostDfa(ExactCostFunc):
     """ Class encoding a Static Cost Deterministic Finite Automata.
@@ -55,7 +57,7 @@ class StaticCostDfa(ExactCostFunc):
 
         return None
 
-    def decompose(self) -> dict[Rational, Dfa]:
+    def decompose(self, num_threads=1, verbose=False) -> dict[Rational, Dfa]:
         """ Decomposes this cost function into a Dfa indicator
         function for each cost.
 
@@ -64,9 +66,16 @@ class StaticCostDfa(ExactCostFunc):
         """
         # Check if value is cached.
         if self.decomp_cost_func is not None:
+            if verbose:
+                cit_log("Returning cached StaticCostDfa Decomposition.")
+
             return self.decomp_cost_func
 
         # Compute decomposed cost function
+        if verbose:
+            start_time = time.time()
+            cit_log("Computing StaticCostDfa Decomposition...")
+
         self.decomp_cost_func = {}
 
         # Compute a mapping from each cost to its associated accepting states.
@@ -81,5 +90,9 @@ class StaticCostDfa(ExactCostFunc):
             indicator_dfa = Dfa(self.dfa.alphabet, self.dfa.states, cost_states_mapping[cost], \
                                 self.dfa.start_state, self.dfa.transitions)
             self.decomp_cost_func[cost] = indicator_dfa
+
+        if verbose:
+            wall_time = "{:.4f}".format(time.time() - start_time)
+            cit_log("StaticCostDfa Decomposition completed. Wallclock Runtime: " + wall_time)
 
         return self.decomp_cost_func

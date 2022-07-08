@@ -3,11 +3,15 @@
 from __future__ import annotations
 from typing import Optional
 
+import time
 from numbers import Rational
 from collections import Counter
 
+from multiprocess import Pool
+
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.costfunctions.cost_func import ExactCostFunc
+from citoolkit.util.logging import cit_log
 
 class AccumulatedCostDfa(ExactCostFunc):
     """ Class encoding an Accumulated Cost Deterministic Finite Automata.
@@ -82,7 +86,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         else:
             return None
 
-    def decompose(self) -> dict[Rational, Dfa]:
+    def decompose(self, num_threads=1, verbose=False) -> dict[Rational, Dfa]:
         """ Decomposes this cost function into a Dfa indicator
         function for each cost.
 
@@ -91,15 +95,23 @@ class AccumulatedCostDfa(ExactCostFunc):
         """
         # Check if value is cached.
         if self.decomp_cost_func is not None:
+            if verbose:
+                cit_log("Returning cached AccumulatedCostDfa Decomposition.")
+
             return self.decomp_cost_func
+
+        # Compute decomposed cost function
+        if verbose:
+            start_time = time.time()
+            cit_log("Computing AccumulatedCostDfa decomposition...")
 
         # If there are no costs return an empty dictionary.
         if len(self.costs) == 0:
-            return dict()
+            return {}
 
         # Create a new state for every combination of original state
         # and cost in between the 0 and the max cost possible.
-        state_rename_map = dict()
+        state_rename_map = {}
         state_iter = 0
 
         # While creating new states record all states that are accepting
@@ -123,7 +135,7 @@ class AccumulatedCostDfa(ExactCostFunc):
 
         # Create a new transition map over the new states and preserves the
         # original transition relation, but also accounts for accumulating cost.
-        new_transitions = dict()
+        new_transitions = {}
 
         for state in self.dfa.states:
             for cost in range(max(self.costs)+1):
@@ -150,10 +162,36 @@ class AccumulatedCostDfa(ExactCostFunc):
 
         # Create each cost indicator function, which are all identical except
         # that they only accept at states which have the correct accepting cost,
-        # and then minimize each indicator function.
-        decomp_cost_func = {cost: Dfa(self.dfa.alphabet, new_states, cost_accepting_map[cost], new_start_state, new_transitions).minimize() for cost in self.costs}
+        # and then minimize each indicator function. If num_threads >1, multithread
+        # in this computation, as it can be heavy.
+        if num_threads <= 1:
+            # Use one thread
+            cpu_time = "N/A"
+            decomp_cost_func = {cost: Dfa(self.dfa.alphabet, new_states, cost_accepting_map[cost], new_start_state, new_transitions).minimize() for cost in self.costs}
+        else:
+            # Multithread using a multiprocessing pool
+            with Pool(num_threads) as pool:
+                # Helper function for pool.map
+                def cost_indicator_wrapper(cost):
+                    process_start_time = time.process_time()
+
+                    # Create cost indicator spec
+                    spec = Dfa(self.dfa.alphabet, new_states, cost_accepting_map[cost], new_start_state, new_transitions).minimize()
+
+                    return (cost, spec, time.process_time() - process_start_time)
+
+                pool_output = pool.map(cost_indicator_wrapper, self.costs)
+
+                # Extract relevant info from pool_output
+                cpu_time = "{:.4f}".format(sum([runtime for _,_,runtime in pool_output]))
+
+                decomp_cost_func = {cost: spec for cost, spec, _ in pool_output}
 
         self.decomp_cost_func = decomp_cost_func
+
+        if verbose:
+            wall_time = "{:.4f}".format(time.time() - start_time)
+            cit_log("AccumulatedCostDfa deconstruction completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
 
         return decomp_cost_func
 
@@ -186,7 +224,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         # Create and initialize table for 0 length words. The cost_table entry
         # (start_state, 0) is set to a multiset containing cost of the
         # start_state. All other (state, 0) entries are set to an empty multiset.
-        cost_table = dict()
+        cost_table = {}
 
         for state in dfa.states:
             if state == dfa.start_state:
