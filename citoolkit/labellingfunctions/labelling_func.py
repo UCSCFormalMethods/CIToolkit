@@ -1,11 +1,10 @@
-""" Contains the LabelFunc class, from which all labelling functions should inherit."""
+""" Contains the ExactLabellingFunc and ApproxLabelFunc classes, from which all labelling functions should inherit."""
 
 from __future__ import annotations
-from typing import Optional
 
 from abc import ABC, abstractmethod
 
-from citoolkit.specifications.spec import ExactSpec, ApproxSpec, UniverseSpec
+from citoolkit.specifications.spec import ExactSpec, ApproxSpec, UniverseSpec, Alphabet
 
 class ExactLabellingFunc(ABC):
     """ The LabelFunc class is a parent class to all labelling functions.
@@ -13,11 +12,11 @@ class ExactLabellingFunc(ABC):
     :param alphabet: The alphabet this specification is defined over.
     """
     def __init__(self, alphabet: set[str], labels: set[str]) -> None:
-        self.alphabet = frozenset(alphabet)
+        self.alphabet = Alphabet.create_alphabet(alphabet)
         self.labels = frozenset(labels)
 
     @abstractmethod
-    def label(self, word: tuple[str, ...]) -> Optional[str]:
+    def label(self, word: tuple[str, ...]) -> str | None:
         """ Returns the appropriate label for a word. If the word
         has no label, returns None.
 
@@ -40,7 +39,7 @@ class ApproxLabelFunc(ABC):
     :param alphabet: The alphabet this specification is defined over.
     """
     def __init__(self, alphabet: set[str], labels) -> None:
-        self.alphabet = frozenset(alphabet)
+        self.alphabet = Alphabet.create_alphabet(alphabet)
         self.labels = labels
 
     @abstractmethod
@@ -59,7 +58,7 @@ class TrivialLabellingFunc(ExactLabellingFunc):
     def __init__(self) -> None:
         super().__init__(alphabet=frozenset(), labels=frozenset(["TrivialLabel"]))
 
-    def label(self, word: tuple[str, ...]) -> Optional[str]:
+    def label(self, word: tuple[str, ...]) -> str | None:
         """ Returns the appropriate label for a word. If the word
         has no label, returns None.
 

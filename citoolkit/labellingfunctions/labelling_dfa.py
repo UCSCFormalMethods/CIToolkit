@@ -1,7 +1,6 @@
 """ Contains the LabellingDfa class"""
 
 from __future__ import annotations
-from typing import Optional
 
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.labellingfunctions.labelling_func import ExactLabellingFunc
@@ -44,7 +43,7 @@ class LabellingDfa(ExactLabellingFunc):
     # LabellingFunc Functions
     ####################################################################################################
 
-    def label(self, word) -> Optional[str]:
+    def label(self, word) -> str | None:
         """ Returns the appropriate label for a word. This label is
         found by first checking if the interior Dfa accepts a word.
         If it does, then the accepting state that the Dfa terminates

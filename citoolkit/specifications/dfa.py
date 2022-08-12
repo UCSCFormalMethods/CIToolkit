@@ -1,7 +1,6 @@
 """ Contains the Dfa specification class."""
 
 from __future__ import annotations
-from typing import Union
 
 import random
 
@@ -23,8 +22,8 @@ class Dfa(ExactSpec):
     :raises ValueError: Raised if the Dfa parameters are flawed so that they do
         not make a well defined Dfa. I.e. the transition map is not complete.
     """
-    def __init__(self, alphabet: set[str], states: set[Union[str, State]], accepting_states: set[Union[str, State]], \
-                 start_state: Union[str, State], transitions: dict[tuple[State, str], State]) -> None:
+    def __init__(self, alphabet: set[str], states: set[str | State], accepting_states: set[str | State], \
+                 start_state: str | State, transitions: dict[tuple[State, str], State]) -> None:
         # Intializes super class and stores all attributes. Also ensures
         # all states are of the State class
         super().__init__(alphabet)
@@ -57,7 +56,7 @@ class Dfa(ExactSpec):
         self._bounded_dfas = {}
 
     ####################################################################################################
-    # Spec Functions
+    # ExactSpec Functions
     ####################################################################################################
 
     def accepts(self, word: tuple[str,...]) -> bool:
@@ -123,6 +122,8 @@ class Dfa(ExactSpec):
         :raises DfaCycleError: Raised if when computing topological ordering,
             the Dfa is determined to by cyclical. In this case language size
             is infinite and so we cannot sample uniformly.
+        :raises DfaEmptyLanguageError: Raised if one tries to sample from a
+            Dfa that does not accept any words.
         :returns: A single word sampled uniformly at random from the language
             of this Dfa, considering only words of length between min_length
             and max_length inclusive if defined.
@@ -131,8 +132,6 @@ class Dfa(ExactSpec):
         if seed is None:
             seed = random.getrandbits(32)
 
-        # Cache the random state and set it to random seed.
-        old_state = random.getstate()
         random.seed(seed)
 
         # Check if we need to recurse to a length bounded DFA or if we can
@@ -210,13 +209,10 @@ class Dfa(ExactSpec):
                     # remaining count and check next symbol.
                     remaining_count -= destination_count
 
-        # Restore old random state
-        random.setstate(old_state)
-
         return sample
 
     ####################################################################################################
-    # DFA Property Functions
+    # Property Functions
     ####################################################################################################
 
     def get_terminal_state(self, word: tuple[str,...]) -> bool:
@@ -232,6 +228,14 @@ class Dfa(ExactSpec):
         return self.get_state_path(word)[-1]
 
     def get_state_path(self, word: tuple[str,...]) -> bool:
+        """ Run the Dfa on word, keeping track of all states reached.
+
+        :param word: The word to be run through this Dfa.
+        :raises ValueError: Raised if the word contains symbols not in
+            this Dfa's alphabet.
+        :returns: A tuple containing a trace of all states reached when
+            consuming all symbols in word.
+        """
         # Checks that word is composed only of symbols in the alphabet.
         for symbol in word:
             if symbol not in self.alphabet:
@@ -246,7 +250,7 @@ class Dfa(ExactSpec):
             current_state = self.transitions[(current_state, symbol)]
             state_path.append(current_state)
 
-        return state_path
+        return tuple(state_path)
 
     def compute_accepting_path_counts(self) -> dict[State, int]:
         """ Computes the number of accepting paths from a state
@@ -454,15 +458,15 @@ class Dfa(ExactSpec):
         return real_partition_sets
 
     ####################################################################################################
-    # DFA Modification Functions
+    # Modification Functions
     ####################################################################################################
 
     def minimize(self) -> Dfa:
         """ Computes and returns a minimal Dfa that accepts the same
-            language as self.
+        language as self.
 
-            :returns: The complete Dfa with the smallest number of states that
-                accepts the same language as this Dfa.
+        :returns: The complete Dfa with the smallest number of states that
+            accepts the same language as this Dfa.
         """
         partition_sets = self.states_partition()
 
@@ -498,7 +502,7 @@ class Dfa(ExactSpec):
         """ Computes and returns a Dfa that accepts words
         if and only if they are not accepted by self.
 
-            :returns: A Dfa that accepts only words not in this Dfa's language.
+        :returns: A Dfa that accepts only words not in this Dfa's language.
         """
         states = self.states
         new_accepting_states = states - self.accepting_states
@@ -518,7 +522,6 @@ class Dfa(ExactSpec):
 
         :param dfa_a: The first Dfa to use in the product construction.
         :param dfa_b: The second Dfa to use in the product construction.
-
         :returns: A Dfa that accepts words accepted by dfa_a or dfa_b.
         """
         return Dfa._product_construction(dfa_a, dfa_b, union=True).minimize()
@@ -530,7 +533,6 @@ class Dfa(ExactSpec):
 
         :param dfa_a: The first dfa to use in the product construction.
         :param dfa_b: The second dfa to use in the product construction.
-
         :returns: A Dfa that accepts words accepted by dfa_a and dfa_b.
         """
 
@@ -559,7 +561,7 @@ class Dfa(ExactSpec):
         alphabet = dfa_a.alphabet & dfa_b.alphabet
 
         if not isinstance(dfa_a, Dfa) or not isinstance(dfa_b, Dfa):
-            raise ValueError("The product construction can only be performed on DFAs.")
+            raise ValueError("The Dfa product construction can only be performed on Dfa objects.")
 
         # Initialize parameters for new Dfa
         new_states = set()
@@ -597,8 +599,10 @@ class Dfa(ExactSpec):
         """ Returns a Dfa that accepts all strings over alphabet with length exactly
         length_requirement.
 
+        :param alphabet: The alphabet for the output Dfa.
         :param length_requirement: The length of strings that the returned
             DFA should accept.
+        :raises ValueError: Raised if length_requirement is negative.
         :returns: A Dfa that accepts all strings over alphabet with length exactly
             length_requirement.
         """
@@ -628,8 +632,10 @@ class Dfa(ExactSpec):
         """ Returns a Dfa that accepts all strings over alphabet with length at least
         length_requirement.
 
+        :param alphabet: The alphabet for the output Dfa.
         :param length_requirement: The maximum length of strings that the returned
             DFA should accept.
+        :raises ValueError: Raised if length_requirement is negative.
         :returns: A Dfa that accepts all strings over alphabet with length at least
             length_requirement.
         """
@@ -659,8 +665,10 @@ class Dfa(ExactSpec):
         """ Returns a Dfa that accepts all strings over alphabet with length at most
         length_requirement.
 
+        :param alphabet: The alphabet for the output Dfa.
         :param length_requirement: The maximum length of strings that the returned
             DFA should accept.
+        :raises ValueError: Raised if length_requirement is negative.
         :returns: A Dfa that accepts all strings over alphabet with length at most
             length_requirement.
         """

@@ -1,7 +1,10 @@
-""" Contains the AccumulatedCostDfa specification class."""
+""" Contains the AccumulatedCostDfa class."""
 
 from __future__ import annotations
-from typing import Optional
+
+# Initialize Logger
+import logging
+logger = logging.getLogger(__name__)
 
 import time
 from numbers import Rational
@@ -11,7 +14,6 @@ from multiprocess import Pool
 
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.costfunctions.cost_func import ExactCostFunc
-from citoolkit.util.logging import cit_log
 
 class AccumulatedCostDfa(ExactCostFunc):
     """ Class encoding an Accumulated Cost Deterministic Finite Automata.
@@ -50,6 +52,13 @@ class AccumulatedCostDfa(ExactCostFunc):
         # of the costs of all words ending in a state with a certain length.
         self.cost_table = self._compute_cost_table(self.dfa, self.cost_map, self.max_word_length)
 
+        # Compute the set of intermediate costs that this cost function
+        # can assign based on the cost table.
+        self.intermediate_costs = set()
+
+        for counter in self.cost_table.values():
+            self.intermediate_costs = self.intermediate_costs | counter.keys()
+
         # Compute the set of costs that this cost function can assign
         # based on the cost table and initialize the CostFunc super class.
         costs = set()
@@ -67,7 +76,7 @@ class AccumulatedCostDfa(ExactCostFunc):
     # CostFunc Functions
     ####################################################################################################
 
-    def cost(self, word) -> Optional[Rational]:
+    def cost(self, word) -> Rational | None:
         """ Returns the appropriate cost for a word. This cost is
         found by first checking if the interior Dfa accepts a word.
         If it does, then the each state in the accepting path is
@@ -77,7 +86,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         :param word: A word over this cost function's alphabet.
         :returns: The cost associated with this word.
         """
-        if self.dfa.accepts(word):
+        if self.dfa.accepts(word) and len(word) <= self.max_word_length:
             state_path = self.dfa.get_state_path(word)
 
             cost = sum([self.cost_map[state] for state in state_path])
@@ -86,7 +95,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         else:
             return None
 
-    def decompose(self, num_threads=1, verbose=False) -> dict[Rational, Dfa]:
+    def decompose(self, num_threads=1) -> dict[Rational, Dfa]:
         """ Decomposes this cost function into a Dfa indicator
         function for each cost.
 
@@ -95,15 +104,13 @@ class AccumulatedCostDfa(ExactCostFunc):
         """
         # Check if value is cached.
         if self.decomp_cost_func is not None:
-            if verbose:
-                cit_log("Returning cached AccumulatedCostDfa Decomposition.")
+            logger.debug("Returning cached AccumulatedCostDfa Decomposition.")
 
             return self.decomp_cost_func
 
         # Compute decomposed cost function
-        if verbose:
-            start_time = time.time()
-            cit_log("Computing AccumulatedCostDfa decomposition...")
+        start_time = time.time()
+        logger.info("Computing AccumulatedCostDfa decomposition...")
 
         # If there are no costs return an empty dictionary.
         if len(self.costs) == 0:
@@ -119,9 +126,10 @@ class AccumulatedCostDfa(ExactCostFunc):
         cost_accepting_map = {cost:set() for cost in self.costs}
 
         for state in self.dfa.states:
-            for cost in range(max(self.costs)+1):
-                new_state = "State" + str(state_iter) + "_" + str(cost)
+            for cost in sorted(self.intermediate_costs, key=lambda x: str(x)):
+                new_state = "State_" + str(state_iter) + "_" + str(cost)
                 state_rename_map[(state, cost)] = new_state
+
 
                 if state in self.dfa.accepting_states and cost in self.costs:
                     cost_accepting_map[cost].add(new_state)
@@ -131,6 +139,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         # Add a sink state and a cost state which is the new state associated
         # with the original start state and its cost.
         new_states = set(state_rename_map.values()) | {"Sink"}
+        assert (self.dfa.start_state, self.cost_map[self.dfa.start_state]) in state_rename_map, (self.dfa.start_state, self.cost_map[self.dfa.start_state])
         new_start_state = state_rename_map[(self.dfa.start_state, self.cost_map[self.dfa.start_state])]
 
         # Create a new transition map over the new states and preserves the
@@ -138,7 +147,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         new_transitions = {}
 
         for state in self.dfa.states:
-            for cost in range(max(self.costs)+1):
+            for cost in sorted(self.intermediate_costs, key=lambda x: str(x)):
                 for symbol in self.dfa.alphabet:
                     dest_state = self.dfa.transitions[(state, symbol)]
 
@@ -149,7 +158,8 @@ class AccumulatedCostDfa(ExactCostFunc):
                     # instead map to the Sink state.
                     new_cost = cost + self.cost_map[dest_state]
 
-                    if new_cost > max(self.costs):
+                    # If new cost is unreachable or too large, then ignore.
+                    if new_cost not in self.intermediate_costs or new_cost > max(self.costs):
                         new_dest_state = "Sink"
                     else:
                         new_dest_state = state_rename_map[(dest_state, new_cost)]
@@ -166,7 +176,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         # in this computation, as it can be heavy.
         if num_threads <= 1:
             # Use one thread
-            cpu_time = "N/A"
+            cpu_time = -1
             decomp_cost_func = {cost: Dfa(self.dfa.alphabet, new_states, cost_accepting_map[cost], new_start_state, new_transitions).minimize() for cost in self.costs}
         else:
             # Multithread using a multiprocessing pool
@@ -183,15 +193,14 @@ class AccumulatedCostDfa(ExactCostFunc):
                 pool_output = pool.map(cost_indicator_wrapper, self.costs)
 
                 # Extract relevant info from pool_output
-                cpu_time = "{:.4f}".format(sum([runtime for _,_,runtime in pool_output]))
+                cpu_time = sum([runtime for _,_,runtime in pool_output])
 
                 decomp_cost_func = {cost: spec for cost, spec, _ in pool_output}
 
         self.decomp_cost_func = decomp_cost_func
 
-        if verbose:
-            wall_time = "{:.4f}".format(time.time() - start_time)
-            cit_log("AccumulatedCostDfa deconstruction completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
+        wall_time = time.time() - start_time
+        logger.info("AccumulatedCostDfa deconstruction completed. Wallclock Runtime: %.4f CPU Runtime: %.4f", wall_time, cpu_time)
 
         return decomp_cost_func
 
@@ -206,7 +215,7 @@ class AccumulatedCostDfa(ExactCostFunc):
         of the costs of all words ending in state s with length l.
 
         :param dfa: A Dfa specification, which accepts words that have a cost.
-        :param cost_map: A dictionary mapping each state in dfa ta cost.
+        :param cost_map: A dictionary mapping each state in dfa to feasible costs.
         :param max_word_length: The maximum length of a word that has a cost.
             Any word with length longer than this will not have a cost associated
             with it.

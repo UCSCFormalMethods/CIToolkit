@@ -20,6 +20,7 @@ class BoolFormula(ApproxSpec):
     :param main_vars: If provided, only variables in this iterator will be counted
         and sampled over. If not provided or the iterator is empty, all variables
         will be counted and sampled over.
+    :raises ValueError: Raised if an input is malformed.
     """
     def __init__(self, clauses, main_vars = None):
         # Initialize superclass
@@ -54,13 +55,17 @@ class BoolFormula(ApproxSpec):
         # Initialize cache values to None
         self._counts = None
 
+    ####################################################################################################
+    # ApproxSpec Functions
+    ####################################################################################################
+
     def accepts(self, word) -> bool:
         raise NotImplementedError()
 
     def language_size(self, tolerance=0.8, confidence=0.2, seed=None) -> int:
         """ Approximately computes the number of solutions to this formula.
-            With probability 1 - confidence, the following holds true,
-            true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
+        With probability 1 - confidence, the following holds true,
+        true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.
@@ -87,17 +92,21 @@ class BoolFormula(ApproxSpec):
 
 
     def sample(self, tolerance=15, seed=None):
-        """ Generate a solution to this boolean formula approximately uniformly.
-            Let true_prob be 1/true_count and returned_prob be the probability of sampling
-            any particular solution. With probability 1 - confidence, the following holds true,
-            1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
+        """ Generate a solution to this boolean formula almost uniformly.
+        Let true_prob be 1/true_count and returned_prob be the probability of sampling
+        any particular solution. With probability 1 - confidence, the following holds true,
+        1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
 
-            language_size() must be called before sample(), as the confidence of sampling
-            depends on the confidence of the count.
+        NOTE: language_size() must be called before sample(), as the confidence of sampling
+        depends on the confidence of the count.
 
-        :param tolerance: The tolerance of the count.
+        :param tolerance: The tolerance of the count. Due to limitations of Unigen this must
+            be greater than or equal to 6.84.
         :param seed: The randomized seed. By default this is equal to None, which means the
             internal random state will be used.
+        :raises ValueError: Raised if too low a tolerance is requested.
+        :raises RuntimeError: Raised if tolerance is too low or if language_size has
+            not already been called for this class.
         :returns: An approximately uniformly sampled solution to this formula.
         """
         # If seed is None, get random seed from internal random state.
@@ -124,6 +133,10 @@ class BoolFormula(ApproxSpec):
         sample = tuple(sampler.sample(*self._counts))
 
         return sample
+
+    ####################################################################################################
+    # Helper Functions
+    ####################################################################################################
 
     @staticmethod
     def _find_kappa(tolerance):
@@ -155,12 +168,33 @@ class UnsatBoolFormula(BoolFormula):
         super().__init__(clauses=[])
 
     def accepts(self, word):
+        """ An UnsatBoolFormula never accepts.
+        
+        :param word: The word which is checked for acceptance.
+        :returns: False
+        """
         return False
 
     def language_size(self, tolerance, confidence, seed) -> int:
+        """ An UnsatBoolFormula has an empty language.
+        
+        :param tolerance: The tolerance of the count.
+        :param confidence: The confidence in the count.
+        :param seed: The randomized seed.
+        :returns: 0
+        """
         return 0
 
     def sample(self, tolerance, seed):
+        """ An UnsatBoolFormula cannot be sampled from.
+
+        :param tolerance: The tolerance of the count.
+        :param confidence: The confidence in the count.
+        :param seed: The randomized seed.
+        :raises ValueError: Raised as the UnsatBoolFormula cannot be
+            sampled from.
+        :returns: None
+        """
         raise ValueError("Cannot sample from an unsatisfiable boolean formula.")
 
 class BoolFormulaAlphabet(Alphabet):

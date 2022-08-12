@@ -39,7 +39,8 @@ def test_ci_improvise():
     epsilon = 0.5
 
     # Create improviser and map to count all words
-    improviser = CI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds)
+    improviser = CI(hard_constraint, soft_constraint, length_bounds)
+    improviser.parameterize(epsilon, prob_bounds)
 
     improvisations = {tuple("01"), tuple("0101"), tuple("010101")}
     improvisation_count = {improvisation:0 for improvisation in improvisations}
@@ -95,7 +96,10 @@ def test_ci_generator():
     words_improvised = 0
 
     # Create an improviser and samples a collection of words from it as a generator.
-    for word in CI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds).generator():
+    improviser = CI(hard_constraint, soft_constraint, length_bounds)
+    improviser.parameterize(epsilon, prob_bounds)
+
+    for word in improviser.generator():
         assert word in improvisations
 
         improvisation_count[word] += 1
@@ -139,15 +143,19 @@ def test_ci_infeasible():
     epsilon = 0.5
 
     # Ensure that the base LCI problem is feasible
-    CI(hard_constraint, soft_constraint, length_bounds, epsilon, prob_bounds)
+    improviser = CI(hard_constraint, soft_constraint, length_bounds)
+    improviser.parameterize(epsilon, prob_bounds)
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
     with pytest.raises(InfeasibleSoftConstraintError):
-        CI(hard_constraint, soft_constraint, length_bounds, 0, prob_bounds)
+        improviser = CI(hard_constraint, soft_constraint, length_bounds)
+        improviser.parameterize(0, prob_bounds)
 
     with pytest.raises(InfeasibleSoftConstraintError):
-        CI(hard_constraint, soft_constraint, (3,6), epsilon, prob_bounds)
+        improviser = CI(hard_constraint, soft_constraint, (3,6))
+        improviser.parameterize(epsilon, prob_bounds)
 
     with pytest.raises(InfeasibleRandomnessError):
-        CI(hard_constraint, soft_constraint, length_bounds, epsilon, (.25,.25))
+        improviser = CI(hard_constraint, soft_constraint, length_bounds)
+        improviser.parameterize(epsilon, (0.25, 0.25))

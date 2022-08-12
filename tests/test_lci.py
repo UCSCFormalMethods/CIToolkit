@@ -12,6 +12,8 @@ from citoolkit.labellingfunctions.labelling_dfa import LabellingDfa
 # Basic Tests
 ###################################################################################################
 
+## LCI Tests ##
+
 def test_lci_improvise():
     """ Test a simple Labelled CI instance. """
     # Create a hard constraint Dfa that accepts all words that end with "01"
@@ -71,7 +73,8 @@ def test_lci_improvise():
     word_prob_bounds["Label3"] = (0,1)
 
     # Create Labelled CI Improviser
-    improviser = LCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds, word_prob_bounds)
+    improviser = LCI(hard_constraint, soft_constraint, label_func, length_bounds)
+    improviser.parameterize(epsilon, label_prob_bounds, word_prob_bounds)
 
     # Create sampling testing variables
     improvisations = {tuple("01"), tuple("001"), tuple("101"), tuple("0001"), tuple("0101"), tuple("1001"), tuple("1101")}
@@ -176,18 +179,24 @@ def test_lci_infeasible():
     word_prob_bounds["Label3"] = (0,1)
 
     # Ensure that the base LCI problem is feasible
-    LCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds, word_prob_bounds)
+    improviser = LCI(hard_constraint, soft_constraint, label_func, length_bounds)
+    improviser.parameterize(epsilon, label_prob_bounds, word_prob_bounds)
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
     with pytest.raises(InfeasibleSoftConstraintError):
-        LCI(hard_constraint, soft_constraint, label_func, length_bounds, 0.16, label_prob_bounds, word_prob_bounds)
+        improviser = LCI(hard_constraint, soft_constraint, label_func, length_bounds)
+        improviser.parameterize(0.16, label_prob_bounds, word_prob_bounds)
 
     with pytest.raises(InfeasibleLabelRandomnessError):
-        LCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, (0.33,0.33), word_prob_bounds)
+        improviser = LCI(hard_constraint, soft_constraint, label_func, length_bounds)
+        improviser.parameterize(epsilon, (0.33,0.33), word_prob_bounds)
 
     with pytest.raises(InfeasibleWordRandomnessError):
-        LCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds, {label:(.2,.8) for label in label_func.labels})
+        improviser = LCI(hard_constraint, soft_constraint, label_func, length_bounds)
+        improviser.parameterize(epsilon, label_prob_bounds, {label:(.2,.8) for label in label_func.labels})
+
+## MELCI Tests ##
 
 def test_melci_improvise():
     """ Test a simple Labelled CI instance. """
@@ -243,7 +252,8 @@ def test_melci_improvise():
     label_prob_bounds = (.25, .4)
 
     # Create Labelled CI Improviser
-    improviser = MELCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds)
+    improviser = MELCI(hard_constraint, soft_constraint, label_func, length_bounds)
+    improviser.parameterize(epsilon, label_prob_bounds)
 
     # Create sampling testing variables
     improvisations = {tuple("01"), tuple("001"), tuple("101"), tuple("0001"), tuple("0101"), tuple("1001"), tuple("1101")}
@@ -339,12 +349,14 @@ def test_melci_infeasible():
     label_prob_bounds = (.2, .4)
 
     # Ensure that the base LCI problem is feasible
-    MELCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, label_prob_bounds)
+    improviser = MELCI(hard_constraint, soft_constraint, label_func, length_bounds)
+    improviser.parameterize(epsilon, label_prob_bounds)
 
-    # Check that various parameter tweaks that render the
-    # problem infeasible are identified by the improviser.
+    # Check that various parameter tweaks that render the problem infeasible are identified by the improviser.
     with pytest.raises(InfeasibleImproviserError):
-        MELCI(hard_constraint, soft_constraint, label_func, length_bounds, 0.1, label_prob_bounds)
+        improviser = MELCI(hard_constraint, soft_constraint, label_func, length_bounds)
+        improviser.parameterize(0.1, label_prob_bounds)
 
     with pytest.raises(InfeasibleImproviserError):
-        MELCI(hard_constraint, soft_constraint, label_func, length_bounds, epsilon, (0.25,0.25))
+        improviser = MELCI(hard_constraint, soft_constraint, label_func, length_bounds)
+        improviser.parameterize(epsilon, (0.25,0.25))

@@ -66,7 +66,8 @@ def test_qci_improvise():
     cost_bound = 2
 
     # Create Quantitative CI Improviser.
-    improviser = QCI(hard_constraint, cost_function, length_bounds, cost_bound, prob_bounds)
+    improviser = QCI(hard_constraint, cost_function, length_bounds)
+    improviser.parameterize(cost_bound, prob_bounds)
 
     # Sample the improviser and check that all improvisations are valid and that the probabilities and cost are reasonable.
     improvisations = {tuple("00"), tuple("000"), tuple("010"), tuple("0000"), tuple("0010"), tuple("0100"), tuple("0110"), \
@@ -145,12 +146,15 @@ def test_qci_infeasible():
     cost_bound = 2
 
     # Ensure that the base QCI problem is feasible
-    QCI(hard_constraint, cost_function, length_bounds, cost_bound, prob_bounds)
+    improviser = QCI(hard_constraint, cost_function, length_bounds)
+    improviser.parameterize(cost_bound, prob_bounds)
 
     # Check that various parameter tweaks that render the
     # problem infeasible are identified by the improviser.
     with pytest.raises(InfeasibleCostError):
-        QCI(hard_constraint, cost_function, length_bounds, 1, prob_bounds)
+        improviser = QCI(hard_constraint, cost_function, length_bounds)
+        improviser.parameterize(1, prob_bounds)
 
     with pytest.raises(InfeasibleRandomnessError):
-        QCI(hard_constraint, cost_function, length_bounds, cost_bound, [Fraction(1,10), Fraction(1,10)])
+        improviser = QCI(hard_constraint, cost_function, length_bounds)
+        improviser.parameterize(cost_bound, [Fraction(1,10), Fraction(1,10)])

@@ -9,6 +9,12 @@ class Improviser(ABC):
     """ The Improviser class is a parent class to all CI improvisers. """
 
     @abstractmethod
+    def parameterize(self) -> None:
+        """ Fix the non-integral parameters and check for feasibility of
+        the improviser.
+        """
+
+    @abstractmethod
     def improvise(self, seed=None) -> tuple[str,...]:
         """ Improvise a single word.
 

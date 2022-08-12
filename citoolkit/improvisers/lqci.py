@@ -4,7 +4,10 @@ Labelled Quantitiative Control Improvisation problem.
 """
 
 from __future__ import annotations
-from typing import Optional
+
+# Initialize Logger
+import logging
+logger = logging.getLogger(__name__)
 
 import time
 import math
@@ -21,7 +24,6 @@ from citoolkit.improvisers.improviser import Improviser, InfeasibleImproviserErr
 from citoolkit.specifications.spec import ExactSpec
 from citoolkit.costfunctions.cost_func import ExactCostFunc
 from citoolkit.labellingfunctions.labelling_func import ExactLabellingFunc
-from citoolkit.util.logging import cit_log
 
 class _LQCIBase(Improviser):
     """ The base class for the LQCI class and the MELQCI class.
@@ -43,22 +45,23 @@ class _LQCIBase(Improviser):
         improvisations.
     :param length_bounds: A tuple containing lower and upper bounds on the length
         of a generated word.
+`   :param num_threads: The number of threads to use in parameterization computation.
+    :param lazy: Whether or not to lazily initialize the improvizer.
     """
     def __init__(self, hard_constraint: ExactSpec, cost_func: ExactCostFunc, label_func: ExactLabellingFunc, \
-                 length_bounds: tuple[int, int], num_threads: int, verbose: bool, lazy: bool) -> None:
+                 length_bounds: tuple[int, int], num_threads: int, lazy: bool) -> None:
         ## Initialization ##
-        # Set verbosity level and num_threads.
-        self.verbose = verbose
-        self.num_threads = num_threads
         self.length_bounds = length_bounds
+        self.lazy = lazy
+        self.labels = label_func.labels
+        self.costs = cost_func.costs
 
         self.class_specs = {}
         self.class_keys = None
         self.class_probabilities = None
 
         ## Function Decomposition ##
-        if self.verbose:
-            cit_log("Beginning function decomposition and abstract spec construction.")
+        logger.info("Beginning function decomposition and abstract spec construction.")
 
         label_specs = label_func.decompose()
         cost_specs = cost_func.decompose()
@@ -71,18 +74,16 @@ class _LQCIBase(Improviser):
             # Create abstract spec
             self.class_specs[class_id] = hard_constraint & label_specs[label] & cost_specs[cost]
 
-        if self.verbose:
-            cit_log("Function decomposition and abstract spec construction completed.")
+        logger.info("Function decomposition and abstract spec construction completed.")
 
         if not lazy:
             ## Spec Construction ##
-            if self.verbose:
-                start_time = time.time()
-                cit_log("Beginning explicit compound Spec construction. Using " + str(num_threads) + " thread(s).")
+            start_time = time.time()
+            logger.info("Beginning explicit compound Spec construction. Using %d thread(s).", num_threads)
 
             # Compute spec for each label/cost class.
             if num_threads <= 1:
-                cpu_time = "N/A"
+                cpu_time = -1
 
                 for class_id in class_ids:
                     label, cost = class_id
@@ -99,7 +100,7 @@ class _LQCIBase(Improviser):
                 # Multiple threads, so create wrapper and thread pool and map abstract specs before
                 # resaving explicit specs.
 
-                with Pool(self.num_threads) as pool:
+                with Pool(num_threads) as pool:
                     # Helper function for pool.map
                     def explicit_wrapper(class_id):
                         process_start_time = time.process_time()
@@ -120,22 +121,20 @@ class _LQCIBase(Improviser):
                     pool_output = pool.map(explicit_wrapper, class_ids)
 
                     # Extract relevant info from pool_output
-                    cpu_time = "{:.4f}".format(sum([runtime for _,_,runtime in pool_output]))
+                    cpu_time = sum([runtime for _,_,runtime in pool_output])
 
                     self.class_specs = {class_id: class_spec for class_id, class_spec, _ in pool_output}
 
-            if self.verbose:
-                wall_time = "{:.4f}".format(time.time() - start_time)
-                cit_log("Explicit compound Spec construction completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
+            wall_time = time.time() - start_time
+            logger.info("Explicit compound Spec construction completed. Wallclock Runtime: %.4f CPU Runtime: %.4f", wall_time, cpu_time)
 
             ## Spec Counting ##
             # Count the language size for each spec if precount is enabled.
-            if self.verbose:
-                start_time = time.time()
-                cit_log("Beginning language size counting. Using " + str(num_threads) + " thread(s).")
+            start_time = time.time()
+            logger.info("Beginning language size counting. Using %d thread(s).", num_threads)
 
             if num_threads <= 1:
-                cpu_time = "N/A"
+                cpu_time = -1
                 # 1 thread, so compute all sizes iteratively.
                 for spec in self.class_specs.values():
                     spec.language_size(*self.length_bounds)
@@ -143,7 +142,7 @@ class _LQCIBase(Improviser):
                 # Multiple threads, so create wrapper and thread pool and map specs before
                 # resaving specs containing cached language sizes.
 
-                with Pool(self.num_threads) as pool:
+                with Pool(num_threads) as pool:
                     # Sort class spec keys for reproducability
                     class_ids = sorted(self.class_specs.keys())
 
@@ -159,32 +158,32 @@ class _LQCIBase(Improviser):
                     pool_output = pool.map(count_wrapper, class_ids)
 
                     # Extract relevant info from pool_output
-                    cpu_time = "{:.4f}".format(sum([runtime for _,_,runtime in pool_output]))
+                    cpu_time = sum([runtime for _,_,runtime in pool_output])
 
                     self.class_specs = {class_id: class_spec for class_id, class_spec, _ in pool_output}
 
-            if self.verbose:
-                wall_time = "{:.4f}".format(time.time() - start_time)
-                cit_log("Language size counting completed. Wallclock Runtime: " + wall_time + "  CPU Runtime: " + cpu_time)
+
+            wall_time = time.time() - start_time
+            logger.info("Language size counting completed. Wallclock Runtime: %.4f CPU Runtime: %.4f", wall_time, cpu_time)
 
     def improvise(self, seed=None) -> tuple[str,...]:
         """ Improvise a single word. Base class must populate self.class_probabilities
         before this method is called.
 
         :returns: A single improvised word.
+        :raises RuntimeError: If this function is called before the improviser is parameterized. 
         """
         if (self.class_probabilities is None) or (self.class_keys is None):
-            raise Exception("Improvise function was called without first computing self.class_probabilities or self.class_keys.")
+            raise RuntimeError("Improvise function was called without first computing self.class_probabilities or self.class_keys."\
+                            " Did you forget to call parameterize?")
 
-        # Cache the random state, set it to the seed, pick a target class, sample, and finally restore the random state.
-        old_state = random.getstate()
-        random.seed(seed)
+        # Set seed if specified
+        if seed is not None:
+            random.seed(seed)
 
         target_class = random.choices(population=self.class_keys, weights=self.class_probabilities, k=1)[0]
 
         sample = self.class_specs[target_class].sample(*self.length_bounds, seed=random.getrandbits(32))
-
-        random.setstate(old_state)
 
         return sample
 
@@ -198,19 +197,12 @@ class LQCI(_LQCIBase):
         improvisations.
     :param length_bounds: A tuple containing lower and upper bounds on the length
         of a generated word.
-    :param cost_bound: The maximum allowed expected cost for our improviser.
-    :param label_prob_bounds: A tuple containing lower and upper bounds on the
-        marginal probability with which we can generate a word with a particular label.
-    :param word_prob_bounds: A dictionary mapping each label in label_func to a tuple. Each
-        tuple contains a lower and upper bound on the conditional probability of selecting
-        a word with the associated label conditioned on the fact that we do select a word
-        with label.
-    :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
+`   :param num_threads: The number of threads to use in parameterization computation.
+    :param lazy: Whether or not to lazily initialize the improvizer.
+    :raises ValueError: If passed parameters are not well formed.
     """
     def __init__(self, hard_constraint: ExactSpec, cost_func: ExactCostFunc, label_func: ExactLabellingFunc, \
-                 length_bounds: tuple[int, int], cost_bound: float, \
-                 label_prob_bounds: tuple[float, float], word_prob_bounds: dict[str, tuple[float, float]], \
-                 seed: int =None, num_threads: int =1, verbose: bool =False, lazy: Optional[bool] =None) -> None:
+                 length_bounds: tuple[int, int], num_threads: int =1, lazy: bool =False) -> None:
         # Checks that parameters are well formed.
         if not isinstance(hard_constraint, ExactSpec):
             raise ValueError("The hard_constraint parameter must be a member of the ExactSpec class.")
@@ -224,13 +216,41 @@ class LQCI(_LQCIBase):
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")
 
+        if len(label_func.labels) == 0:
+            raise InfeasibleImproviserError("This problem has no labels and therefore no improvisations.")
+
+        if len(cost_func.costs) == 0:
+            raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
+
+        # Initialize LQCI base class.
+        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, lazy=lazy)
+
+        logger.info("LQCI Improviser successfully initialized")
+
+    def parameterize(self, cost_bound: float, label_prob_bounds: tuple[float, float], \
+                     word_prob_bounds: dict[str, tuple[float, float]], num_threads: int =1):
+        """ Parameterize this improviser, computing an improvising distribution if possible and throwing
+        an exception otherwise.
+
+        :param cost_bound: The maximum allowed expected cost for our improviser.
+        :param label_prob_bounds: A tuple containing lower and upper bounds on the
+            marginal probability with which we can generate a word with a particular label.
+        :param word_prob_bounds: A dictionary mapping each label in label_func to a tuple. Each
+            tuple contains a lower and upper bound on the conditional probability of selecting
+            a word with the associated label conditioned on the fact that we do select a word
+            with label.
+    `   :param num_threads: The number of threads to use in parameterization computation.
+        :raises ValueError: If passed parameters are not well formed.
+        :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
+        """
+        # Checks that parameters are well formed.
         if cost_bound < 0:
             raise ValueError("The cost_bound parameter must be a number >= 0.")
 
         if (len(label_prob_bounds) != 2) or (label_prob_bounds[0] < 0) or (label_prob_bounds[0] > label_prob_bounds[1]) or (label_prob_bounds[1] > 1):
             raise ValueError("The label_prob_bounds parameter should contain two floats, with 0 <= label_prob_bounds[0] <= label_prob_bounds[1] <= 1.")
 
-        for label in label_func.labels:
+        for label in self.labels:
             target_prob_bounds = word_prob_bounds[label]
 
             if label not in word_prob_bounds.keys():
@@ -239,38 +259,18 @@ class LQCI(_LQCIBase):
             if (len(target_prob_bounds) != 2) or (target_prob_bounds[0] < 0) or (target_prob_bounds[0] > target_prob_bounds[1]) or (target_prob_bounds[1] > 1):
                 raise ValueError("The word_prob_bounds parameter should contain two floats, with 0 <= word_prob_bounds[" + label + "][0] <= word_prob_bounds[" + label + "][1] <= 1.")
 
-        if len(label_func.labels) == 0:
-            raise InfeasibleImproviserError("This problem has no labels and therefore no improvisations.")
+        if label_prob_bounds[1] == 0:
+            raise InfeasibleImproviserError("No label can be assigned probability with label_prob_bounds[1] == 0.")
 
-        if len(cost_func.costs) == 0:
-            raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
-
-        # If lazy is set to the default None, set it to either True or False.
-        # The heuristic is simple, if all words have zero minimum probability then count
-        # lazily.
-        if lazy is None:
-            if max([word_prob_bounds[label][0] for label in label_func.labels]) == 0:
-                lazy = True
-            else:
-                lazy = False
-
-        # Cache the random state and set seed.
-        old_state = random.getstate()
-        random.seed(seed)
-
-        # Initialize LQCI base class.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, verbose=verbose, lazy=lazy)
-
-        if self.verbose:
-            start_time = time.time()
-            cit_log("Beginning LQCI distribution calculation.")
+        start_time = time.time()
+        logger.info("Beginning LQCI distribution calculation.")
 
         ## Distribution Computation ##
         feasible_labels = set()
 
-        for label in label_func.labels:
-            for cost in cost_func.costs:
-                if self.class_specs[(label, cost)].language_size(*length_bounds) > 0:
+        for label in self.labels:
+            for cost in self.costs:
+                if self.class_specs[(label, cost)].language_size(*self.length_bounds) > 0:
                     feasible_labels.add(label)
                     break
             if label_prob_bounds[0] > 0 and label not in feasible_labels:
@@ -297,14 +297,14 @@ class LQCI(_LQCIBase):
                     + label + "\" results in a probability of " + str(label_prob) + ", which is greater than 1.", None)
 
         # Add probabilites to appropriate classes (up to beta per word) without assigning more than 1 over each label.
-        if lazy and self.num_threads > 1 and len(label_func.labels) > 1:
+        if self.lazy and num_threads > 1 and len(self.labels) > 1:
             # Probabilities are not yet computed and we have several threads available and several labels to compute. Advantageous to multithread.
-            with Pool(self.num_threads) as pool:
+            with Pool(num_threads) as pool:
                 # Helper function that counts buckets for a label and assigns probability.
                 def assign_beta(func_input):
                     label, label_specs, cond_label_weights = func_input
 
-                    for cost in sorted(cost_func.costs):
+                    for cost in sorted(self.costs):
                         # If we assigned all probability, terminate early
                         if sum(cond_label_weights.values()) == 1:
                             break
@@ -319,7 +319,7 @@ class LQCI(_LQCIBase):
 
                 # Create helper function inputs and run them through assign_beta
                 func_inputs = []
-                for label in label_func.labels:
+                for label in self.labels:
                     label_specs = {c:(spec) for (l, c), spec in self.class_specs.items() if l == label}
                     cond_label_weights = {c:weight for (l, c), weight in conditional_weights.items() if l == label}
                     func_inputs.append((label, label_specs, cond_label_weights))
@@ -334,10 +334,13 @@ class LQCI(_LQCIBase):
 
                 conditional_weights = {(l,b):pool_dict[l][1][b] for l,b in self.class_specs}
 
+                # Update label_sum_probs
+                label_sum_probs = {label: sum([prob for (l,_), prob in conditional_weights.items() if l == label]) for label in self.labels}
+
         else:
             # Probabilities already computed or only one thread, so no point in multithreading.
-            for label in label_func.labels:
-                for cost in sorted(cost_func.costs):
+            for label in self.labels:
+                for cost in sorted(self.costs):
                     # If we assigned all probability, terminate early
                     if label_sum_probs[label] == 1:
                         break
@@ -358,8 +361,8 @@ class LQCI(_LQCIBase):
 
         # Calculate conditional expected costs
         conditional_costs = {}
-        for label in label_func.labels:
-            conditional_costs[label] = sum([conditional_weights[(label,cost)]*cost for cost in cost_func.costs])
+        for label in self.labels:
+            conditional_costs[label] = sum([conditional_weights[(label,cost)]*cost for cost in self.costs])
 
         # Calculate marginal weights.
         marginal_weights = {}
@@ -369,32 +372,29 @@ class LQCI(_LQCIBase):
             # In this case all labels must get the same probability, which will be handled by case 3 of the if statement below.
             u = 0
         else:
-            u = math.floor((1 - len(label_func.labels)*label_prob_bounds[0])/(label_prob_bounds[1] - label_prob_bounds[0]))
+            u = math.floor((1 - len(self.labels)*label_prob_bounds[0])/(label_prob_bounds[1] - label_prob_bounds[0]))
 
-        for label_iter, label in enumerate(sorted(label_func.labels, key=lambda x: conditional_costs[x])):
+        for label_iter, label in enumerate(sorted(self.labels, key=lambda x: conditional_costs[x])):
             if label_iter < u:
                 marginal_weights[label] = (label_prob_bounds[1])
             elif label_iter == u:
-                marginal_weights[label] = (1 - label_prob_bounds[1]*u - label_prob_bounds[0]*(len(label_func.labels) - u - 1))
+                marginal_weights[label] = (1 - label_prob_bounds[1]*u - label_prob_bounds[0]*(len(self.labels) - u - 1))
             else:
                 marginal_weights[label] = (label_prob_bounds[0])
 
-        expected_cost = sum([marginal_weights[label] * conditional_costs[label] for label in label_func.labels])
+        expected_cost = sum([marginal_weights[label] * conditional_costs[label] for label in self.labels])
 
-        if self.verbose:
-            cit_log("Expected Calculated Distribution Cost: " + str(expected_cost))
+
+        logger.info("Calculated Distribution Expected Cost: %.4f", expected_cost)
 
         # Store improvisation values.
-        self.class_keys = [(label, cost) for label in sorted(label_func.labels) for cost in sorted(cost_func.costs)]
+        self.class_keys = [(label, cost) for label in sorted(self.labels) for cost in sorted(self.costs)]
         self.class_probabilities = [marginal_weights[label]*conditional_weights[(label,cost)] for label,cost in self.class_keys]
 
-        if self.verbose:
-            wall_time = "{:.4f}".format(time.time() - start_time)
-            cit_log("LQCI distribution calculation completed. Wallclock Runtime: " + wall_time)
+        wall_time = time.time() - start_time
+        logger.info("LQCI distribution calculation completed. Wallclock Runtime: %.4f", wall_time)
 
         ## Cleanup ##
-        # Restore old state
-        random.setstate(old_state)
 
         # Checks that this improviser is feasible. If not raise an InfeasibleImproviserError.
         if len(feasible_labels) < (1/label_prob_bounds[1]) or (label_prob_bounds[0] != 0 and len(feasible_labels) > (1/label_prob_bounds[0])):
@@ -410,6 +410,8 @@ class LQCI(_LQCIBase):
             raise InfeasibleCostError("Greedy construction does not satisfy cost_bound, meaning no improviser can."\
                                       + " Minimum expected cost was " + str(expected_cost) + ".", expected_cost)
 
+        logger.info("LQCI Improviser successfully parameterized")
+
 class MELQCI(_LQCIBase):
     """ An improviser for the Maximum Entropy Labelled Quantitative Control Improvisation (MELQCI) problem.
 
@@ -420,14 +422,11 @@ class MELQCI(_LQCIBase):
         improvisations.
     :param length_bounds: A tuple containing lower and upper bounds on the length
         of a generated word.
-    :param cost_bound: The maximum allowed expected cost for our improviser.
-    :param label_prob_bounds: A tuple containing lower and upper bounds on the
-        marginal probability with which we can generate a word with a particular label.
-    :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
+    :param num_threads: The number of threads to use in parameterization computation.
+    :raises ValueError: If passed parameters are not well formed.
     """
     def __init__(self, hard_constraint: ExactSpec, cost_func: ExactCostFunc, label_func: ExactLabellingFunc, \
-                 length_bounds: tuple[int, int], cost_bound: float, label_prob_bounds: tuple[float, float],
-                 num_threads: int =1, verbose: bool =False) -> None:
+                 length_bounds: tuple[int, int], num_threads: int =1) -> None:
         # Checks that parameters are well formed.
         if not isinstance(hard_constraint, ExactSpec):
             raise ValueError("The hard_constraint parameter must be a member of the ExactSpec class.")
@@ -441,12 +440,6 @@ class MELQCI(_LQCIBase):
         if (len(length_bounds) != 2) or (length_bounds[0] < 0) or (length_bounds[0] > length_bounds[1]):
             raise ValueError("The length_bounds parameter should contain two integers, with 0 <= length_bounds[0] <= length_bounds[1].")
 
-        if cost_bound < 0:
-            raise ValueError("The cost_bound parameter must be a number >= 0.")
-
-        if (len(label_prob_bounds) != 2) or (label_prob_bounds[0] < 0) or (label_prob_bounds[0] > label_prob_bounds[1]) or (label_prob_bounds[1] > 1):
-            raise ValueError("The label_prob_bounds parameter should contain two floats, with 0 <= label_prob_bounds[0] <= label_prob_bounds[1] <= 1.")
-
         if len(label_func.labels) == 0:
             raise InfeasibleImproviserError("This problem has no labels and therefore no improvisations.")
 
@@ -454,24 +447,49 @@ class MELQCI(_LQCIBase):
             raise InfeasibleImproviserError("This problem has no costs and therefore no improvisations.")
 
         # Initialize LQCI base class.
-        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, verbose=verbose, lazy=False)
+        super().__init__(hard_constraint, cost_func, label_func, length_bounds, num_threads=num_threads, lazy=False)
 
-        if self.verbose:
-            start_time = time.time()
-            cit_log("Beginning MELQCI distribution calculation.")
+        # Initialize reporting variables to None
+        self.status = None
+        self.entropy = None
+
+        logger.info("MELQCI Improviser successfully initialized")
+
+    def parameterize(self, cost_bound: float, label_prob_bounds: tuple[float, float], num_threads:int =1):
+        """ Parameterize the MELQCI improviser.
+
+        :param cost_bound: The maximum allowed expected cost for our improviser.
+        :param label_prob_bounds: A tuple containing lower and upper bounds on the
+            marginal probability with which we can generate a word with a particular label.
+        :param num_threads: The number of threads to use in parameterization computation.
+        :raises ValueError: If passed parameters are not well formed.
+        :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
+        """
+        # Checks that parameters are well formed.
+        if cost_bound < 0:
+            raise ValueError("The cost_bound parameter must be a number >= 0.")
+
+        if (len(label_prob_bounds) != 2) or (label_prob_bounds[0] < 0) or (label_prob_bounds[0] > label_prob_bounds[1]) or (label_prob_bounds[1] > 1):
+            raise ValueError("The label_prob_bounds parameter should contain two floats, with 0 <= label_prob_bounds[0] <= label_prob_bounds[1] <= 1.")
+
+        if label_prob_bounds[1] == 0:
+            raise InfeasibleImproviserError("No label can be assigned probability with label_prob_bounds[1] == 0.")
+
+        start_time = time.time()
+        logger.info("Beginning MELQCI distribution calculation.")
 
         # Extract class sizes from class specs.
         cost_class_sizes = {}
 
-        for label in label_func.labels:
-            for cost in cost_func.costs:
-                cost_class_sizes[(label, cost)] = self.class_specs[(label, cost)].language_size(*length_bounds)
+        for label in self.labels:
+            for cost in self.costs:
+                cost_class_sizes[(label, cost)] = self.class_specs[(label, cost)].language_size(*self.length_bounds)
 
         # Create optimization variables and constants. Assuming n labels and m costs, the variable at position
         # x*m + y represents the probability allocated to words with label x and cost y.
-        x = cp.Variable(len(label_func.labels)*len(cost_func.costs), nonneg=True)
+        x = cp.Variable(len(self.labels)*len(self.costs), nonneg=True)
 
-        cost_class_sizes_vector = [max(1, cost_class_sizes[(label, cost)]) for label in sorted(label_func.labels) for cost in sorted(cost_func.costs)]
+        cost_class_sizes_vector = [max(1, cost_class_sizes[(label, cost)]) for label in sorted(self.labels) for cost in sorted(self.costs)]
 
         entropy_equation = - cp.sum(cp.entr(x) + cp.multiply(x, np.log(cost_class_sizes_vector)))
 
@@ -481,12 +499,12 @@ class MELQCI(_LQCIBase):
         constraints = []
 
         # (C1) Satisfaction of the cost bound
-        expected_cost_equation = cp.sum(cp.multiply(x, sorted(cost_func.costs)*len(label_func.labels)))
+        expected_cost_equation = cp.sum(cp.multiply(x, sorted(self.costs)*len(self.labels)))
         constraints.append(expected_cost_equation <= cost_bound)
 
         # (C2) - (C3) Randomness over Labels lower and upper bound
-        for label_iter, label in enumerate(sorted(label_func.labels)):
-            label_prob_equation = cp.sum(cp.multiply(x, np.concatenate([([1]*len(cost_func.costs) if i == label_iter else [0]*len(cost_func.costs)) for i in range(len(label_func.labels))])))
+        for label_iter, label in enumerate(sorted(self.labels)):
+            label_prob_equation = cp.sum(cp.multiply(x, np.concatenate([([1]*len(self.costs) if i == label_iter else [0]*len(self.costs)) for i in range(len(self.labels))])))
 
             constraints.append(label_prob_equation >= label_prob_bounds[0])
             constraints.append(label_prob_equation <= label_prob_bounds[1])
@@ -498,23 +516,21 @@ class MELQCI(_LQCIBase):
         constraints.append(cp.sum(x) == 1)
 
         # (C6) Empty Cost Classes have 0 probability
-        for label_iter, label in enumerate(sorted(label_func.labels)):
-            for cost_iter, cost in enumerate(sorted(cost_func.costs)):
+        for label_iter, label in enumerate(sorted(self.labels)):
+            for cost_iter, cost in enumerate(sorted(self.costs)):
                 if cost_class_sizes[(label, cost)] == 0:
-                    empty_cost_class_vector = [0]*(len(label_func.labels)*len(cost_func.costs))
-                    empty_cost_class_vector[label_iter*len(cost_func.costs) + cost_iter] = 1
+                    empty_cost_class_vector = [0]*(len(self.labels)*len(self.costs))
+                    empty_cost_class_vector[label_iter*len(self.costs) + cost_iter] = 1
                     constraints.append(cp.multiply(x, empty_cost_class_vector) == 0)
 
         # Create and solve problem
         prob = cp.Problem(objective, constraints)
-        if self.verbose:
-            cit_log("Solving MELQCI distribution optimization problem.")
 
-        result = prob.solve(verbose=verbose)
+        logger.info("Solving MELQCI distribution optimization problem.")
+        result = prob.solve()
 
-        if self.verbose:
-            wall_time = "{:.4f}".format(time.time() - start_time)
-            cit_log("MELQCI distribution calculation completed. Wallclock Runtime: " + wall_time)
+        wall_time = time.time() - start_time
+        logger.info("MELQCI distribution calculation completed. Wallclock Runtime: %.4f", wall_time)
 
         # Check if problem is infeasible. If so, raise an InfeasibleImproviserError.
         if "infeasible" in prob.status:
@@ -525,13 +541,16 @@ class MELQCI(_LQCIBase):
             warnings.warn("Got unexpected value '" + prob.status + "' as optimizer output.")
 
         # Store improvisation variables
-        self.class_keys = [(label, cost) for label in sorted(label_func.labels) for cost in sorted(cost_func.costs)]
+        self.class_keys = [(label, cost) for label in sorted(self.labels) for cost in sorted(self.costs)]
         self.class_probabilities = list(x.value)
-        self.entropy = -1*result
         self.status = prob.status
+        self.entropy = -1*result
+
+        logger.info("Optimizer Return States: %s", str(self.status))
+        logger.info("Calculated Distribution Entropy: %.4f", self.entropy)
 
         # Set all sorted_cost_class_weights that have empty cost classes to absolutely zero instead of very near 0.
-        for label_iter, label in enumerate(sorted(label_func.labels)):
-            for cost_iter, cost in enumerate(sorted(cost_func.costs)):
+        for label_iter, label in enumerate(sorted(self.labels)):
+            for cost_iter, cost in enumerate(sorted(self.costs)):
                 if cost_class_sizes[(label, cost)] == 0:
-                    self.class_probabilities[label_iter*len(cost_func.costs) + cost_iter] = 0
+                    self.class_probabilities[label_iter*len(self.costs) + cost_iter] = 0

@@ -3,20 +3,30 @@ and the AbstractSpec class, which allows one to perform the union,
 intersection, and negation operations on specifications."""
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Any
 
-from enum import Enum
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
+from enum import Enum
 
 ####################################################################################################
 # Alphabet Classes
 ####################################################################################################
 
-class Alphabet(ABC):
-    """ The base class for all alphabets."""
+class Alphabet:
+    """ The base class for all alphabets. Alphabets are used to determine compatibility
+    when combining specifications"""
     @staticmethod
-    def create_alphabet(alphabet_input):
+    def create_alphabet(alphabet_input: Any) -> Alphabet:
+        """ Generic static function providing the ability to create an alphabet from different
+        inputs. If the input is already an alphabet, that alphabet is simply returned. If the
+        input is an iterable, a SymbolAlphabet is created over that iterable and returned. Otherwise,
+        an error is raised.
+
+        :param alphabet_input: The input that should be converted to an alphabet.
+        :returns: An alphabet encoding of alphabet_input or NotImplemented.
+        :raises ValueError: Raised when an alphabet_input with unsupported format is passed.
+        """
         if isinstance(alphabet_input, Alphabet):
             # Already an alphabet, simply return it.
             return alphabet_input
@@ -27,15 +37,33 @@ class Alphabet(ABC):
             raise ValueError("Cannot create an alphabet from type " + str(type(alphabet_input)))
 
     def __and__(self, other):
+        """ Provides a generic way to combine two alphabets. By default, equality is checked and
+        if the two objects are equal, then this object is returned. If the two objects are not equal
+        NotImplemented is returned.
+
+        :param other: The other object to combine with this object.
+        :returns: A combined alphabet or NotImplemented
+        """
+        if self != other:
+            return NotImplemented
+
         return self
 
 class SymbolAlphabet(Alphabet):
     """ A class representing a generic alphabet of symbols. Typically symbols are strings.
+
+    :param symbols: An iterable containing whatever symbols are in this alphabet.
     """
-    def __init__(self, symbols):
+    def __init__(self, symbols: Iterable):
         self.symbols = frozenset(symbols)
 
     def __eq__(self, other):
+        """ Checks compatibility with another alphabet. If the other object is a SymbolAlphabet
+        with the same symbols set, return True. Otherwise return NotImplemented.
+
+        :param other: The other comparison object.
+        :returns: Whether or not this alphabet is compatible with other.
+        """
         if isinstance(other, SymbolAlphabet):
             return other.symbols == self.symbols
 
@@ -50,6 +78,12 @@ class SymbolAlphabet(Alphabet):
 class UniversalAlphabet(Alphabet):
     """ A class representing an alphabet compatible with any other alphabet"""
     def __eq__(self, other):
+        """ Checks equality with another object. If the other object is an Alphabet,
+        return True. Otherwise return NotImplemented.
+
+        :param other: The other comparison object.
+        :returns: Whether or not this alphabet is compatible to other.
+        """
         if isinstance(other, Alphabet):
             return True
 
@@ -64,12 +98,16 @@ class UniversalAlphabet(Alphabet):
 
 class Spec(ABC):
     """ The Spec class is a parent class to all exact and approximate specifications.
+    All specifications must support the accepts function, which checks membership in
+    the language the spec represents. Using this Spec objects can be combined into
+    AbstractSpec objects with the Or (|), And (&), Not (~), and Difference (-) operators. 
+    Certain compatible combinations of Spec objects in AbstractSpec form can also be
+    collapsed into a single Spec again, by calling the explicit method. For more details,
+    see the AbstractSpec class.
 
-    :param alphabet: The alphabet this specification is defined over. An
-        empty alphabet indicates a special specification that is well defined
-        over all alphabets.
+    :param alphabet: The alphabet this specification is defined over.
     """
-    def __init__(self, alphabet) -> None:
+    def __init__(self, alphabet):
         self.alphabet = Alphabet.create_alphabet(alphabet)
 
     @abstractmethod
@@ -80,6 +118,13 @@ class Spec(ABC):
             of this specification.
         :returns: True if this Spec accepts word and false otherwise.
         """
+
+    def explicit(self) -> Spec:
+        """ The default implementation of explicit for all Spec objects, which
+        is to simply return itself as it is already explicit. The only class
+        that should need to override this is AbstractSpec.
+        """
+        return self
 
     def __or__(self, other: Spec) -> AbstractSpec:
         """ Computes an abstract specification that accepts only words accepted
@@ -118,16 +163,17 @@ class Spec(ABC):
         :param other: The specification whose complement will be intersected with self.
         :returns: An AbstractSpec that accepts words accepted by this Spec and not by other.
         """
-        complement_spec_2 = AbstractSpec(other, None, SpecOp.NEGATION)
+        complement_other_spec = AbstractSpec(other, None, SpecOp.NEGATION)
 
-        return AbstractSpec(self, complement_spec_2, SpecOp.INTERSECTION)
+        return AbstractSpec(self, complement_other_spec, SpecOp.INTERSECTION)
 
 class ExactSpec(Spec):
     """ The ExactSpec class is the parent class to all classes that support
-    exact language size counting and sampling.
+    exact language size counting and sampling. These operations also require a lower
+    and upper bound on word length.
     """
     @abstractmethod
-    def language_size(self, min_length: int = None, max_length: int = None) -> int:
+    def language_size(self, min_length: int=None, max_length: int=None) -> int:
         """ Computes the number of words accepted by this specification.
 
         :param min_length: An inclusive lower bound on word size to consider.
@@ -136,8 +182,9 @@ class ExactSpec(Spec):
         """
 
     @abstractmethod
-    def sample(self, min_length: int = None, max_length: int = None, seed=None) -> Any:
-        """ Generate a word uniformly at random from this specification.
+    def sample(self, min_length: int=None, max_length: int=None, seed=None) -> Any:
+        """ Generate a word uniformly at random from this specification. What
+        a word is depends on the alphabet.
 
         :param min_length: An inclusive lower bound on word size to consider.
         :param max_length: An inclusive upper bound on word size to consider.
@@ -146,7 +193,9 @@ class ExactSpec(Spec):
 
 class ApproxSpec(Spec):
     """ The ApproximateSpec class is the parent class to all classes that support
-    approximate language size counting and sampling.
+    approximate language size counting and sampling. As these operations are approximate
+    they require a tolerance and/or confidence to be specified. The word length for these
+    specs is also constant, and so the bounds on word length are omitted.
     """
     @abstractmethod
     def language_size(self, tolerance, confidence, seed=1) -> int:
@@ -161,9 +210,10 @@ class ApproxSpec(Spec):
 
     @abstractmethod
     def sample(self, tolerance, seed=None) -> Any:
-        """ Generate a word approximately uniformly at random from this specification.
-            Let true_prob be 1/true_count and returned_prob be the probability of sampling
-            any particular solution. With probability 1 - confidence, the following holds true,
+        """ Generate a word approximately uniformly at random from this specification. What
+            a word is depends on the alphabet. Let true_prob be 1/true_count and returned_prob 
+            be the probability of sampling any particular solution. With probability 1 - confidence, 
+            the following holds true, 
             1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
 
         :param tolerance: The tolerance of the count.
@@ -191,7 +241,7 @@ class AbstractSpec(Spec):
     :param operation: The operation to be performed on the specs.
     :raises ValueError: Raised if a parameter is not supported or incompatible.
     """
-    def __init__(self, spec_1: Spec, spec_2: Optional[Spec], operation: SpecOp) -> None:
+    def __init__(self, spec_1: Spec, spec_2: Spec | None, operation: SpecOp):
         # Performs checks to make sure that AbstractSpec is being used correctly.
         # Determine if alphabet is well defined and if so freezes it.
         if (spec_2 is not None) and (spec_1.alphabet != spec_2.alphabet):
@@ -206,7 +256,7 @@ class AbstractSpec(Spec):
 
         if (operation == SpecOp.NEGATION) \
           and (not isinstance(spec_1, Spec) or spec_2 is not None):
-            raise ValueError("The negation operation require one specification as input.")
+            raise ValueError("The negation operation requires exactly one specification as input.")
 
         # Intializes super class and stores all attributes, or their
         # copies if appropriate.
@@ -225,11 +275,11 @@ class AbstractSpec(Spec):
     def accepts(self, word: tuple[str,...]) -> bool:
         """ Returns true if the specification accepts word, and false otherwise.
 
-        :param word: The word which is checked for membership in the lanugage
+        :param word: The word which is checked for membership in the language
             of this specification.
         :raises NotImplementedError: If an operation is passed that is not yet
             implemented.
-        :returns: True if this AbstractSpec accepts word and false otherwise.
+        :returns: True if this AbstractSpec accepts word and False otherwise.
         """
         if self.operation == SpecOp.UNION:
             return self.spec_1.accepts(word) or self.spec_2.accepts(word)
@@ -437,12 +487,19 @@ class UniverseSpec(Spec):
         super().__init__(UniversalAlphabet())
 
     def accepts(self, word) -> bool:
-        """ Always returns True, as the UniverseSpec accepts all strings."""
+        """ The UniverseSpec has a universal language, so this always returns
+        true.
+
+        :param word: The word which is checked for membership in the language
+            of this specification.
+        :returns: True
+        """
         return True
 
     def __eq__(self, other: object) -> bool:
         """ Checks equality with another object.
 
+        :param other: The other spec with which to check equality.
         :returns: True if other is a UniverseSpec object and NotImplemented otherwise.
         """
         if isinstance(other, UniverseSpec):
@@ -462,12 +519,19 @@ class NullSpec(Spec):
         super().__init__(UniversalAlphabet())
 
     def accepts(self, word) -> bool:
-        """ Always returns False, as the NullSpec accepts all strings."""
+        """ The NullSpec has an empty language, so this always returns
+        false.
+
+        :param word: The word which is checked for membership in the language
+            of this specification.
+        :returns: False
+        """
         return False
 
     def __eq__(self, other: object) -> bool:
         """ Checks equality with another object.
 
+        :param other: The other spec with which to check equality.
         :returns: True if other is a NullSpec object and NotImplemented otherwise.
         """
         if isinstance(other, NullSpec):
