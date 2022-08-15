@@ -404,8 +404,8 @@ def test_dfa_sample():
     for word in dfa_language:
         word_prob = sample_counts[word]/100000
 
-        assert word_prob > .24
-        assert word_prob < .26
+        assert word_prob > .23
+        assert word_prob < .27
 
 def test_dfa_sample_abstract():
     """ Create a simple Dfa that when uniformly sampled

@@ -11,8 +11,9 @@ import z3
 from citoolkit.specifications.spec import ApproxSpec, Alphabet
 from citoolkit.specifications.bool_formula import BoolFormula, UnsatBoolFormula
 
+
 class Z3Formula(ApproxSpec):
-    """ The Z3Formula class encodes a Z3 formula specification. The Z3Formula must support
+    """The Z3Formula class encodes a Z3 formula specification. The Z3Formula must support
     the bitblasting tactic as all the language_size() and sample() computations are performed
     by transforming the Z3Formula spec into an equivalent BoolFormula Spec. All main_vars must
     be either Bool or BitVec variables.
@@ -21,7 +22,7 @@ class Z3Formula(ApproxSpec):
     "CI_Internal_(*)_(*)" where * is any sequence of characters. These variables names are used
     internally and so if they are present in the formula parameter, behaviour is undefined.
 
-    It is important to note that each Z3Formula can maintain it's own context, though by default 
+    It is important to note that each Z3Formula can maintain it's own context, though by default
     it will use whatever context. This is because the memory overhead of contexts is significant
     and this is only required when accessing different Z3Formulas concurrently. If a new_context
     is desired, one can use the new_context parameter.
@@ -34,12 +35,21 @@ class Z3Formula(ApproxSpec):
         be computed until needed.
     :raises ValueError: Returned if invalid parameters are passed to the constructor.
     """
-    def __init__(self, formula, main_variables, new_context=False, lazy=True):
+
+    def __init__(
+        self,
+        formula: z3.Z3Formula,
+        main_variables: Iterable[z3.z3.BoolRef | z3.z3.BitVecRef],
+        new_context: bool = False,
+        lazy: bool = True,
+    ):
         super().__init__(Z3FormulaAlphabet())
 
         # Check validity of parameters.
         if not isinstance(main_variables, Iterable):
-            raise ValueError("main_variables must be an iterator (See docstring for details).")
+            raise ValueError(
+                "main_variables must be an iterator (See docstring for details)."
+            )
 
         # Create a new context for this formula
         if new_context:
@@ -51,7 +61,9 @@ class Z3Formula(ApproxSpec):
         if self.context is not None:
             self.formula = formula.translate(self.context)
             self.orig_formula = formula.translate(self.context)
-            self.main_variables = {var.translate(self.context) for var in main_variables}
+            self.main_variables = {
+                var.translate(self.context) for var in main_variables
+            }
         else:
             self.formula = formula
             self.orig_formula = formula
@@ -73,7 +85,7 @@ class Z3Formula(ApproxSpec):
     ####################################################################################################
 
     def accepts(self, word) -> bool:
-        """ Returns True if and only if a word is accepted by this specification.
+        """Returns True if and only if a word is accepted by this specification.
         A word is accepted when, if each variable in word is assigned to the corresponding
         value in word, the resulting formula is satisfiable.
 
@@ -81,7 +93,9 @@ class Z3Formula(ApproxSpec):
         :returns: Whether or not the word is accepted by this spec.
         """
         if self.context is not None:
-            translated_word = {var.translate(self.context): val for var,val in word.items()}
+            translated_word = {
+                var.translate(self.context): val for var, val in word.items()
+            }
         else:
             translated_word = word
 
@@ -95,8 +109,10 @@ class Z3Formula(ApproxSpec):
 
         return solver.check() == z3.sat
 
-    def language_size(self, tolerance=0.8, confidence=0.2, seed=None) -> int:
-        """ Approximately computes the number of solutions to this formula.
+    def language_size(
+        self, tolerance: float = 0.8, confidence: float = 0.2, seed: int = None
+    ) -> int:
+        """Approximately computes the number of solutions to this formula.
         With probability 1 - confidence, the following holds true,
         true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
 
@@ -106,10 +122,14 @@ class Z3Formula(ApproxSpec):
             internal random state will be used.
         :returns: The approximate number of solutions to this formula.
         """
-        return self.bool_formula_spec.language_size(tolerance=tolerance, confidence=confidence, seed=seed)
+        return self.bool_formula_spec.language_size(
+            tolerance=tolerance, confidence=confidence, seed=seed
+        )
 
-    def sample(self, tolerance=15, seed=None):
-        """ Generate a solution to this boolean formula approximately uniformly.
+    def sample(
+        self, tolerance: float = 15, seed: int = None
+    ) -> dict[z3.z3.SortRef, bool | int]:
+        """Generate a solution to this boolean formula approximately uniformly.
         Let true_prob be 1/true_count and returned_prob be the probability of sampling
         any particular solution. With probability 1 - confidence, the following holds true,
         1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
@@ -122,15 +142,17 @@ class Z3Formula(ApproxSpec):
             internal random state will be used.
         :returns: An approximately uniformly sampled solution to this formula.
         """
-        return self._extract_main_vars(self.bool_formula_spec.sample(tolerance=tolerance, seed=seed))
+        return self._extract_main_vars(
+            self.bool_formula_spec.sample(tolerance=tolerance, seed=seed)
+        )
 
     ####################################################################################################
     # Property Functions
     ####################################################################################################
 
     @property
-    def feasible(self):
-        """ Determines whether or not this formula has a solution.
+    def feasible(self) -> bool:
+        """Determines whether or not this formula has a solution.
 
         :returns: Returns True if this Z3Formula has a solution and False otherwise.
         """
@@ -145,8 +167,8 @@ class Z3Formula(ApproxSpec):
         return self._feasible
 
     @property
-    def bool_formula_spec(self):
-        """ Fetches the internal boolean formula representation of this spec.
+    def bool_formula_spec(self) -> BoolFormula:
+        """Fetches the internal boolean formula representation of this spec.
 
         :returns: The internal boolean formula representing this spec.
         """
@@ -154,8 +176,8 @@ class Z3Formula(ApproxSpec):
         return self._bool_formula_spec
 
     @property
-    def main_variables_map(self):
-        """ Fetches the mapping from main variables to boolean values for this spec.
+    def main_variables_map(self) -> dict[str, int | tuple[int]]:
+        """Fetches the mapping from main variables to boolean values for this spec.
 
         :returns: The mapping from main variables to boolean values for this spec.
         """
@@ -166,8 +188,8 @@ class Z3Formula(ApproxSpec):
     # Modification Functions
     ####################################################################################################
 
-    def set_bool_formula_spec(self, spec):
-        """ Sets the internal boolean formula representation of this spec.
+    def set_bool_formula_spec(self, spec: BoolFormula) -> None:
+        """Sets the internal boolean formula representation of this spec.
 
         :param spec: The boolean formula spec to store internally
         """
@@ -180,8 +202,8 @@ class Z3Formula(ApproxSpec):
     # Helper Functions
     ####################################################################################################
 
-    def _create_bool_formula_spec(self):
-        """ Augments the formula with Bool variables needed to track the
+    def _create_bool_formula_spec(self) -> None:
+        """Augments the formula with Bool variables needed to track the
         variables in main_variables and then converts the Z3 formula to an
         equivalent BoolFormulaSpec while creating a mapping to convert CNF
         solutions back to the main_variables.
@@ -203,7 +225,7 @@ class Z3Formula(ApproxSpec):
         internal_vars = []
 
         # Sort the main variable list for reproducibility
-        main_var_list = sorted(self.main_variables, key = lambda x: str(x))
+        main_var_list = sorted(self.main_variables, key=lambda x: str(x))
 
         for main_var in main_var_list:
             if isinstance(main_var, z3.z3.BoolRef):
@@ -219,16 +241,24 @@ class Z3Formula(ApproxSpec):
                 # For each bit in the Bitvector, create a boolean equal to that bits value.
                 for index in range(main_var.size()):
                     internal_var = self._create_internal_var(str(main_var), index)
-                    bitmask = z3.BitVecSort(main_var.size(), ctx=self.context).cast(math.pow(2,index))
+                    bitmask = z3.BitVecSort(main_var.size(), ctx=self.context).cast(
+                        math.pow(2, index)
+                    )
 
-                    self.formula = z3.And(self.formula, (internal_var == ((target_var & bitmask) == bitmask)))
+                    self.formula = z3.And(
+                        self.formula,
+                        (internal_var == ((target_var & bitmask) == bitmask)),
+                    )
 
                     internal_vars.append(str(internal_var))
             else:
-                raise ValueError(str(type(main_var)) + " is not a supported Z3 variable type and so cannot be a main variable.")
+                raise ValueError(
+                    f"{type(main_var)} is not a supported Z3 variable type and so"
+                    " cannot be a main variable."
+                )
 
         # Bitblast Z3 expression and convert to DIMACS format.
-        tactic = z3.Then('simplify', 'bit-blast', 'tseitin-cnf', ctx=self.context)
+        tactic = z3.Then("simplify", "bit-blast", "tseitin-cnf", ctx=self.context)
         goal = tactic(self.formula)
 
         assert len(goal) == 1
@@ -252,7 +282,9 @@ class Z3Formula(ApproxSpec):
                 clauses.append([int(var) for var in raw_clause[:-1]])
 
         # Create BoolFormulaSpec using DIMACS format CNF
-        dimacs_internal_vars = {var_mapping[internal_var] for internal_var in internal_vars}
+        dimacs_internal_vars = {
+            var_mapping[internal_var] for internal_var in internal_vars
+        }
 
         self._bool_formula_spec = BoolFormula(clauses, dimacs_internal_vars)
 
@@ -266,30 +298,33 @@ class Z3Formula(ApproxSpec):
                 dimacs_var = var_mapping[internal_var_name]
 
                 self._main_variables_map[str(main_var)] = dimacs_var
-            else: # Bitvector case
+            else:  # Bitvector case
                 dimacs_var_list = []
 
                 # For each bit in the Bitvector, create a boolean equal to that bits value.
                 for index in range(main_var.size()):
-                    internal_var_name = str(self._create_internal_var(str(main_var), index))
+                    internal_var_name = str(
+                        self._create_internal_var(str(main_var), index)
+                    )
 
                     dimacs_var_list.append(var_mapping[internal_var_name])
 
-
                 self._main_variables_map[str(main_var)] = tuple(dimacs_var_list)
 
-    def _create_internal_var(self, name, index):
-        """ Given a name and an index, returns a Z3 Boolean variable corresponding to it.
+    def _create_internal_var(self, name: str, index: int) -> z3.z3.BoolRef:
+        """Given a name and an index, returns a Z3 Boolean variable corresponding to it.
         Primarily used in _create_bool_formula_spec.
 
         :param name: The name of the original Z3 variable.
         :param index: The index in that Z3 variable.
         :returns: A Z3 Boolean variable corresponding to the name and index.
         """
-        return z3.Bool("CI_Internal_(" + name + ")_(" + str(index) + ")", ctx=self.context)
+        return z3.Bool(f"CI_Internal_({name})_({index})", ctx=self.context)
 
-    def _extract_main_vars(self, dimacs_sample):
-        """ Given a sampled solution in DIMACS format, extracts the main variables of this Z3 formula
+    def _extract_main_vars(
+        self, dimacs_sample: Iterable[int]
+    ) -> dict[z3.z3.SortRef, bool | int]:
+        """Given a sampled solution in DIMACS format, extracts the main variables of this Z3 formula
         from it.
 
         :param dimacs_sample: A sampled value from the internal boolean formula corresponding to this
@@ -308,9 +343,14 @@ class Z3Formula(ApproxSpec):
 
         for main_var in self.main_variables:
             if isinstance(main_var, z3.z3.BoolRef):
-                main_var_values[main_var] = bool(sample_dict[self._main_variables_map[str(main_var)]])
-            else: # Bitvector case
-                bitvector = [sample_dict[dimacs_var] for dimacs_var in self._main_variables_map[str(main_var)]]
+                main_var_values[main_var] = bool(
+                    sample_dict[self._main_variables_map[str(main_var)]]
+                )
+            else:  # Bitvector case
+                bitvector = [
+                    sample_dict[dimacs_var]
+                    for dimacs_var in self._main_variables_map[str(main_var)]
+                ]
 
                 # Convert endianess
                 bitvector.reverse()
@@ -329,8 +369,8 @@ class Z3Formula(ApproxSpec):
     ####################################################################################################
 
     @staticmethod
-    def union_construction(formula_a, formula_b):
-        """ Create a Z3 Formula that is the union of two other Z3 formulas.
+    def union_construction(formula_a: Z3Formula, formula_b: Z3Formula) -> Z3Formula:
+        """Create a Z3 Formula that is the union of two other Z3 formulas.
         The new main_variables is the set of main variables in either formula.
 
         :param formula_a: The first input formula
@@ -340,8 +380,12 @@ class Z3Formula(ApproxSpec):
         if formula_a.context != formula_b.context:
             new_context = z3.Context()
 
-            t_variables_a = [var.translate(new_context) for var in formula_a.main_variables]
-            t_variables_b = [var.translate(new_context) for var in formula_b.main_variables]
+            t_variables_a = [
+                var.translate(new_context) for var in formula_a.main_variables
+            ]
+            t_variables_b = [
+                var.translate(new_context) for var in formula_b.main_variables
+            ]
 
             t_formula_a = formula_a.formula.translate(new_context)
             t_formula_b = formula_b.formula.translate(new_context)
@@ -358,8 +402,10 @@ class Z3Formula(ApproxSpec):
         return Z3Formula(union_formula, main_variables)
 
     @staticmethod
-    def intersection_construction(formula_a, formula_b):
-        """ Create a Z3 Formula that is the intersection of two other Z3 formulas.
+    def intersection_construction(
+        formula_a: Z3Formula, formula_b: Z3Formula
+    ) -> Z3Formula:
+        """Create a Z3 Formula that is the intersection of two other Z3 formulas.
         The new main_variables is the set of main variables in either formula.
 
         :param formula_a: The first input formula
@@ -369,8 +415,12 @@ class Z3Formula(ApproxSpec):
         if formula_a.context != formula_b.context:
             new_context = z3.Context()
 
-            t_variables_a = [var.translate(new_context) for var in formula_a.main_variables]
-            t_variables_b = [var.translate(new_context) for var in formula_b.main_variables]
+            t_variables_a = [
+                var.translate(new_context) for var in formula_a.main_variables
+            ]
+            t_variables_b = [
+                var.translate(new_context) for var in formula_b.main_variables
+            ]
 
             t_formula_a = formula_a.formula.translate(new_context)
             t_formula_b = formula_b.formula.translate(new_context)
@@ -387,8 +437,8 @@ class Z3Formula(ApproxSpec):
         return Z3Formula(intersection_formula, main_variables)
 
     @staticmethod
-    def negation_construction(formula):
-        """ Create a Z3 Formula that is the negation if the input Z3 formula.
+    def negation_construction(formula: Z3Formula) -> Z3Formula:
+        """Create a Z3 Formula that is the negation if the input Z3 formula.
         The main variables are the same as the main variables in the input formula.
 
         :param formula: The input formula
@@ -399,11 +449,13 @@ class Z3Formula(ApproxSpec):
 
         return Z3Formula(negation_formula, main_variables)
 
+
 class Z3FormulaAlphabet(Alphabet):
-    """ Alphabet class representing the abstract alphabet of a Z3 formula,
-        which is a mapping from each variable number to a truth assignment
-        or integer.
+    """Alphabet class representing the abstract alphabet of a Z3 formula,
+    which is a mapping from each variable number to a truth assignment
+    or integer.
     """
+
     def __eq__(self, other):
         if isinstance(other, Z3FormulaAlphabet):
             return True

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 # Initialize Logger
 import logging
+
 logger = logging.getLogger(__name__)
 
 import time
@@ -12,8 +13,9 @@ from numbers import Rational
 from citoolkit.specifications.dfa import Dfa, State
 from citoolkit.costfunctions.cost_func import ExactCostFunc
 
+
 class StaticCostDfa(ExactCostFunc):
-    """ Class encoding a Static Cost Deterministic Finite Automata.
+    """Class encoding a Static Cost Deterministic Finite Automata.
     This is represented with a Dfa that has each accepting state
     mapped to a cost. A word has a cost if it is accepted by the
     Dfa and the cost associated with that word is the one that is
@@ -23,10 +25,11 @@ class StaticCostDfa(ExactCostFunc):
     :param cost_map: A dictionary mapping each accepting state in dfa to
         a cost.
     """
+
     def __init__(self, dfa: Dfa, cost_map: dict[State, Rational]):
         # Initialize super class and stores attributes.
         self.dfa = dfa
-        self.cost_map = {State(state):cost for (state,cost) in cost_map.items()}
+        self.cost_map = {State(state): cost for (state, cost) in cost_map.items()}
         costs = frozenset(self.cost_map.values())
 
         super().__init__(self.dfa.alphabet, costs)
@@ -34,7 +37,10 @@ class StaticCostDfa(ExactCostFunc):
         # Perform checks to ensure a well formed Static Cost Dfa.
         for target_state in self.dfa.accepting_states:
             if target_state not in self.cost_map.keys():
-                raise ValueError("The accepting state '" + str(target_state) + "' is missing an associated cost in cost_map")
+                raise ValueError(
+                    f"The accepting state '{target_state}' is missing an associated"
+                    " cost in cost_map"
+                )
 
         # Initialize cache values to None
         self.decomp_cost_func = None
@@ -44,7 +50,7 @@ class StaticCostDfa(ExactCostFunc):
     ####################################################################################################
 
     def cost(self, word) -> Rational | None:
-        """ Returns the appropriate cost for a word. This cost is
+        """Returns the appropriate cost for a word. This cost is
         found by first checking if the interior Dfa accepts a word.
         If it does, then the accepting state that the Dfa terminates
         in is mapped through cost_map to determine the cost for
@@ -59,8 +65,8 @@ class StaticCostDfa(ExactCostFunc):
 
         return None
 
-    def decompose(self, num_threads=1) -> dict[Rational, Dfa]:
-        """ Decomposes this cost function into a Dfa indicator
+    def decompose(self, num_threads: int = 1) -> dict[Rational, Dfa]:
+        """Decomposes this cost function into a Dfa indicator
         function for each cost.
 
         :returns: A dictionary mapping each cost to a Dfa Spec that
@@ -79,7 +85,7 @@ class StaticCostDfa(ExactCostFunc):
         self.decomp_cost_func = {}
 
         # Compute a mapping from each cost to its associated accepting states.
-        cost_states_mapping = {cost:set() for cost in self.costs}
+        cost_states_mapping = {cost: set() for cost in self.costs}
 
         for accepting_state in self.dfa.accepting_states:
             cost = self.cost_map[accepting_state]
@@ -87,11 +93,18 @@ class StaticCostDfa(ExactCostFunc):
 
         # Compute the indicator function for each cost
         for cost in self.costs:
-            indicator_dfa = Dfa(self.dfa.alphabet, self.dfa.states, cost_states_mapping[cost], \
-                                self.dfa.start_state, self.dfa.transitions)
+            indicator_dfa = Dfa(
+                self.dfa.alphabet,
+                self.dfa.states,
+                cost_states_mapping[cost],
+                self.dfa.start_state,
+                self.dfa.transitions,
+            )
             self.decomp_cost_func[cost] = indicator_dfa
 
         wall_time = time.time() - start_time
-        logger.info("StaticCostDfa Decomposition completed. Wallclock Runtime: %.4f", wall_time)
+        logger.info(
+            "StaticCostDfa Decomposition completed. Wallclock Runtime: %.4f", wall_time
+        )
 
         return self.decomp_cost_func

@@ -6,18 +6,20 @@ from abc import ABC, abstractmethod
 
 from citoolkit.specifications.spec import ExactSpec, ApproxSpec, UniverseSpec, Alphabet
 
+
 class ExactLabellingFunc(ABC):
-    """ The LabelFunc class is a parent class to all labelling functions.
+    """The LabelFunc class is a parent class to all labelling functions.
 
     :param alphabet: The alphabet this specification is defined over.
     """
+
     def __init__(self, alphabet: set[str], labels: set[str]) -> None:
         self.alphabet = Alphabet.create_alphabet(alphabet)
         self.labels = frozenset(labels)
 
     @abstractmethod
     def label(self, word: tuple[str, ...]) -> str | None:
-        """ Returns the appropriate label for a word. If the word
+        """Returns the appropriate label for a word. If the word
         has no label, returns None.
 
         :param word: A word over this labelling function's alphabet.
@@ -26,25 +28,27 @@ class ExactLabellingFunc(ABC):
 
     @abstractmethod
     def decompose(self) -> dict[str, ExactSpec]:
-        """ Decompose this labelling function into an ExactSpec object for
+        """Decompose this labelling function into an ExactSpec object for
         each label that accepts only on words with that label.
 
         :returns: A dictionary mapping each label to an ExactSpec object that
             accepts only words labelled with that label by this labelling function.
         """
 
+
 class ApproxLabelFunc(ABC):
-    """ The ApproximateCostFunc class is a parent class to all approximate cost functions.
+    """The ApproximateCostFunc class is a parent class to all approximate cost functions.
 
     :param alphabet: The alphabet this specification is defined over.
     """
+
     def __init__(self, alphabet: set[str], labels) -> None:
         self.alphabet = Alphabet.create_alphabet(alphabet)
         self.labels = labels
 
     @abstractmethod
-    def realize(self, label) -> ApproxSpec:
-        """ Realize this cost function into an ApproximateSpec object that accepts
+    def realize(self, label: str) -> ApproxSpec:
+        """Realize this cost function into an ApproximateSpec object that accepts
         only words with cost in the range [min_cost, max_cost].
 
         :param min_cost: The minimum cost accepted by the realized cost function.
@@ -53,13 +57,15 @@ class ApproxLabelFunc(ABC):
             in the range [min_cost, max_cost].
         """
 
+
 class TrivialLabellingFunc(ExactLabellingFunc):
-    """ The TrivialLabelFunc class assigns the label "TrivialLabel" to every string. """
+    """The TrivialLabelFunc class assigns the label "TrivialLabel" to every string."""
+
     def __init__(self) -> None:
         super().__init__(alphabet=frozenset(), labels=frozenset(["TrivialLabel"]))
 
     def label(self, word: tuple[str, ...]) -> str | None:
-        """ Returns the appropriate label for a word. If the word
+        """Returns the appropriate label for a word. If the word
         has no label, returns None.
 
         :param word: A word over this labelling function's alphabet.
@@ -68,7 +74,7 @@ class TrivialLabellingFunc(ExactLabellingFunc):
         return "TrivialLabel"
 
     def decompose(self) -> dict[str, ExactSpec]:
-        """ Decompose this labelling function into an ExactSpec object for
+        """Decompose this labelling function into an ExactSpec object for
         each label that accepts only on words with that label.
 
         :returns: A dictionary mapping each label to an ExactSpec object that

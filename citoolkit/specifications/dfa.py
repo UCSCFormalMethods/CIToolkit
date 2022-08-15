@@ -6,8 +6,9 @@ import random
 
 from citoolkit.specifications.spec import ExactSpec
 
+
 class Dfa(ExactSpec):
-    """ The Dfa class encodes a Deterministic Finite Automata specification.
+    """The Dfa class encodes a Deterministic Finite Automata specification.
 
     Note: All state variables in all parameters can be State objects or strings.
     Any strings will be converted to State objects internally.
@@ -22,8 +23,15 @@ class Dfa(ExactSpec):
     :raises ValueError: Raised if the Dfa parameters are flawed so that they do
         not make a well defined Dfa. I.e. the transition map is not complete.
     """
-    def __init__(self, alphabet: set[str], states: set[str | State], accepting_states: set[str | State], \
-                 start_state: str | State, transitions: dict[tuple[State, str], State]) -> None:
+
+    def __init__(
+        self,
+        alphabet: set[str],
+        states: set[str | State],
+        accepting_states: set[str | State],
+        start_state: str | State,
+        transitions: dict[tuple[State, str], State],
+    ) -> None:
         # Intializes super class and stores all attributes. Also ensures
         # all states are of the State class
         super().__init__(alphabet)
@@ -31,8 +39,10 @@ class Dfa(ExactSpec):
         self.accepting_states = frozenset(map(State, accepting_states))
         self.start_state = State(start_state)
 
-        self.transitions = {(State(state),symbol):State(dest_state) for \
-                            ((state, symbol),dest_state) in transitions.items()}
+        self.transitions = {
+            (State(state), symbol): State(dest_state)
+            for ((state, symbol), dest_state) in transitions.items()
+        }
 
         # Perform checks to ensure well formed DFA.
         if not self.accepting_states.issubset(self.states):
@@ -44,11 +54,17 @@ class Dfa(ExactSpec):
         for symbol in self.alphabet:
             for state in self.states:
                 if (state, symbol) not in self.transitions:
-                    raise ValueError("The transition map is missing a transition for " + str((state, symbol)))
+                    raise ValueError(
+                        "The transition map is missing a transition for "
+                        + str((state, symbol))
+                    )
 
                 if self.transitions[(state, symbol)] not in self.states:
-                    raise ValueError("The transition from state '" + str(state) + "' with symbol '" + str(symbol) +\
-                                     "' leads to '" + str(self.transitions[(state, symbol)]) + "', which is not a state.")
+                    raise ValueError(
+                        f"The transition from state '{state}' with symbol '{symbol}'"
+                        f" leads to '{self.transitions[(state, symbol)]}', which is not"
+                        " a state."
+                    )
 
         # Initialize cache values to None
         self._topological_ordering = None
@@ -59,8 +75,8 @@ class Dfa(ExactSpec):
     # ExactSpec Functions
     ####################################################################################################
 
-    def accepts(self, word: tuple[str,...]) -> bool:
-        """ Returns true if this Dfa accepts word, and false otherwise.
+    def accepts(self, word: tuple[str, ...]) -> bool:
+        """Returns true if this Dfa accepts word, and false otherwise.
 
         :param word: The candidate word that is checked for belonging in
             the language of this Dfa.
@@ -71,7 +87,7 @@ class Dfa(ExactSpec):
         return self.get_terminal_state(word) in self.accepting_states
 
     def language_size(self, min_length: int = None, max_length: int = None) -> int:
-        """ Returns the number of words accepted by this Dfa.
+        """Returns the number of words accepted by this Dfa.
 
         :param min_length: An inclusive lower bound on word size to consider.
         :param max_length: An inclusive upper bound on word size to consider.
@@ -93,10 +109,14 @@ class Dfa(ExactSpec):
                 bounded_dfa = self
 
                 if min_length is not None:
-                    bounded_dfa = bounded_dfa & Dfa.min_length_dfa(self.alphabet, min_length)
+                    bounded_dfa = bounded_dfa & Dfa.min_length_dfa(
+                        self.alphabet, min_length
+                    )
 
                 if max_length is not None:
-                    bounded_dfa = bounded_dfa & Dfa.max_length_dfa(self.alphabet, max_length)
+                    bounded_dfa = bounded_dfa & Dfa.max_length_dfa(
+                        self.alphabet, max_length
+                    )
 
                 self._bounded_dfas[(min_length, max_length)] = bounded_dfa.explicit()
 
@@ -109,12 +129,16 @@ class Dfa(ExactSpec):
             try:
                 accepting_path_counts = self.compute_accepting_path_counts()
             except DfaCycleError as exception:
-                raise DfaCycleError("Cannot compute language size for a Dfa with an infinite language.") from exception
+                raise DfaCycleError(
+                    "Cannot compute language size for a Dfa with an infinite language."
+                ) from exception
 
             return accepting_path_counts[self.start_state]
 
-    def sample(self, min_length: int = None, max_length: int = None, seed=None) -> tuple[str,...]:
-        """ Samples a word uniformly at random from the language of
+    def sample(
+        self, min_length: int = None, max_length: int = None, seed: int = None
+    ) -> tuple[str, ...]:
+        """Samples a word uniformly at random from the language of
         this Dfa and returns the sampled word.
 
         :param min_length: An inclusive lower bound on word size to consider.
@@ -145,10 +169,14 @@ class Dfa(ExactSpec):
                 bounded_dfa = self
 
                 if min_length is not None:
-                    bounded_dfa = bounded_dfa & Dfa.min_length_dfa(self.alphabet, min_length)
+                    bounded_dfa = bounded_dfa & Dfa.min_length_dfa(
+                        self.alphabet, min_length
+                    )
 
                 if max_length is not None:
-                    bounded_dfa = bounded_dfa & Dfa.max_length_dfa(self.alphabet, max_length)
+                    bounded_dfa = bounded_dfa & Dfa.max_length_dfa(
+                        self.alphabet, max_length
+                    )
 
                 self._bounded_dfas[(min_length, max_length)] = bounded_dfa.explicit()
 
@@ -162,11 +190,15 @@ class Dfa(ExactSpec):
             try:
                 accepting_path_counts = self.compute_accepting_path_counts()
             except DfaCycleError as exception:
-                raise DfaCycleError("Cannot sample uniformly from a Dfa with an infinite language.") from exception
+                raise DfaCycleError(
+                    "Cannot sample uniformly from a Dfa with an infinite language."
+                ) from exception
 
             # Check that this Dfa's language is non empty.
             if self.language_size(min_length, max_length) == 0:
-                raise DfaEmptyLanguageError("Cannot sample from a Dfa with an empty language.")
+                raise DfaEmptyLanguageError(
+                    "Cannot sample from a Dfa with an empty language."
+                )
 
             # Initialize sample variables
             current_state = self.start_state
@@ -176,7 +208,7 @@ class Dfa(ExactSpec):
             while True:
                 # Select a random number in the range of all possible
                 # remaining words in our language from our current stage
-                remaining_count = random.randint(0, state_count-1)
+                remaining_count = random.randint(0, state_count - 1)
 
                 # Check if the current state is an accepting one, and
                 # if so, have we finished generating words.
@@ -215,8 +247,8 @@ class Dfa(ExactSpec):
     # Property Functions
     ####################################################################################################
 
-    def get_terminal_state(self, word: tuple[str,...]) -> bool:
-        """ Returns the terminal state reached in this Dfa after consuming
+    def get_terminal_state(self, word: tuple[str, ...]) -> bool:
+        """Returns the terminal state reached in this Dfa after consuming
         all symbols in word.
 
         :param word: The word to be run through this Dfa.
@@ -227,8 +259,8 @@ class Dfa(ExactSpec):
         """
         return self.get_state_path(word)[-1]
 
-    def get_state_path(self, word: tuple[str,...]) -> bool:
-        """ Run the Dfa on word, keeping track of all states reached.
+    def get_state_path(self, word: tuple[str, ...]) -> bool:
+        """Run the Dfa on word, keeping track of all states reached.
 
         :param word: The word to be run through this Dfa.
         :raises ValueError: Raised if the word contains symbols not in
@@ -239,8 +271,10 @@ class Dfa(ExactSpec):
         # Checks that word is composed only of symbols in the alphabet.
         for symbol in word:
             if symbol not in self.alphabet:
-                raise ValueError("'" + str(word) + "' contains the symbol '" + \
-                                 str(symbol) + "' which is not in the Dfa's alphabet.")
+                raise ValueError(
+                    f"'{word}' contains the symbol '{symbol}' which is not in the Dfa's"
+                    " alphabet."
+                )
 
         # Consumes all symbols in word and returns the a list of the states encountered.
         current_state = self.start_state
@@ -253,7 +287,7 @@ class Dfa(ExactSpec):
         return tuple(state_path)
 
     def compute_accepting_path_counts(self) -> dict[State, int]:
-        """ Computes the number of accepting paths from a state
+        """Computes the number of accepting paths from a state
         to an accepting state for all states.
 
         :raises DfaCycleError: Raised if when computing topological ordering,
@@ -266,7 +300,7 @@ class Dfa(ExactSpec):
         if self._accepting_path_counts is not None:
             return self._accepting_path_counts
         else:
-            self._accepting_path_counts = {state:0 for state in self.states}
+            self._accepting_path_counts = {state: 0 for state in self.states}
 
         # Compute topological ordering to ensure that we traverse
         # Dfa in well defined order, specifically a reverse topological
@@ -293,7 +327,7 @@ class Dfa(ExactSpec):
         return self._accepting_path_counts
 
     def states_topological(self) -> list[State]:
-        """ Returns a topologically sorted list of this DFA's states, excluding those
+        """Returns a topologically sorted list of this DFA's states, excluding those
         that are unreachable or dead.
 
         :raises DfaCycleError: Raised if when computing topological ordering,
@@ -330,7 +364,7 @@ class Dfa(ExactSpec):
         # Initialize topological ordering variables.
         topological_ordering = []
         working_states = set().union(*feasible_sets)
-        states_indegree = {state:0 for state in working_states}
+        states_indegree = {state: 0 for state in working_states}
 
         # Calculate initial indegree for all states
         for state in working_states:
@@ -368,14 +402,16 @@ class Dfa(ExactSpec):
 
         # Checks that we have emptied working_states. If not, we have a cycle.
         if len(working_states) > 0:
-            raise DfaCycleError("Cannot compute a topological_ordering for a DFA with a cycle.")
+            raise DfaCycleError(
+                "Cannot compute a topological_ordering for a DFA with a cycle."
+            )
 
         self._topological_ordering = tuple(topological_ordering)
 
         return topological_ordering
 
     def states_partition(self) -> list[set[State]]:
-        """ Uses Hopcroft's algorithm to partition all this Dfa's states
+        """Uses Hopcroft's algorithm to partition all this Dfa's states
         into equivalence classes, excluding unreachable states.
 
         :returns: A list of sets that partition the states in this Dfa into equivalence
@@ -400,8 +436,14 @@ class Dfa(ExactSpec):
         reachable_accepting_states = reachable_states & self.accepting_states
 
         # Use Hopcroft's algorithm to merge nondistingishuable states.
-        partition_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
-        working_sets = [reachable_states - reachable_accepting_states, reachable_accepting_states.copy()]
+        partition_sets = [
+            reachable_states - reachable_accepting_states,
+            reachable_accepting_states.copy(),
+        ]
+        working_sets = [
+            reachable_states - reachable_accepting_states,
+            reachable_accepting_states.copy(),
+        ]
 
         while len(working_sets) > 0:
             working_set = working_sets.pop()
@@ -462,7 +504,7 @@ class Dfa(ExactSpec):
     ####################################################################################################
 
     def minimize(self) -> Dfa:
-        """ Computes and returns a minimal Dfa that accepts the same
+        """Computes and returns a minimal Dfa that accepts the same
         language as self.
 
         :returns: The complete Dfa with the smallest number of states that
@@ -496,10 +538,16 @@ class Dfa(ExactSpec):
         minimal_accepting_states = minimal_states & self.accepting_states
         start_state_rep = representative_map[self.start_state]
 
-        return Dfa(self.alphabet, minimal_states, minimal_accepting_states, start_state_rep, minimal_transitions)
+        return Dfa(
+            self.alphabet,
+            minimal_states,
+            minimal_accepting_states,
+            start_state_rep,
+            minimal_transitions,
+        )
 
     def negation(self) -> Dfa:
-        """ Computes and returns a Dfa that accepts words
+        """Computes and returns a Dfa that accepts words
         if and only if they are not accepted by self.
 
         :returns: A Dfa that accepts only words not in this Dfa's language.
@@ -509,7 +557,9 @@ class Dfa(ExactSpec):
         start_state = self.start_state
         transitions = self.transitions.copy()
 
-        return Dfa(self.alphabet, states, new_accepting_states, start_state, transitions)
+        return Dfa(
+            self.alphabet, states, new_accepting_states, start_state, transitions
+        )
 
     ####################################################################################################
     # Constructor Functions
@@ -517,7 +567,7 @@ class Dfa(ExactSpec):
 
     @staticmethod
     def union_construction(dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
-        """ Computes the union product construction for two DFAs and
+        """Computes the union product construction for two DFAs and
         return its minimized form.
 
         :param dfa_a: The first Dfa to use in the product construction.
@@ -528,7 +578,7 @@ class Dfa(ExactSpec):
 
     @staticmethod
     def intersection_construction(dfa_a: Dfa, dfa_b: Dfa) -> Dfa:
-        """ Computes the union product construction for two DFAs and
+        """Computes the union product construction for two DFAs and
         return its minimized form.
 
         :param dfa_a: The first dfa to use in the product construction.
@@ -540,7 +590,7 @@ class Dfa(ExactSpec):
 
     @staticmethod
     def _product_construction(dfa_a: Dfa, dfa_b: Dfa, union: bool) -> Dfa:
-        """ Computes the product construction for two DFAs, for either
+        """Computes the product construction for two DFAs, for either
         the union or intersection depending on the value of the union
         parameter.
 
@@ -556,12 +606,16 @@ class Dfa(ExactSpec):
         # Performs checks to make sure that the product construction
         # is being used correctly.
         if dfa_a.alphabet != dfa_b.alphabet:
-            raise ValueError("Cannot perform operations on specifications with different alphabets.")
+            raise ValueError(
+                "Cannot perform operations on specifications with different alphabets."
+            )
 
         alphabet = dfa_a.alphabet & dfa_b.alphabet
 
         if not isinstance(dfa_a, Dfa) or not isinstance(dfa_b, Dfa):
-            raise ValueError("The Dfa product construction can only be performed on Dfa objects.")
+            raise ValueError(
+                "The Dfa product construction can only be performed on Dfa objects."
+            )
 
         # Initialize parameters for new Dfa
         new_states = set()
@@ -581,22 +635,34 @@ class Dfa(ExactSpec):
 
                 # Check if this new state is an accepting state, depending
                 # on whether we are computing a union or intersection construction.
-                if (union and (state_a in dfa_a.accepting_states or state_b in dfa_b.accepting_states)) \
-                  or (state_a in dfa_a.accepting_states and state_b in dfa_b.accepting_states):
+                if (
+                    union
+                    and (
+                        state_a in dfa_a.accepting_states
+                        or state_b in dfa_b.accepting_states
+                    )
+                ) or (
+                    state_a in dfa_a.accepting_states
+                    and state_b in dfa_b.accepting_states
+                ):
                     new_accepting_states.add(new_state)
 
                 # Determines the transition for this new state for each symbol
                 # and adds them to new_transitions.
                 for symbol in alphabet:
-                    new_transitions[(new_state, symbol)] = State(dfa_a.transitions[(state_a, symbol)], \
-                                                       dfa_b.transitions[(state_b, symbol)])
+                    new_transitions[(new_state, symbol)] = State(
+                        dfa_a.transitions[(state_a, symbol)],
+                        dfa_b.transitions[(state_b, symbol)],
+                    )
 
         # Uses the above pieces to create the new product Dfa and returns it.
-        return Dfa(alphabet, new_states, new_accepting_states, new_start_state, new_transitions)
+        return Dfa(
+            alphabet, new_states, new_accepting_states, new_start_state, new_transitions
+        )
 
     @staticmethod
     def exact_length_dfa(alphabet: set[str], length_requirement: int) -> Dfa:
-        """ Returns a Dfa that accepts all strings over alphabet with length exactly
+        """Returns a Dfa that accepts all strings over alphabet with length exactly
         length_requirement.
 
         :param alphabet: The alphabet for the output Dfa.
@@ -610,26 +676,28 @@ class Dfa(ExactSpec):
         if length_requirement < 0:
             raise ValueError("length_requirement must be non-negative.")
 
-        states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
+        states = {f"Seen{state_num}" for state_num in range(length_requirement + 1)} | {
+            "Sink"
+        }
 
-        accepting_states = {("Seen" + str(length_requirement))}
+        accepting_states = {f"Seen{length_requirement}"}
         start_state = "Seen0"
 
         transitions = {}
 
         for state_num in range(length_requirement):
             for symbol in alphabet:
-                transitions[("Seen" + str(state_num), symbol)] = "Seen" + str(state_num+1)
+                transitions[(f"Seen{state_num}", symbol)] = f"Seen{state_num + 1}"
 
         for symbol in alphabet:
-            transitions[("Seen" + str(length_requirement), symbol)] = "Sink"
+            transitions[(f"Seen{length_requirement}", symbol)] = "Sink"
             transitions[("Sink", symbol)] = "Sink"
 
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
     @staticmethod
     def min_length_dfa(alphabet: set[str], length_requirement: int) -> Dfa:
-        """ Returns a Dfa that accepts all strings over alphabet with length at least
+        """Returns a Dfa that accepts all strings over alphabet with length at least
         length_requirement.
 
         :param alphabet: The alphabet for the output Dfa.
@@ -643,26 +711,28 @@ class Dfa(ExactSpec):
         if length_requirement < 0:
             raise ValueError("length_requirement must be non-negative.")
 
-        states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
+        states = {f"Seen{state_num}" for state_num in range(length_requirement + 1)} | {
+            "Sink"
+        }
 
-        accepting_states = {"Seen" + str(length_requirement), "Sink"}
+        accepting_states = {f"Seen{length_requirement}", "Sink"}
         start_state = "Seen0"
 
         transitions = {}
 
         for state_num in range(length_requirement):
             for symbol in alphabet:
-                transitions[("Seen" + str(state_num), symbol)] = "Seen" + str(state_num+1)
+                transitions[(f"Seen{state_num}", symbol)] = f"Seen{state_num + 1}"
 
         for symbol in alphabet:
-            transitions[("Seen" + str(length_requirement), symbol)] = "Sink"
+            transitions[(f"Seen{length_requirement}", symbol)] = "Sink"
             transitions[("Sink", symbol)] = "Sink"
 
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
     @staticmethod
     def max_length_dfa(alphabet: set[str], length_requirement: int) -> Dfa:
-        """ Returns a Dfa that accepts all strings over alphabet with length at most
+        """Returns a Dfa that accepts all strings over alphabet with length at most
         length_requirement.
 
         :param alphabet: The alphabet for the output Dfa.
@@ -676,31 +746,37 @@ class Dfa(ExactSpec):
         if length_requirement < 0:
             raise ValueError("length_requirement must be non-negative.")
 
-        states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)} | {"Sink"}
+        states = {f"Seen{state_num}" for state_num in range(length_requirement + 1)} | {
+            "Sink"
+        }
 
-        accepting_states = {"Seen" + str(state_num) for state_num in range(length_requirement+1)}
+        accepting_states = {
+            f"Seen{state_num}" for state_num in range(length_requirement + 1)
+        }
         start_state = "Seen0"
 
         transitions = {}
 
         for state_num in range(length_requirement):
             for symbol in alphabet:
-                transitions[("Seen" + str(state_num), symbol)] = "Seen" + str(state_num+1)
+                transitions[(f"Seen{state_num}", symbol)] = f"Seen{state_num + 1}"
 
         for symbol in alphabet:
-            transitions[("Seen" + str(length_requirement), symbol)] = "Sink"
+            transitions[(f"Seen{length_requirement}", symbol)] = "Sink"
             transitions[("Sink", symbol)] = "Sink"
 
         return Dfa(alphabet, states, accepting_states, start_state, transitions)
 
+
 class State:
-    """ Class representing a state in a DFA. Primarily used for merging states
+    """Class representing a state in a DFA. Primarily used for merging states
     and pretty printing them.
 
     :param * args: A sequence of strings or other State objects that will be
         merged into a new state.
     :raises ValueError: Raised if a non string or state object is passed in args.
     """
+
     def __init__(self, *args: Union[str, State]) -> None:
         # Parses
         labels = []
@@ -711,29 +787,31 @@ class State:
             elif isinstance(arg, State):
                 labels += list(arg.state_tuple)
             else:
-                raise ValueError("Only strings or State objects can be used to create another state.")
+                raise ValueError(
+                    "Only strings or State objects can be used to create another state."
+                )
 
-        self.state_tuple: tuple[str,...] = tuple(labels)
+        self.state_tuple: tuple[str, ...] = tuple(labels)
 
     def __str__(self) -> str:
-        """ Pretty prints the State as a Tuple.
+        """Pretty prints the State as a Tuple.
 
         :returns: A pretty printed version of the state
         """
         if len(self.state_tuple) == 1:
-            return "(" + self.state_tuple[0] + ")"
+            return f"({self.state_tuple[0]})"
         else:
             return str(self.state_tuple)
 
     def __repr__(self) -> str:
-        """ Prints the State object as a reconstructable version of the object.
+        """Prints the State object as a reconstructable version of the object.
 
         :returns: A reconstructable string interpretation of the State object.
         """
-        return "State" + str(self)
+        return f"State{self}"
 
     def __eq__(self, other: object) -> bool:
-        """ Checks equality, either with another State or a string.
+        """Checks equality, either with another State or a string.
 
         :returns: True if the state values represent the same State, returns NotImplemented
             otherwise.
@@ -746,16 +824,17 @@ class State:
             return NotImplemented
 
     def __hash__(self):
-        """ Returns a hash of the State's interior tuple
-        """
+        """Returns a hash of the State's interior tuple"""
         return hash(self.state_tuple)
 
+
 class DfaCycleError(Exception):
-    """ An error raised when trying to compute language size for or sample
+    """An error raised when trying to compute language size for or sample
     from a Dfa that contains a cycle.
     """
 
+
 class DfaEmptyLanguageError(Exception):
-    """ An error raised when a Dfa's language is empty, which prevents an
+    """An error raised when a Dfa's language is empty, which prevents an
     operation from being completed, e.g. sampling.
     """

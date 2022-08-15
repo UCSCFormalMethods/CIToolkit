@@ -7,25 +7,31 @@ from abc import ABC, abstractmethod
 
 from citoolkit.specifications.spec import ExactSpec, ApproxSpec, Alphabet
 
+
 class ExactCostFunc(ABC):
-    """ The CostFunc class is a parent class to all cost functions.
+    """The CostFunc class is a parent class to all cost functions.
 
     :param alphabet: The alphabet this specification is defined over.
     """
+
     def __init__(self, alphabet: set[str], costs: set[Rational]) -> None:
         self.alphabet = Alphabet.create_alphabet(alphabet)
         self.costs = frozenset(costs)
 
         for cost in costs:
             if not isinstance(cost, Rational):
-                raise ValueError("'" + str(cost) + "' is not of the type Rational, and therefore cannot be a cost." +\
-                                 " Consider constructing one using the 'fractions' library.")
+                raise ValueError(
+                    f"'{cost}' is not of the type Rational, and therefore cannot be a"
+                    " cost. Consider constructing one using the 'fractions' library."
+                )
             if cost < 0:
-                raise ValueError("'" + str(cost) + "' is less than zero, and therefore cannot be a cost.")
+                raise ValueError(
+                    f"'{cost}' is less than zero, and therefore cannot be a cost."
+                )
 
     @abstractmethod
     def cost(self, word: tuple[str, ...]) -> Rational | None:
-        """ Returns the appropriate cost for a word. If the word
+        """Returns the appropriate cost for a word. If the word
         has no cost, returns None.
 
         :param word: A word over this labelling function's alphabet.
@@ -33,25 +39,27 @@ class ExactCostFunc(ABC):
         """
 
     @abstractmethod
-    def decompose(self, num_threads) -> dict[Rational, ExactSpec]:
-        """ Decompose this cost function into an ExactSpec object for
+    def decompose(self, num_threads: int) -> dict[Rational, ExactSpec]:
+        """Decompose this cost function into an ExactSpec object for
         each cost that accepts only on words with that cost.
 
         :returns: A dictionary mapping each cost to an ExactSpec object that
             accepts only words assigned that cost by this cost function.
         """
 
+
 class ApproxCostFunc(ABC):
-    """ The ApproximateCostFunc class is a parent class to all approximate cost functions.
+    """The ApproximateCostFunc class is a parent class to all approximate cost functions.
 
     :param alphabet: The alphabet this specification is defined over.
     """
+
     def __init__(self, alphabet: set[str]) -> None:
         self.alphabet = Alphabet.create_alphabet(alphabet)
 
     @abstractmethod
-    def realize(self, min_cost, max_cost) -> ApproxSpec:
-        """ Realize this cost function into an ApproximateSpec object that accepts
+    def realize(self, min_cost: int, max_cost: int) -> ApproxSpec:
+        """Realize this cost function into an ApproximateSpec object that accepts
         only words with cost in the range [min_cost, max_cost].
 
         :param min_cost: The minimum cost accepted by the realized cost function.
@@ -60,8 +68,9 @@ class ApproxCostFunc(ABC):
             in the range [min_cost, max_cost].
         """
 
+
 class SoftConstraintCostFunc(ExactCostFunc):
-    """ The SoftConstraintCostFunc class takes in a soft constraint ExactSpec and
+    """The SoftConstraintCostFunc class takes in a soft constraint ExactSpec and
     produces an equivalent cost function for use in Quantitative CI. The new
     cost function assigns all words that are accepted by that ExactSpec cost 1.
     All other words are assigned cost 0 (Note that the ExactSpec must support the
@@ -70,13 +79,14 @@ class SoftConstraintCostFunc(ExactCostFunc):
     :param soft_constraint: The soft constraint for which an equivalent cost
         function will be constructed.
     """
+
     def __init__(self, soft_constraint: ExactSpec) -> None:
         self.soft_constraint = soft_constraint
 
-        super().__init__(alphabet=frozenset(), costs=frozenset([0,1]))
+        super().__init__(alphabet=frozenset(), costs=frozenset([0, 1]))
 
     def cost(self, word: tuple[str, ...]) -> Rational | None:
-        """ Returns the appropriate cost for a word. If the word
+        """Returns the appropriate cost for a word. If the word
         has no cost, returns None.
 
         :param word: A word over this cost function's alphabet.
@@ -87,8 +97,8 @@ class SoftConstraintCostFunc(ExactCostFunc):
         else:
             return 1
 
-    def decompose(self, num_threads=1) -> dict[Rational, ExactSpec]:
-        """ Decompose this cost function into a ExactSpec object for
+    def decompose(self, num_threads: int = 1) -> dict[Rational, ExactSpec]:
+        """Decompose this cost function into a ExactSpec object for
         each cost that accepts only on words with that cost.
 
         :returns: A dictionary mapping each cost to a ExactSpec object that
