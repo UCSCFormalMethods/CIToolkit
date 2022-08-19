@@ -23,16 +23,16 @@ from citoolkit.costfunctions.cost_func import SoftConstraintCostFunc
 class LCI(LQCI):
     """An improviser for the Labelled Control Improvisation (LCI) problem.
 
-        :param hard_constraint: A specification that must accept all improvisations
-        :param soft_constraint: A specification that must accept improvisations with
-            probability 1 - epsilon.
-        :param label_func: A labelling function that must associate a label with all
-            improvisations.
-        :param length_bounds: A tuple containing lower and upper bounds on the length
-            of a generated word.
-    `   :param num_threads: The number of threads to use in parameterization computation.
-        :param lazy: Whether or not to lazily initialize the improvizer.
-        :raises ValueError: If passed parameters are not well formed.
+    :param hard_constraint: A specification that must accept all improvisations
+    :param soft_constraint: A specification that must accept improvisations with
+        probability 1 - epsilon.
+    :param label_func: A labelling function that must associate a label with all
+        improvisations.
+    :param length_bounds: A tuple containing lower and upper bounds on the length
+        of a generated word.
+    :param num_threads: The number of threads to use in parameterization computation.
+    :param lazy: Whether or not to lazily initialize the improvizer.
+    :raises ValueError: If passed parameters are not well formed.
     """
 
     def __init__(
@@ -162,15 +162,15 @@ class LCI(LQCI):
 class MELCI(MELQCI):
     """An improviser for the Maximum Entropy Labelled Control Improvisation (MELCI) problem.
 
-        :param hard_constraint: A specification that must accept all improvisations
-        :param soft_constraint: A specification that must accept improvisations with
-            probability 1 - epsilon.
-        :param label_func: A labelling function that must associate a label with all
-            improvisations.
-        :param length_bounds: A tuple containing lower and upper bounds on the length
-            of a generated word.
-    `   :param num_threads: The number of threads to use in parameterization computation.
-        :raises ValueError: If passed parameters are not well formed.
+    :param hard_constraint: A specification that must accept all improvisations
+    :param soft_constraint: A specification that must accept improvisations with
+        probability 1 - epsilon.
+    :param label_func: A labelling function that must associate a label with all
+        improvisations.
+    :param length_bounds: A tuple containing lower and upper bounds on the length
+        of a generated word.
+    :param num_threads: The number of threads to use in parameterization computation.
+    :raises ValueError: If passed parameters are not well formed.
     """
 
     def __init__(

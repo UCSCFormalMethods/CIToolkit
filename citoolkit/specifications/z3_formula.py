@@ -114,7 +114,7 @@ class Z3Formula(ApproxSpec):
     ) -> int:
         """Approximately computes the number of solutions to this formula.
         With probability 1 - confidence, the following holds true,
-        true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
+        true_count*(1 + tolerance)^-1 <= returned_count <= true_count*(1 + tolerance)
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.
@@ -210,8 +210,6 @@ class Z3Formula(ApproxSpec):
         """
         if self._bool_formula_spec is not None:
             return
-
-        z3.set_param("seed", 1)
 
         # Check if Z3 formula is UNSAT. If so, set self._bool_formula_spec
         # to an unsat spec.
@@ -452,8 +450,7 @@ class Z3Formula(ApproxSpec):
 
 class Z3FormulaAlphabet(Alphabet):
     """Alphabet class representing the abstract alphabet of a Z3 formula,
-    which is a mapping from each variable number to a truth assignment
-    or integer.
+    which is a mapping from each variable to a truth assignment or integer.
     """
 
     def __eq__(self, other):

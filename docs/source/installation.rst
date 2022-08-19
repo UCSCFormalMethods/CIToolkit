@@ -1,7 +1,7 @@
 Installation
 ============
 
-``citoolkit`` is writtin in Python 3, and requires **Python 3.9**. It is available as a PyPi package and can be installed by running:
+``citoolkit`` is writtin in Python 3, and requires **Python 3.10**. It is available as a PyPi package and can be installed by running:
 
 .. code-block:: console
 
@@ -20,6 +20,10 @@ Alternatively, to automatically install ``citoolkit`` and all its dependencies i
 .. code-block:: console
 
     $ make create_env
+
+.. note::
+
+	At the moment the packages ``pyapproxmc`` and ``pyunigen`` are not available via PyPi, so they must be installed into your Python environment manually. They are available on GitHub: `ApproxMC <https://github.com/meelgroup/approxmc>`_ `Unigen <https://github.com/meelgroup/unigen>`_.
 
 You can then activate that virtual environment by running:
 

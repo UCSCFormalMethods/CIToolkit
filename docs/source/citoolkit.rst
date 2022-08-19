@@ -7,7 +7,9 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   citoolkit.costfunctions
    citoolkit.improvisers
+   citoolkit.labellingfunctions
    citoolkit.specifications
 
 Module contents

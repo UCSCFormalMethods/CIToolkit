@@ -72,7 +72,7 @@ class BoolFormula(ApproxSpec):
     ) -> int:
         """Approximately computes the number of solutions to this formula.
         With probability 1 - confidence, the following holds true,
-        true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
+        true_count*(1 + tolerance)^-1 <= returned_count <= true_count*(1 + tolerance)
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.

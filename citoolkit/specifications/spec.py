@@ -217,8 +217,8 @@ class ApproxSpec(Spec):
         self, tolerance: float, confidence: float, seed: int = None
     ) -> int:
         """Approximately computes the number of words accepted by this specification.
-            With probability 1 - confidence, the following holds true,
-            true_count*(1 + confidence)^-1 <= returned_count <= true_count*(1 + confidence)
+        With probability 1 - confidence, the following holds true,
+        Strue_count*(1 + tolerance)^-1 <= returned_count <= true_count*(1 + tolerance)
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.
@@ -228,10 +228,10 @@ class ApproxSpec(Spec):
     @abstractmethod
     def sample(self, tolerance: float, seed: int = None) -> Any:
         """Generate a word approximately uniformly at random from this specification. What
-            a word is depends on the alphabet. Let true_prob be 1/true_count and returned_prob
-            be the probability of sampling any particular solution. With probability 1 - confidence,
-            the following holds true,
-            1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
+        a word is depends on the alphabet. Let true_prob be 1/true_count and returned_prob
+        be the probability of sampling any particular solution. With probability 1 - confidence,
+        the following holds true,
+        1/(1 + tolerance) * true_prob <= returned_prob <= (1 + tolerance) / true_prob
 
         :param tolerance: The tolerance of the count.
         :param confidence: The confidence in the count.

@@ -69,7 +69,7 @@ def test_alqci_improvise(num_threads, lazy):
 @given(num_threads=integers(1,2), lazy=booleans())
 @settings(deadline=None)
 def test_alqci_reproducible(num_threads, lazy):
-    """ Tests a simple Approximate Labelled Quantitative CI instance gives reproducible results
+    """ Tests that a simple Approximate Labelled Quantitative CI instance gives reproducible results
     modulo the same random state
     """
     # Store the initial random state and initialize a variable to store sampled words for

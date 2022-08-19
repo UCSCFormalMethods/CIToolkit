@@ -8,6 +8,7 @@ import dill as pickle
 from citoolkit.specifications.z3_formula import Z3Formula
 
 def test_z3_formula_basic():
+    """ Test basic functionality of the Z3Formula class """
     # Create a simple Z3 formula.
     x = z3.BitVec("x", 8)
     y = z3.BitVec("y", 8)
@@ -42,6 +43,7 @@ def test_z3_formula_basic():
         assert (sample["x"] + sample["y"] + sample["z"])%256 == 200
 
 def test_z3_formula_operations():
+    """ Tests that binary operations work correctly on the Z3Formulas"""
     # Create 2 simple Z3 formulas.
 
     x = z3.BitVec("x", 8)

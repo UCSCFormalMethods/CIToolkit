@@ -139,6 +139,6 @@ class CI(LQCI):
         except InfeasibleCostError as exc:
             raise InfeasibleSoftConstraintError(
                 "Greedy construction does not satisfy soft constraint, meaning no"
-                f" improviser can. Maximum expected cost was {1 - exc.best_cost}.",
+                f" improviser can. Maximum percentage of words satisfying soft constraint was {1 - exc.best_cost}.",
                 (1 - exc.best_cost),
             ) from exc

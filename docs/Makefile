@@ -15,7 +15,7 @@ help:
 .PHONY: help Makefile api_docs
 
 api_doc:
-	sphinx-apidoc -o ./source ../citoolkit
+	sphinx-apidoc -f -o ./source ../citoolkit
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

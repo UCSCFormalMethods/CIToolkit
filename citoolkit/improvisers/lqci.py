@@ -35,25 +35,25 @@ from citoolkit.labellingfunctions.labelling_func import ExactLabellingFunc
 class _LQCIBase(Improviser):
     """The base class for the LQCI class and the MELQCI class.
 
-        When this class is intialized, all the label/cost class specs are
-        created and stored in the class_specs dictionary attribute which matches
-        all (label,cost) tuples to the spec that recognizes words with that label
-        and cost.
+    When this class is intialized, all the label/cost class specs are
+    created and stored in the class_specs dictionary attribute which matches
+    all (label,cost) tuples to the spec that recognizes words with that label
+    and cost.
 
-        All child classes must then initialize two list attributes: class_keys
-        which contains a (label,cost) tuple for every label/cost class to be sampled
-        from, and class_probabilities which contains the probability for the label/cost
-        class at the same index in class_keys.
+    All child classes must then initialize two list attributes: class_keys
+    which contains a (label,cost) tuple for every label/cost class to be sampled
+    from, and class_probabilities which contains the probability for the label/cost
+    class at the same index in class_keys.
 
-        :param hard_constraint: A specification that must accept all improvisations.
-        :param cost_func: A cost function that must associate a rational cost
-            with all improvisations.
-        :param label_func: A labelling function that must associate a label with all
-            improvisations.
-        :param length_bounds: A tuple containing lower and upper bounds on the length
-            of a generated word.
-    `   :param num_threads: The number of threads to use in parameterization computation.
-        :param lazy: Whether or not to lazily initialize the improvizer.
+    :param hard_constraint: A specification that must accept all improvisations.
+    :param cost_func: A cost function that must associate a rational cost
+        with all improvisations.
+    :param label_func: A labelling function that must associate a label with all
+        improvisations.
+    :param length_bounds: A tuple containing lower and upper bounds on the length
+        of a generated word.
+    :param num_threads: The number of threads to use in parameterization computation.
+    :param lazy: Whether or not to lazily initialize the improvizer.
     """
 
     def __init__(
@@ -247,16 +247,16 @@ class _LQCIBase(Improviser):
 class LQCI(_LQCIBase):
     """An improviser for the Labelled Quantitative Control Improvisation (LQCI) problem.
 
-        :param hard_constraint: A specification that must accept all improvisations.
-        :param cost_func: A cost function that must associate a rational cost
-            with all improvisations.
-        :param label_func: A labelling function that must associate a label with all
-            improvisations.
-        :param length_bounds: A tuple containing lower and upper bounds on the length
-            of a generated word.
-    `   :param num_threads: The number of threads to use in parameterization computation.
-        :param lazy: Whether or not to lazily initialize the improvizer.
-        :raises ValueError: If passed parameters are not well formed.
+    :param hard_constraint: A specification that must accept all improvisations.
+    :param cost_func: A cost function that must associate a rational cost
+        with all improvisations.
+    :param label_func: A labelling function that must associate a label with all
+        improvisations.
+    :param length_bounds: A tuple containing lower and upper bounds on the length
+        of a generated word.
+    :param num_threads: The number of threads to use in parameterization computation.
+    :param lazy: Whether or not to lazily initialize the improvizer.
+    :raises ValueError: If passed parameters are not well formed.
     """
 
     def __init__(
@@ -325,18 +325,18 @@ class LQCI(_LQCIBase):
         num_threads: int = 1,
     ) -> None:
         """Parameterize this improviser, computing an improvising distribution if possible and throwing
-            an exception otherwise.
+        an exception otherwise.
 
-            :param cost_bound: The maximum allowed expected cost for our improviser.
-            :param label_prob_bounds: A tuple containing lower and upper bounds on the
-                marginal probability with which we can generate a word with a particular label.
-            :param word_prob_bounds: A dictionary mapping each label in label_func to a tuple. Each
-                tuple contains a lower and upper bound on the conditional probability of selecting
-                a word with the associated label conditioned on the fact that we do select a word
-                with label.
-        `   :param num_threads: The number of threads to use in parameterization computation.
-            :raises ValueError: If passed parameters are not well formed.
-            :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
+        :param cost_bound: The maximum allowed expected cost for our improviser.
+        :param label_prob_bounds: A tuple containing lower and upper bounds on the
+            marginal probability with which we can generate a word with a particular label.
+        :param word_prob_bounds: A dictionary mapping each label in label_func to a tuple. Each
+            tuple contains a lower and upper bound on the conditional probability of selecting
+            a word with the associated label conditioned on the fact that we do select a word
+            with label.
+    `   :param num_threads: The number of threads to use in parameterization computation.
+        :raises ValueError: If passed parameters are not well formed.
+        :raises InfeasibleImproviserError: If the resulting improvisation problem is not feasible.
         """
         # Checks that parameters are well formed.
         if cost_bound < 0:
